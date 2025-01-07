@@ -1,6 +1,6 @@
 mod mesh;
-mod types;
-mod scene;
+mod type_def;
+pub mod scene;
 mod vector;
 mod color;
 mod aabb;
@@ -12,3 +12,4 @@ mod animation;
 mod texture;
 mod light;
 mod camera;
+mod quaternion;

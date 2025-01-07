@@ -1,25 +1,25 @@
 use std::ops;
 
-use super::types::base_types::AiReal;
+use super::type_def::base_types::AiReal;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct AiMatrix4x4 {
-    a1: AiReal,
-    a2: AiReal,
-    a3: AiReal,
-    a4: AiReal,
-    b1: AiReal,
-    b2: AiReal,
-    b3: AiReal,
-    b4: AiReal,
-    c1: AiReal,
-    c2: AiReal,
-    c3: AiReal,
-    c4: AiReal,
-    d1: AiReal,
-    d2: AiReal,
-    d3: AiReal,
-    d4: AiReal,
+    pub a1: AiReal,
+    pub a2: AiReal,
+    pub a3: AiReal,
+    pub a4: AiReal,
+    pub b1: AiReal,
+    pub b2: AiReal,
+    pub b3: AiReal,
+    pub b4: AiReal,
+    pub c1: AiReal,
+    pub c2: AiReal,
+    pub c3: AiReal,
+    pub c4: AiReal,
+    pub d1: AiReal,
+    pub d2: AiReal,
+    pub d3: AiReal,
+    pub d4: AiReal,
 }
 
 impl Default for AiMatrix4x4 {
@@ -47,7 +47,7 @@ impl Default for AiMatrix4x4 {
 
 impl ops::MulAssign for AiMatrix4x4 {
     fn mul_assign(&mut self, rhs: Self) {
-        let new_self = AiMatrix4x4{
+        let new_self = AiMatrix4x4 {
             a1: rhs.a1 * self.a1 + rhs.b1 * self.a2 + rhs.c1 * self.a3 + rhs.d1 * self.a4,
             a2: rhs.a2 * self.a1 + rhs.b2 * self.a2 + rhs.c2 * self.a3 + rhs.d2 * self.a4,
             a3: rhs.a3 * self.a1 + rhs.b3 * self.a2 + rhs.c3 * self.a3 + rhs.d3 * self.a4,
@@ -63,15 +63,36 @@ impl ops::MulAssign for AiMatrix4x4 {
             d1: rhs.a1 * self.d1 + rhs.b1 * self.d2 + rhs.c1 * self.d3 + rhs.d1 * self.d4,
             d2: rhs.a2 * self.d1 + rhs.b2 * self.d2 + rhs.c2 * self.d3 + rhs.d2 * self.d4,
             d3: rhs.a3 * self.d1 + rhs.b3 * self.d2 + rhs.c3 * self.d3 + rhs.d3 * self.d4,
-            d4: rhs.a4 * self.d1 + rhs.b4 * self.d2 + rhs.c4 * self.d3 + rhs.d4 * self.d4
+            d4: rhs.a4 * self.d1 + rhs.b4 * self.d2 + rhs.c4 * self.d3 + rhs.d4 * self.d4,
         };
         self.a1 = new_self.a1;
     }
 }
 
-impl AiMatrix4x4{
-    fn identity() -> Self{
-        let one: AiReal =  <AiReal as Default>::default() + 1 as AiReal;
+impl AiMatrix4x4 {
+    pub fn new() -> Self {
+        AiMatrix4x4 {
+            a1: 0.0,
+            a2: 0.0,
+            a3: 0.0,
+            a4: 0.0,
+            b1: 0.0,
+            b2: 0.0,
+            b3: 0.0,
+            b4: 0.0,
+            c1: 0.0,
+            c2: 0.0,
+            c3: 0.0,
+            c4: 0.0,
+            d1: 0.0,
+            d2: 0.0,
+            d3: 0.0,
+            d4: 0.0,
+        }
+    }
+    
+    pub fn identity() -> Self {
+        let one: AiReal = <AiReal as Default>::default() + 1 as AiReal;
         Self {
             a1: one,
             a2: Default::default(),

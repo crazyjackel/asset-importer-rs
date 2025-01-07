@@ -2,7 +2,7 @@ use enumflags2::bitflags;
 
 use super::{
     error::{AiFailure, AiReturnError},
-    types::base_types::AiReal,
+    type_def::base_types::AiReal,
     vector::AiVector2D,
 };
 

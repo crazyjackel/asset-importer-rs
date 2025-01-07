@@ -4,11 +4,11 @@ use enumflags2::{bitflags, BitFlags};
 use super::{animation::AiAnimation, camera::AiCamera, light::AiLight, material::AiMaterial, matrix::AiMatrix4x4, mesh::{AiMesh, AiSkeleton}, metadata::AiMetadata, texture::AiTexture};
 
 #[derive(Debug, PartialEq)]
-pub struct AiNode {
+pub struct AiNode<'a> {
     name: String,
-    parent: Option<Rc<AiNode>>,
-    children: Vec<Box<AiNode>>,
-    meshes: Vec<Rc<AiMesh>>,
+    parent: Option<&'a AiNode<'a>>,
+    children: Vec<&'a AiNode<'a>>,
+    meshes: Vec<&'a AiMesh<'a>>,
     transformation: AiMatrix4x4,
     metadata: Option<AiMetadata>
 }
@@ -26,16 +26,16 @@ pub enum AiSceneFlag {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct AiScene{
+pub struct AiScene<'a>{
     name: String,
     flags: BitFlags<AiSceneFlag>,
-    root: Box<AiNode>,
-    meshes: Vec<Rc<AiMesh>>,
+    root: AiNode<'a>,
+    meshes: Vec<AiMesh<'a>>,
     materials: Vec<Rc<AiMaterial>>,
     animations: Vec<Rc<AiAnimation>>,
     textures: Vec<Rc<AiTexture>>,
     lights: Vec<Rc<AiLight>>,
     cameras: Vec<Rc<AiCamera>>,
-    skeletons: Vec<Rc<AiSkeleton>>,
+    skeletons: Vec<AiSkeleton<'a>>,
     metadata: AiMetadata
 }
