@@ -1,8 +1,7 @@
 use std::fmt;
 
-use serde::{de, ser, Deserialize, Serialize};
+use serde::{de, ser};
 use serde_derive::{Deserialize, Serialize};
-use serde_json::Value;
 
 use super::{buffer::BufferView, root::StringIndex, validation::Checked};
 
@@ -45,6 +44,7 @@ enum ComponentType {
     UnsignedInt,
     Float,
 }
+
 impl ComponentType {
     pub const fn size(&self) -> u32 {
         match self {
@@ -194,7 +194,7 @@ impl<'de> de::Deserialize<'de> for Checked<Type> {
     }
 }
 #[derive(Clone, Debug, Deserialize, Serialize)]
-struct Accessor {
+pub struct Accessor {
     #[serde(rename = "bufferView")]
     buffer_view: StringIndex<BufferView>,
     #[serde(rename = "byteOffset")]
@@ -207,9 +207,40 @@ struct Accessor {
     #[serde(rename = "type")]
     attribute_type: Checked<Type>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    max: Option<Value>,
+    max: Option<Vec<f32>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    min: Option<Value>,
+    min: Option<Vec<f32>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     name: Option<String>,
+}
+
+#[test]
+fn test_accessor_deserialize() {
+    let data = r#"{
+            "bufferView" : "bufferViewWithVertices_id",
+            "byteOffset" : 0,
+            "byteStride" : 3,
+            "componentType" : 5126,
+            "count" : 1024,
+            "type" : "SCALAR",
+            "name": "user-defined accessor name",
+            "max" : [-1.0, -1.0, -1.0],
+            "min" : [1.0, 1.0, 1.0],
+            "extensions" : {
+               "extension_name" : {
+                  "extension specific" : "value"
+               }
+            },
+            "extras" : {
+                "Application specific" : "The extra object can contain any properties."
+            }     
+        }
+    "#;
+    let accessor: Result<Accessor, _> = serde_json::from_str(data);
+    let accessor_unwrap = accessor.unwrap();
+    println!("{}", serde_json::to_string(&accessor_unwrap).unwrap());
+    assert_eq!(
+        Some("user-defined accessor name".to_string()),
+        accessor_unwrap.name
+    );
 }

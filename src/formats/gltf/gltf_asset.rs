@@ -1,4 +1,9 @@
-use std::{collections::HashMap, fmt::Debug, fs::File, io::{Error, Read}};
+use std::{
+    collections::HashMap,
+    fmt::Debug,
+    fs::File,
+    io::{Error, Read},
+};
 
 use animation::Animation;
 use buffer::Buffer;
@@ -567,11 +572,9 @@ impl<'a> Default for Asset<'a> {
 impl<'a> Asset<'a> {
     pub fn load_asset(filepath: &str, is_binary: bool) -> Result<Self, Error> {
         let file = File::open(filepath)?;
-        let (scene_length, body_length) :(u64,u64) = if is_binary{
-            (0,0)
-        }
-        else{
-
+        let (scene_length, body_length): (u64, u64) = if is_binary {
+            (0, 0)
+        } else {
             (file.metadata()?.len(), 0)
         };
 

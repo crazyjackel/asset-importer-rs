@@ -1,4 +1,16 @@
 mod accessor;
+mod animation;
+mod asset;
 mod buffer;
-mod validation;
+mod camera;
+mod gltf;
+mod image;
+mod material;
+mod mesh;
+mod node;
 mod root;
+mod scene;
+mod shader;
+mod skin;
+mod texture;
+mod validation;
