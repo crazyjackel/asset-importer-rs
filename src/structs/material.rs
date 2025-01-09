@@ -1,3 +1,5 @@
+use std::future::poll_fn;
+
 use enumflags2::bitflags;
 
 use super::{
@@ -160,11 +162,26 @@ pub enum AiPropertyTypeInfo {
     Buffer = 0x05,
 }
 
+pub trait AiPropertyConvert{
+    fn ai_property(&self) -> AiPropertyTypeInfo;
+    fn to_binary(&self) -> Vec<u8>;
+}
+
+impl AiPropertyConvert for f32{
+    fn ai_property(&self) -> AiPropertyTypeInfo {
+        AiPropertyTypeInfo::Float
+    }
+
+    fn to_binary(&self) -> Vec<u8> {
+        self.to_le_bytes().to_vec()
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub struct AiMaterialProperty {
     key: String,
     index: u32,
-    semantic: u32,
+    semantic: AiTextureType,
     property_type: AiPropertyTypeInfo,
     data: Vec<u8>,
 }
@@ -174,15 +191,38 @@ pub struct AiMaterial {
     properties: Vec<AiMaterialProperty>,
 }
 
+impl Default for AiMaterial{
+    fn default() -> Self {
+        Self { properties: Default::default() }
+    }
+}
+
+impl AiMaterial{
+    pub fn new() -> Self{
+        Self { properties: Default::default() }
+    }
+}
+
 impl AiMaterial {
+    pub fn add_property<T>(&self, key: String, 
+        semantic_type: Option<AiTextureType>,
+        property_type: Option<AiPropertyTypeInfo>,
+        data: T)
+        where T: AiPropertyConvert
+    {
+
+    }
+
     pub fn get_property(
         &self,
         key: String,
-        semantic_type: u32,
+        semantic_type: Option<AiTextureType>,
+        property_type: Option<AiPropertyTypeInfo>,
     ) -> Result<&AiMaterialProperty, AiReturnError> {
         for property in &self.properties {
             if property.key == key
-                && (semantic_type == u32::MAX || property.semantic == semantic_type)
+                && (semantic_type == None || Some(property.semantic) == semantic_type)
+                && (property_type == None || Some(property.property_type) == property_type)
             {
                 return Ok(property);
             }
@@ -193,9 +233,10 @@ impl AiMaterial {
     pub fn get_real_vector(
         &self,
         key: String,
-        semantic_type: u32,
+        semantic_type: Option<AiTextureType>,
+        property_type: Option<AiPropertyTypeInfo>,
     ) -> Result<Vec<AiReal>, AiReturnError> {
-        let property = self.get_property(key, semantic_type)?;
+        let property = self.get_property(key, semantic_type, property_type)?;
         match property.property_type {
             /* Conversion from Vec<u8> representing Vec<f32> to Vec<AiReal>
                Chunks u8 into [u8;4] to then convert to f32 and then cast as AiReal (either f32 or f64)
@@ -264,9 +305,11 @@ impl AiMaterial {
             }
         }
     }
+
+
 }
 
-/// Tests the code of get_real_vector's String | Buffer Match 
+/// Tests the code of get_real_vector's String | Buffer Match
 /// Check that strings made up of joined floats can be parsed successfully
 #[test]
 fn base_vec_to_real_vec() {
@@ -284,6 +327,7 @@ fn base_vec_to_real_vec() {
             x.parse::<AiReal>()
                 .map_err(|_| AiReturnError::Failure(AiFailure))
         })
-        .collect::<Result<Vec<AiReal>, AiReturnError>>().unwrap();
+        .collect::<Result<Vec<AiReal>, AiReturnError>>()
+        .unwrap();
     assert_eq!(base_vec, real_vec);
 }

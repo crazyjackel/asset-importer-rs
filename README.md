@@ -17,3 +17,6 @@ Specific Feature-Flag parity with Assimp will be considered as a future excursio
 The active goal is to lay out the code and then optimize later. As part of this, a redocumentation phase will commence after 0.1.0 works to categorize a set of 'issues' and engage in providing documentation on the work.
 
 All documentation provided should have corresponding testing.
+
+Some key differences:
+- AiTexture will use an enum for format rather than a text-based hint. This should reduce memory usage and result in higher stability in terms of options
