@@ -14,8 +14,21 @@ mod light;
 mod camera;
 mod quaternion;
 
+pub use color::AiColor3D;
+pub use color::AiColor4D;
+
+pub use material::AiMaterial;
+pub use material::AiMaterialProperty;
+pub use material::AiPropertyTypeInfo;
+pub use material::AiTextureType;
+pub use material::AiUvTransform;
+pub use material::matkey;
+pub use material::AiTextureMapMode;
+
 pub use texture::AiTexel;
 pub use texture::AiTexture;
 pub use texture::AiTextureFormat;
 
-pub use material::AiMaterial;
+pub use type_def::base_types;
+pub use vector::AiVector2D;
+pub use vector::AiVector3D;

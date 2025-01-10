@@ -1,11 +1,14 @@
 
+use bytemuck::{Pod, Zeroable};
+
 use super::type_def::EPSILON_F;
 
-#[derive(Debug, PartialEq, Clone)]
+#[repr(C)]
+#[derive(Debug, PartialEq, Pod, Clone, Copy, Zeroable)]
 pub struct AiColor3D {
-    r: f32,
-    g: f32,
-    b: f32
+    pub r: f32,
+    pub g: f32,
+    pub b: f32
 }
 
 
@@ -24,18 +27,25 @@ impl AiColor3D {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[repr(C)]
+#[derive(Debug, PartialEq, Pod, Clone, Copy, Zeroable)]
 pub struct AiColor4D {
-    r: f32,
-    g: f32,
-    b: f32,
-    a: f32,
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+    pub a: f32,
 }
 
 
 impl Default for AiColor4D{
     fn default() -> Self {
         Self { r: Default::default(), g: Default::default(), b: Default::default(), a: Default::default() }
+    }
+}
+
+impl From<[f32;4]> for AiColor4D{
+    fn from(value: [f32;4]) -> Self {
+        AiColor4D { r: value[0], g: value[1], b: value[2], a: value[3] }
     }
 }
 

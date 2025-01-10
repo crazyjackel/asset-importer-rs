@@ -1,11 +1,14 @@
 use std::ops;
 
+use bytemuck::{Pod, Zeroable};
+
 use super::type_def::base_types::AiReal;
 
-#[derive(Debug, PartialEq)]
+#[repr(C)]
+#[derive(Debug, PartialEq, Pod, Clone, Copy, Zeroable)]
 pub struct AiVector2D {
-    x: AiReal,
-    y: AiReal,
+    pub x: AiReal,
+    pub y: AiReal,
 }
 
 impl Default for AiVector2D {
@@ -79,7 +82,8 @@ impl AiVector2D {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[repr(C)]
+#[derive(Debug, PartialEq, Pod, Clone, Copy, Zeroable)]
 pub struct AiVector3D {
     pub x: AiReal,
     pub y: AiReal,
