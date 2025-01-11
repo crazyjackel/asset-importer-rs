@@ -24,6 +24,10 @@ pub use material::AiTextureType;
 pub use material::AiUvTransform;
 pub use material::matkey;
 pub use material::AiTextureMapMode;
+pub use material::AiShadingMode;
+
+pub use mesh::AiMesh;
+pub use mesh::AiPrimitiveType;
 
 pub use texture::AiTexel;
 pub use texture::AiTexture;

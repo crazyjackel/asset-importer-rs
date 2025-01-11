@@ -64,6 +64,7 @@ pub enum AiPrimitiveType {
     Polygon = 0x08,
     NgonEncodingFlag = 0x10,
 }
+
 impl ::enumflags2::_internal::core::ops::Not for AiPrimitiveType {
     type Output = ::enumflags2::BitFlags<Self>;
     #[inline(always)]
@@ -163,11 +164,17 @@ pub enum AiMorphingTarget {
     MorphRelative = 0x03,
 }
 
+impl Default for AiMorphingTarget{
+    fn default() -> Self {
+        AiMorphingTarget::Unknown
+    }
+}
+
 #[derive(Debug, PartialEq, Clone)]
 pub struct AiMesh<'a> {
-    name: String,
-    primitive_types: BitFlags<AiPrimitiveType>,
-    vertices: Vec<AiVector3D>,
+    pub name: String,
+    pub primitive_types: BitFlags<AiPrimitiveType>,
+    pub vertices: Vec<AiVector3D>,
     normals: Vec<AiVector3D>,
     tangents: Vec<AiVector3D>,
     bi_tangents: Vec<AiVector3D>,
@@ -181,6 +188,29 @@ pub struct AiMesh<'a> {
     method: AiMorphingTarget,
     aabb: AiAABB,
     texture_coordinate_names: [String; AI_MAX_NUMBER_OF_TEXTURECOORDS],
+}
+
+impl<'a> Default for AiMesh<'a> {
+    fn default() -> Self {
+        Self {
+            name: Default::default(),
+            primitive_types: Default::default(),
+            vertices: Default::default(),
+            normals: Default::default(),
+            tangents: Default::default(),
+            bi_tangents: Default::default(),
+            colors: Default::default(),
+            texture_coords: Default::default(),
+            num_uv_components: Default::default(),
+            faces: Default::default(),
+            bones: Default::default(),
+            material_index: Default::default(),
+            anim_meshes: Default::default(),
+            method: Default::default(),
+            aabb: Default::default(),
+            texture_coordinate_names: Default::default(),
+        }
+    }
 }
 
 impl<'a> AiMesh<'a> {
@@ -208,18 +238,18 @@ impl<'a> AiMesh<'a> {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct AiSkeletonBone<'a>{
+pub struct AiSkeletonBone<'a> {
     parent: i32,
     node: &'a AiNode<'a>,
     armature: &'a AiNode<'a>,
     mesh: &'a AiMesh<'a>,
     weights: Vec<AiVertexWeight>,
     offset_matrix: AiMatrix4x4,
-    local_matrix: AiMatrix4x4
+    local_matrix: AiMatrix4x4,
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct AiSkeleton<'a>{
+pub struct AiSkeleton<'a> {
     name: String,
     bones: Vec<AiSkeletonBone<'a>>,
 }

@@ -9,6 +9,8 @@ use super::{
     vector::AiVector2D,
 };
 
+
+//@todo Add an Enum to Matkey that can be used to convert to and from binary based on format
 pub mod matkey {
     use super::AiTextureType;
 
