@@ -6,13 +6,6 @@ use crate::core::{import::AiImport, importer::AiImporter, importer_desc::{AiImpo
 struct GltfImporter;
 
 impl AiImport for GltfImporter{
-    fn can_read(&self, file:&str) -> bool {
-        todo!()
-    }
-
-    fn read_file(&self, importer: &mut AiImporter, file: &str) -> Result<crate::structs::scene::AiScene, crate::core::error::AiReadError> {
-        todo!()
-    }
 
     fn info(&self) -> AiImporterDesc {
         AiImporterDesc{
@@ -27,6 +20,14 @@ impl AiImport for GltfImporter{
             max_minor: 0,
             extensions: vec!["gltf".to_string(),"glb".to_string()],
         }
+    }
+    
+    fn can_read<P>(&self, path: P) -> bool where P: AsRef<std::path::Path> {
+        todo!()
+    }
+    
+    fn read_file<P>(&self, importer: &mut AiImporter, path: P) -> Result<crate::structs::scene::AiScene, crate::core::error::AiReadError> where P: AsRef<std::path::Path> {
+        todo!()
     }
 }
 

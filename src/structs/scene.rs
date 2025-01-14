@@ -1,16 +1,38 @@
 use std::rc::Rc;
 
+use super::{
+    animation::AiAnimation,
+    camera::AiCamera,
+    light::AiLight,
+    material::AiMaterial,
+    matrix::AiMatrix4x4,
+    mesh::{AiMesh, AiSkeleton},
+    metadata::AiMetadata,
+    texture::AiTexture,
+};
 use enumflags2::{bitflags, BitFlags};
-use super::{animation::AiAnimation, camera::AiCamera, light::AiLight, material::AiMaterial, matrix::AiMatrix4x4, mesh::{AiMesh, AiSkeleton}, metadata::AiMetadata, texture::AiTexture};
 
 #[derive(Debug, PartialEq)]
 pub struct AiNode<'a> {
-    name: String,
-    parent: Option<&'a AiNode<'a>>,
-    children: Vec<&'a AiNode<'a>>,
-    meshes: Vec<&'a AiMesh<'a>>,
-    transformation: AiMatrix4x4,
-    metadata: Option<AiMetadata>
+    pub name: String,
+    pub parent: Option<&'a AiNode<'a>>,
+    pub children: Vec<&'a AiNode<'a>>,
+    pub meshes: Vec<&'a AiMesh<'a>>,
+    pub transformation: AiMatrix4x4,
+    pub metadata: Option<AiMetadata>,
+}
+
+impl<'a> Default for AiNode<'a> {
+    fn default() -> Self {
+        Self {
+            name: Default::default(),
+            parent: Default::default(),
+            children: Default::default(),
+            meshes: Default::default(),
+            transformation: AiMatrix4x4::identity(),
+            metadata: Default::default(),
+        }
+    }
 }
 
 #[bitflags]
@@ -22,11 +44,11 @@ pub enum AiSceneFlag {
     ValidationWarning = 0x04,
     NonVerboseFormat = 0x08,
     Terrain = 0x10,
-    AllowShared = 0x20
+    AllowShared = 0x20,
 }
 
 #[derive(Debug, PartialEq)]
-pub struct AiScene<'a>{
+pub struct AiScene<'a> {
     name: String,
     flags: BitFlags<AiSceneFlag>,
     root: AiNode<'a>,
@@ -37,5 +59,5 @@ pub struct AiScene<'a>{
     lights: Vec<Rc<AiLight>>,
     cameras: Vec<Rc<AiCamera>>,
     skeletons: Vec<AiSkeleton<'a>>,
-    metadata: AiMetadata
+    metadata: AiMetadata,
 }

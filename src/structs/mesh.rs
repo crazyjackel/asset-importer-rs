@@ -6,8 +6,8 @@ use super::aabb::AiAABB;
 use super::matrix::AiMatrix4x4;
 use super::{color::AiColor4D, scene::AiNode, type_def::base_types::AiReal, vector::AiVector3D};
 
-const AI_MAX_NUMBER_OF_COLORS_SETS: usize = 0x8;
-const AI_MAX_NUMBER_OF_TEXTURECOORDS: usize = 0x8;
+pub const AI_MAX_NUMBER_OF_COLORS_SETS: usize = 0x8;
+pub const AI_MAX_NUMBER_OF_TEXTURECOORDS: usize = 0x8;
 
 pub type AiFace = Vec<usize>;
 
@@ -128,14 +128,29 @@ impl AiPrimitiveType {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct AiAnimMesh {
-    name: String,
-    vertices: Vec<AiVector3D>,
-    normals: Vec<AiVector3D>,
-    tangents: Vec<AiVector3D>,
-    bi_tangents: Vec<AiVector3D>,
-    colors: [Option<Vec<AiColor4D>>; AI_MAX_NUMBER_OF_COLORS_SETS],
-    texture_coords: [Option<Vec<AiVector3D>>; AI_MAX_NUMBER_OF_TEXTURECOORDS],
-    weight: f32,
+    pub name: String,
+    pub vertices: Vec<AiVector3D>,
+    pub normals: Vec<AiVector3D>,
+    pub tangents: Vec<AiVector3D>,
+    pub bi_tangents: Vec<AiVector3D>,
+    pub colors: [Option<Vec<AiColor4D>>; AI_MAX_NUMBER_OF_COLORS_SETS],
+    pub texture_coords: [Option<Vec<AiVector3D>>; AI_MAX_NUMBER_OF_TEXTURECOORDS],
+    pub weight: f32,
+}
+
+impl Default for AiAnimMesh {
+    fn default() -> Self {
+        Self {
+            name: Default::default(),
+            vertices: Default::default(),
+            normals: Default::default(),
+            tangents: Default::default(),
+            bi_tangents: Default::default(),
+            colors: Default::default(),
+            texture_coords: Default::default(),
+            weight: Default::default(),
+        }
+    }
 }
 
 impl AiAnimMesh {
@@ -164,7 +179,7 @@ pub enum AiMorphingTarget {
     MorphRelative = 0x03,
 }
 
-impl Default for AiMorphingTarget{
+impl Default for AiMorphingTarget {
     fn default() -> Self {
         AiMorphingTarget::Unknown
     }
@@ -175,19 +190,19 @@ pub struct AiMesh<'a> {
     pub name: String,
     pub primitive_types: BitFlags<AiPrimitiveType>,
     pub vertices: Vec<AiVector3D>,
-    normals: Vec<AiVector3D>,
-    tangents: Vec<AiVector3D>,
-    bi_tangents: Vec<AiVector3D>,
-    colors: [Option<Vec<AiColor4D>>; AI_MAX_NUMBER_OF_COLORS_SETS],
-    texture_coords: [Option<Vec<AiVector3D>>; AI_MAX_NUMBER_OF_TEXTURECOORDS],
-    num_uv_components: [u32; AI_MAX_NUMBER_OF_TEXTURECOORDS],
-    faces: Vec<AiFace>,
-    bones: Vec<AiBone<'a>>,
-    material_index: u32,
-    anim_meshes: Vec<AiAnimMesh>,
-    method: AiMorphingTarget,
-    aabb: AiAABB,
-    texture_coordinate_names: [String; AI_MAX_NUMBER_OF_TEXTURECOORDS],
+    pub normals: Vec<AiVector3D>,
+    pub tangents: Vec<AiVector3D>,
+    pub bi_tangents: Vec<AiVector3D>,
+    pub colors: [Option<Vec<AiColor4D>>; AI_MAX_NUMBER_OF_COLORS_SETS],
+    pub texture_coords: [Option<Vec<AiVector3D>>; AI_MAX_NUMBER_OF_TEXTURECOORDS],
+    //pub num_uv_components: [u32; AI_MAX_NUMBER_OF_TEXTURECOORDS],
+    pub faces: Vec<AiFace>,
+    pub bones: Vec<AiBone<'a>>,
+    pub material_index: u32,
+    pub anim_meshes: Vec<AiAnimMesh>,
+    pub method: AiMorphingTarget,
+    pub aabb: AiAABB,
+    pub texture_coordinate_names: [String; AI_MAX_NUMBER_OF_TEXTURECOORDS],
 }
 
 impl<'a> Default for AiMesh<'a> {
@@ -201,7 +216,7 @@ impl<'a> Default for AiMesh<'a> {
             bi_tangents: Default::default(),
             colors: Default::default(),
             texture_coords: Default::default(),
-            num_uv_components: Default::default(),
+            //num_uv_components: Default::default(),
             faces: Default::default(),
             bones: Default::default(),
             material_index: Default::default(),

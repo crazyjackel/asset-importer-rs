@@ -14,8 +14,13 @@ mod light;
 mod camera;
 mod quaternion;
 
+pub use camera::AiCamera;
+
 pub use color::AiColor3D;
 pub use color::AiColor4D;
+
+pub use light::AiLight;
+pub use light::AiLightSourceType;
 
 pub use material::AiMaterial;
 pub use material::AiMaterialProperty;
@@ -28,6 +33,12 @@ pub use material::AiShadingMode;
 
 pub use mesh::AiMesh;
 pub use mesh::AiPrimitiveType;
+pub use mesh::AiFace;
+pub use mesh::AiAnimMesh;
+pub use mesh::AI_MAX_NUMBER_OF_COLORS_SETS;
+pub use mesh::AI_MAX_NUMBER_OF_TEXTURECOORDS;
+
+pub use scene::AiNode;
 
 pub use texture::AiTexel;
 pub use texture::AiTexture;

@@ -2,15 +2,15 @@ use super::{matrix::AiMatrix4x4, type_def::AIMathTwoPI_F, vector::AiVector3D};
 
 #[derive(Debug, PartialEq)]
 pub struct AiCamera {
-    name: String,
-    position: AiVector3D,
-    up_vec: AiVector3D,
-    look_vec: AiVector3D,
-    horizontal_fov: f32,
-    near_plane: f32,
-    far_plane: f32,
-    aspect_ratio: f32,
-    orthographic_width: f32,
+    pub name: String,
+    pub position: AiVector3D,
+    pub up_vec: AiVector3D,
+    pub look_vec: AiVector3D,
+    pub horizontal_fov: f32,
+    pub near_plane: f32,
+    pub far_plane: f32,
+    pub aspect_ratio: f32,
+    pub orthographic_width: f32,
 }
 
 impl Default for AiCamera {

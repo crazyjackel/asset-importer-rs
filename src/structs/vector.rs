@@ -20,36 +20,6 @@ impl Default for AiVector2D {
     }
 }
 
-impl ops::Div<AiReal> for AiVector2D {
-    type Output = Self;
-
-    fn div(self, rhs: AiReal) -> Self::Output {
-        AiVector2D {
-            x: self.x / rhs,
-            y: self.y / rhs,
-        }
-    }
-}
-
-impl ops::DivAssign<AiReal> for AiVector2D {
-    fn div_assign(&mut self, rhs: AiReal) {
-        self.x /= rhs;
-        self.y /= rhs;
-    }
-}
-
-impl ops::Index<u8> for AiVector2D {
-    type Output = AiReal;
-
-    fn index(&self, index: u8) -> &Self::Output {
-        match index {
-            0 => &self.x,
-            1 => &self.y,
-            _ => &self.x,
-        }
-    }
-}
-
 impl AiVector2D {
     pub fn new(x: AiReal, y: AiReal) -> AiVector2D {
         AiVector2D { x, y }
@@ -82,6 +52,53 @@ impl AiVector2D {
     }
 }
 
+impl ops::AddAssign<AiVector2D> for AiVector2D{
+    fn add_assign(&mut self, rhs: AiVector2D) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+    }
+}
+
+impl ops::Div<AiReal> for AiVector2D {
+    type Output = Self;
+
+    fn div(self, rhs: AiReal) -> Self::Output {
+        AiVector2D {
+            x: self.x / rhs,
+            y: self.y / rhs,
+        }
+    }
+}
+
+impl ops::DivAssign<AiReal> for AiVector2D {
+    fn div_assign(&mut self, rhs: AiReal) {
+        self.x /= rhs;
+        self.y /= rhs;
+    }
+}
+
+impl ops::Index<u8> for AiVector2D {
+    type Output = AiReal;
+
+    fn index(&self, index: u8) -> &Self::Output {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            _ => &self.x,
+        }
+    }
+}
+
+impl ops::Mul<f32> for AiVector2D{
+    type Output = AiVector2D;
+
+    fn mul(mut self, rhs: f32) -> Self::Output {
+        self.x *= rhs;
+        self.y *= rhs;
+        self
+    }
+}
+
 #[repr(C)]
 #[derive(Debug, PartialEq, Pod, Clone, Copy, Zeroable)]
 pub struct AiVector3D {
@@ -96,97 +113,6 @@ impl Default for AiVector3D {
             x: Default::default(),
             y: Default::default(),
             z: Default::default(),
-        }
-    }
-}
-
-impl ops::Div<AiReal> for AiVector3D {
-    type Output = Self;
-
-    fn div(self, rhs: AiReal) -> Self::Output {
-        AiVector3D {
-            x: self.x / rhs,
-            y: self.y / rhs,
-            z: self.z / rhs,
-        }
-    }
-}
-
-impl ops::DivAssign<AiReal> for AiVector3D {
-    fn div_assign(&mut self, rhs: AiReal) {
-        self.x /= rhs;
-        self.y /= rhs;
-    }
-}
-
-impl ops::BitXor<AiVector3D> for AiVector3D {
-    type Output = AiVector3D;
-
-    fn bitxor(self, rhs: AiVector3D) -> Self::Output {
-        self.cross(&rhs)
-    }
-}
-impl ops::BitXor<&AiVector3D> for AiVector3D {
-    type Output = AiVector3D;
-
-    fn bitxor(self, rhs: &AiVector3D) -> Self::Output {
-        self.cross(rhs)
-    }
-}
-impl ops::BitXor<AiVector3D> for &AiVector3D {
-    type Output = AiVector3D;
-
-    fn bitxor(self, rhs: AiVector3D) -> Self::Output {
-        self.cross(&rhs)
-    }
-}
-impl ops::BitXor<&AiVector3D> for &AiVector3D {
-    type Output = AiVector3D;
-
-    fn bitxor(self, rhs: &AiVector3D) -> Self::Output {
-        self.cross(rhs)
-    }
-}
-
-
-impl ops::Mul<AiVector3D> for AiVector3D{
-    type Output = AiReal;
-
-    fn mul(self, rhs: AiVector3D) -> Self::Output {
-        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
-    }
-}
-impl ops::Mul<&AiVector3D> for AiVector3D{
-    type Output = AiReal;
-
-    fn mul(self, rhs: &AiVector3D) -> Self::Output {
-        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
-    }
-}
-impl ops::Mul<AiVector3D> for &AiVector3D{
-    type Output = AiReal;
-
-    fn mul(self, rhs: AiVector3D) -> Self::Output {
-        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
-    }
-}
-impl ops::Mul<&AiVector3D> for &AiVector3D{
-    type Output = AiReal;
-
-    fn mul(self, rhs: &AiVector3D) -> Self::Output {
-        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
-    }
-}
-
-impl ops::Index<u8> for AiVector3D {
-    type Output = AiReal;
-
-    fn index(&self, index: u8) -> &Self::Output {
-        match index {
-            0 => &self.x,
-            1 => &self.y,
-            2 => &self.z,
-            _ => &self.x,
         }
     }
 }
@@ -225,5 +151,115 @@ impl AiVector3D {
             y: self.z * other.x - self.x * other.z,
             z: self.x * other.y - self.y * other.x,
         }
+    }
+}
+
+impl ops::AddAssign<AiVector3D> for AiVector3D{
+    fn add_assign(&mut self, rhs: AiVector3D) {
+        self.x += rhs.x;
+        self.y += rhs.y;
+        self.z += rhs.z;
+    }
+}
+
+impl ops::BitXor<AiVector3D> for AiVector3D {
+    type Output = AiVector3D;
+
+    fn bitxor(self, rhs: AiVector3D) -> Self::Output {
+        self.cross(&rhs)
+    }
+}
+impl ops::BitXor<&AiVector3D> for AiVector3D {
+    type Output = AiVector3D;
+
+    fn bitxor(self, rhs: &AiVector3D) -> Self::Output {
+        self.cross(rhs)
+    }
+}
+impl ops::BitXor<AiVector3D> for &AiVector3D {
+    type Output = AiVector3D;
+
+    fn bitxor(self, rhs: AiVector3D) -> Self::Output {
+        self.cross(&rhs)
+    }
+}
+impl ops::BitXor<&AiVector3D> for &AiVector3D {
+    type Output = AiVector3D;
+
+    fn bitxor(self, rhs: &AiVector3D) -> Self::Output {
+        self.cross(rhs)
+    }
+}
+
+impl ops::Div<AiReal> for AiVector3D {
+    type Output = Self;
+
+    fn div(self, rhs: AiReal) -> Self::Output {
+        AiVector3D {
+            x: self.x / rhs,
+            y: self.y / rhs,
+            z: self.z / rhs,
+        }
+    }
+}
+impl ops::DivAssign<AiReal> for AiVector3D {
+    fn div_assign(&mut self, rhs: AiReal) {
+        self.x /= rhs;
+        self.y /= rhs;
+    }
+}
+
+
+impl ops::Index<u8> for AiVector3D {
+    type Output = AiReal;
+
+    fn index(&self, index: u8) -> &Self::Output {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => &self.x,
+        }
+    }
+}
+
+impl ops::Mul<AiVector3D> for AiVector3D{
+    type Output = AiReal;
+
+    fn mul(self, rhs: AiVector3D) -> Self::Output {
+        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
+    }
+}
+
+impl ops::Mul<&AiVector3D> for AiVector3D{
+    type Output = AiReal;
+
+    fn mul(self, rhs: &AiVector3D) -> Self::Output {
+        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
+    }
+}
+impl ops::Mul<AiVector3D> for &AiVector3D{
+    type Output = AiReal;
+
+    fn mul(self, rhs: AiVector3D) -> Self::Output {
+        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
+    }
+}
+impl ops::Mul<&AiVector3D> for &AiVector3D{
+    type Output = AiReal;
+
+    fn mul(self, rhs: &AiVector3D) -> Self::Output {
+        self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
+    }
+}
+
+impl ops::Mul<f32> for AiVector3D{
+    type Output = AiVector3D;
+
+    fn mul(mut self, rhs: f32) -> Self::Output {
+        self.x *= rhs;
+        self.y *= rhs;
+        self.z *= rhs;
+        self
     }
 }

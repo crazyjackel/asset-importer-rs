@@ -1,6 +1,5 @@
 use super::{
-    color::AiColor3D,
-    vector::{AiVector2D, AiVector3D},
+    base_types::AIMathTwoPI, color::AiColor3D, type_def::AiMathPI_F, vector::{AiVector2D, AiVector3D}
 };
 
 #[repr(u8)]
@@ -22,19 +21,20 @@ impl Default for AiLightSourceType {
 
 #[derive(Debug, PartialEq)]
 pub struct AiLight {
-    name: String,
-    source_type: AiLightSourceType,
-    position: AiVector3D,
-    direction: AiVector3D,
-    up: AiVector3D,
-    attenuation: f32,
-    attenuation_linear: f32,
-    attenuation_quadratic: f32,
-    diffuse_color: AiColor3D,
-    ambient_color: AiColor3D,
-    inner_cone_angle: f32,
-    outer_cone_angle: f32,
-    size: AiVector2D,
+    pub name: String,
+    pub source_type: AiLightSourceType,
+    pub position: AiVector3D,
+    pub direction: AiVector3D,
+    pub up: AiVector3D,
+    pub attenuation: f32,
+    pub attenuation_linear: f32,
+    pub attenuation_quadratic: f32,
+    pub diffuse_color: AiColor3D,
+    pub specular_color: AiColor3D,
+    pub ambient_color: AiColor3D,
+    pub inner_cone_angle: f32,
+    pub outer_cone_angle: f32,
+    pub size: AiVector2D,
 }
 
 impl Default for AiLight {
@@ -46,12 +46,13 @@ impl Default for AiLight {
             direction: Default::default(),
             up: Default::default(),
             attenuation: Default::default(),
-            attenuation_linear: Default::default(),
+            attenuation_linear: 1.0,
             attenuation_quadratic: Default::default(),
             diffuse_color: Default::default(),
+            specular_color: Default::default(),
             ambient_color: Default::default(),
-            inner_cone_angle: Default::default(),
-            outer_cone_angle: Default::default(),
+            inner_cone_angle: AiMathPI_F,
+            outer_cone_angle: AiMathPI_F,
             size: Default::default(),
         }
     }
