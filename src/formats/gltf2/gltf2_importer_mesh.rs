@@ -4,7 +4,7 @@ use crate::{core::error::AiReadError, structs::{base_types::AiReal, AiAnimMesh, 
 
 use super::{gltf2_error::Gtlf2Error, gltf2_importer::Gltf2Importer};
 
-trait GetPointer {
+pub(crate) trait GetPointer {
     fn get_pointer<'a>(&self, buffers: &'a [buffer::Data]) -> Result<Vec<u8>, Gtlf2Error>;
 }
 
@@ -118,7 +118,7 @@ impl Gltf2Importer{
         document: &'a Document,
         buffer_data: &'a [buffer::Data],
         last_material_index: usize
-    ) -> Result<(Vec<AiMesh<'a>>, Vec<u32>, Vec<Vec<u32>>), AiReadError> {
+    ) -> Result<(Vec<AiMesh>, Vec<u32>, Vec<Vec<u32>>), AiReadError> {
         let asset_meshes: Vec<Mesh<'_>> = document.meshes().collect();
 
         //Maps Document Mesh Index to Offset. Lets us add all primitives to a Node as Meshes
@@ -645,7 +645,7 @@ impl Gltf2Importer{
 }
 
 
-fn remap_data<B,F>(vertex_remapping_table: Option<&Vec<u32>>, data: Vec<u8>, chunk_size: usize, f: F) 
+pub(crate) fn remap_data<B,F>(vertex_remapping_table: Option<&Vec<u32>>, data: Vec<u8>, chunk_size: usize, f: F) 
 -> Vec<B> where F: FnMut(&[u8]) -> B, B:Clone + Default
     {
     let vertices= if let Some(remap) = vertex_remapping_table {

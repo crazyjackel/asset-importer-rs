@@ -90,7 +90,7 @@ impl AiMatrix4x4 {
             d4: 0.0,
         }
     }
-    
+
     pub fn identity() -> Self {
         let one: AiReal = <AiReal as Default>::default() + 1 as AiReal;
         Self {
@@ -110,6 +110,29 @@ impl AiMatrix4x4 {
             d2: Default::default(),
             d3: Default::default(),
             d4: one,
+        }
+    }
+}
+
+impl From<[[f32; 4]; 4]> for AiMatrix4x4 {
+    fn from(value: [[f32; 4]; 4]) -> Self {
+        AiMatrix4x4 {
+            a1: value[0][0],
+            a2: value[0][1],
+            a3: value[0][2],
+            a4: value[0][3],
+            b1: value[1][0],
+            b2: value[1][1],
+            b3: value[1][2],
+            b4: value[1][3],
+            c1: value[2][0],
+            c2: value[2][1],
+            c3: value[2][2],
+            c4: value[2][3],
+            d1: value[3][0],
+            d2: value[3][1],
+            d3: value[3][2],
+            d4: value[3][3],
         }
     }
 }

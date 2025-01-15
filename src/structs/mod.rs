@@ -31,14 +31,22 @@ pub use material::matkey;
 pub use material::AiTextureMapMode;
 pub use material::AiShadingMode;
 
+pub use matrix::AiMatrix4x4;
+
 pub use mesh::AiMesh;
 pub use mesh::AiPrimitiveType;
 pub use mesh::AiFace;
 pub use mesh::AiAnimMesh;
+pub use mesh::AiVertexWeight;
+pub use mesh::AiBone;
 pub use mesh::AI_MAX_NUMBER_OF_COLORS_SETS;
 pub use mesh::AI_MAX_NUMBER_OF_TEXTURECOORDS;
 
+pub use metadata::AiMetadata;
+pub use metadata::AiMetadataEntry;
+
 pub use scene::AiNode;
+pub use scene::AiNodeTree;
 
 pub use texture::AiTexel;
 pub use texture::AiTexture;

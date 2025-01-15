@@ -66,3 +66,71 @@ impl Gltf2Importer {
         Ok(lights)
     }
 }
+
+#[cfg(feature = "KHR_lights_punctual")]
+#[test]
+fn test_light_import() {
+    let gltf_data = r#"{
+            "extensions": {
+                "KHR_lights_punctual": {
+                    "lights": [
+                        {
+                        "color": [
+                            1,
+                            0.63187497854232788,
+                            0.23909975588321689
+                        ],
+                        "intensity": 15,
+                        "name": "Point",
+                        "type": "point"
+                        },
+                        {
+                        "intensity": 1.5,
+                        "name": "Point.002",
+                        "type": "point"
+                        },
+                        {
+                        "color": [
+                            0.21223080158233645,
+                            0.59061902761459351,
+                            0.55834054946899414
+                        ],
+                        "intensity": 80,
+                        "name": "Point.003",
+                        "type": "point"
+                        },
+                        {
+                        "color": [
+                            0.21223080158233645,
+                            0.59061902761459351,
+                            0.55834054946899414
+                        ],
+                        "intensity": 80,
+                        "name": "Point.001",
+                        "type": "point"
+                        },
+                        {
+                        "color": [
+                            1,
+                            0.62783652544021606,
+                            0.50124037265777588
+                        ],
+                        "intensity": 180,
+                        "name": "Point.004",
+                        "type": "point"
+                        }
+                    ]
+                }
+            },
+            "extensionsUsed": [
+                "KHR_lights_punctual"
+            ],
+            "asset" : {
+                "version" : "2.0"
+            }
+        }"#;
+    let scene = serde_json::from_str(gltf_data).unwrap();
+    let document = Document::from_json_without_validation(scene);
+    let lights = Gltf2Importer::import_lights(&document).unwrap();
+    assert_eq!(5, lights.len());
+}

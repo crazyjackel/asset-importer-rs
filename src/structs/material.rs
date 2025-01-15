@@ -1,14 +1,9 @@
-use std::future::poll_fn;
-
 use bytemuck::{Pod, Zeroable};
 use enumflags2::bitflags;
 
-use super::{
-    error::{AiFailure, AiReturnError},
-    type_def::base_types::AiReal,
-    vector::AiVector2D,
-};
+use crate::structs::error::{AiFailure, AiReturnError};
 
+use super::{type_def::base_types::AiReal, vector::AiVector2D};
 
 //@todo Add an Enum to Matkey that can be used to convert to and from binary based on format
 pub mod matkey {
@@ -286,7 +281,7 @@ impl Default for AiUvTransform {
             rotation: 0f32,
         }
     }
-} 
+}
 
 #[repr(u8)]
 #[derive(Clone, Debug, PartialEq)]

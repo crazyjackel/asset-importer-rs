@@ -94,16 +94,25 @@ impl AiImport for Gltf2Importer {
         let embedded_materials =
             Gltf2Importer::import_embedded_materials(&document, &embedded_tex_ids)?;
         //import meshes
-        let (meshes, mesh_offsets, remapping_tables) =
+        let (mut meshes, mesh_offsets, remapping_tables) =
             Gltf2Importer::import_meshes(&document, &buffer_data, embedded_materials.len() - 1)?;
 
         //import cameras
-        let cameras = Gltf2Importer::import_cameras(&document);
+        let mut cameras = Gltf2Importer::import_cameras(&document)?;
         //import lights
-        let lights = Gltf2Importer::import_lights(&document);
+        let mut lights = Gltf2Importer::import_lights(&document)?;
 
         //import nodes
-        let node = Gltf2Importer::import_nodes(&document);
+        let node = Gltf2Importer::import_nodes(
+            &document,
+            &buffer_data,
+            &mut meshes,
+            &mesh_offsets,
+            &remapping_tables,
+            &mut lights,
+            &mut cameras,
+        )?;
+        
         //import animations
         //import metadata
 

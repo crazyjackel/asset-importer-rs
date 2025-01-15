@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use enumflags2::BitFlags;
 
 use super::aabb::AiAABB;
@@ -13,16 +11,16 @@ pub type AiFace = Vec<usize>;
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct AiVertexWeight {
-    vertex_id: usize,
-    weight: AiReal,
+    pub vertex_id: usize,
+    pub weight: AiReal,
 }
 
 impl AiVertexWeight {
-    fn new(p_id: usize, p_weight: AiReal) {
+    pub fn new(p_id: usize, p_weight: AiReal) -> Self {
         Self {
             vertex_id: p_id,
             weight: p_weight,
-        };
+        }
     }
 }
 
@@ -36,15 +34,27 @@ impl Default for AiVertexWeight {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct AiBone<'a> {
-    name: String,
-    weights: Vec<AiVertexWeight>,
-    node: &'a AiNode<'a>,
-    armature: &'a AiNode<'a>,
-    offset_matrix: AiMatrix4x4,
+pub struct AiBone {
+    pub name: String,
+    pub weights: Vec<AiVertexWeight>,
+    pub node_index: usize,
+    pub armature_index: usize,
+    pub offset_matrix: AiMatrix4x4,
 }
 
-impl<'a> AiBone<'a> {
+impl Default for AiBone {
+    fn default() -> Self {
+        Self {
+            name: Default::default(),
+            weights: Default::default(),
+            node_index: Default::default(),
+            armature_index: Default::default(),
+            offset_matrix: Default::default(),
+        }
+    }
+}
+
+impl AiBone {
     fn copyVertexWeights(&mut self, other: AiBone) {
         if other.weights.is_empty() {
             self.weights.clear();
@@ -186,7 +196,7 @@ impl Default for AiMorphingTarget {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct AiMesh<'a> {
+pub struct AiMesh {
     pub name: String,
     pub primitive_types: BitFlags<AiPrimitiveType>,
     pub vertices: Vec<AiVector3D>,
@@ -197,7 +207,7 @@ pub struct AiMesh<'a> {
     pub texture_coords: [Option<Vec<AiVector3D>>; AI_MAX_NUMBER_OF_TEXTURECOORDS],
     //pub num_uv_components: [u32; AI_MAX_NUMBER_OF_TEXTURECOORDS],
     pub faces: Vec<AiFace>,
-    pub bones: Vec<AiBone<'a>>,
+    pub bones: Vec<AiBone>,
     pub material_index: u32,
     pub anim_meshes: Vec<AiAnimMesh>,
     pub method: AiMorphingTarget,
@@ -205,7 +215,7 @@ pub struct AiMesh<'a> {
     pub texture_coordinate_names: [String; AI_MAX_NUMBER_OF_TEXTURECOORDS],
 }
 
-impl<'a> Default for AiMesh<'a> {
+impl Default for AiMesh {
     fn default() -> Self {
         Self {
             name: Default::default(),
@@ -228,7 +238,7 @@ impl<'a> Default for AiMesh<'a> {
     }
 }
 
-impl<'a> AiMesh<'a> {
+impl AiMesh {
     fn get_num_uv_channels(&self) -> u32 {
         let mut n: u32 = 0;
         for i in 0..AI_MAX_NUMBER_OF_TEXTURECOORDS {
@@ -253,18 +263,18 @@ impl<'a> AiMesh<'a> {
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct AiSkeletonBone<'a> {
+pub struct AiSkeletonBone {
     parent: i32,
-    node: &'a AiNode<'a>,
-    armature: &'a AiNode<'a>,
-    mesh: &'a AiMesh<'a>,
+    node_index: usize,
+    armature_index: usize,
+    mesh_index: usize,
     weights: Vec<AiVertexWeight>,
     offset_matrix: AiMatrix4x4,
     local_matrix: AiMatrix4x4,
 }
 
 #[derive(Debug, PartialEq, Clone)]
-pub struct AiSkeleton<'a> {
+pub struct AiSkeleton {
     name: String,
-    bones: Vec<AiSkeletonBone<'a>>,
+    bones: Vec<AiSkeletonBone>,
 }

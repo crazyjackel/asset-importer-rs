@@ -1,4 +1,7 @@
-use gltf::{Camera, Document};
+use gltf::{
+    json::{Root, Scene},
+    Camera, Document, Gltf,
+};
 
 use crate::{
     core::error::AiReadError,
@@ -47,4 +50,37 @@ impl Gltf2Importer {
         }
         Ok(cameras)
     }
+}
+
+#[test]
+fn test_camera_import() {
+    let gltf_data = r#"{
+            "cameras" : [
+                {
+                "type": "perspective",
+                "perspective": {
+                    "aspectRatio": 1.0,
+                    "yfov": 0.7,
+                    "zfar": 100,
+                    "znear": 0.01
+                }
+                },
+                {
+                "type": "orthographic",
+                "orthographic": {
+                    "xmag": 1.0,
+                    "ymag": 1.0,
+                    "zfar": 100,
+                    "znear": 0.01
+                }
+                }
+            ],
+            "asset" : {
+                "version" : "2.0"
+            }
+        }"#;
+    let scene = serde_json::from_str(gltf_data).unwrap();
+    let document = Document::from_json_without_validation(scene);
+    let cameras = Gltf2Importer::import_cameras(&document).unwrap();
+    assert_eq!(2, cameras.len());
 }
