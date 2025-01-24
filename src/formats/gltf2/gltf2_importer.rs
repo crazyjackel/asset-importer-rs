@@ -68,7 +68,7 @@ impl AiImport for Gltf2Importer {
         !gltf.is_err()
     }
 
-    fn read_file<P>(&self, importer: &mut AiImporter, path: P) -> Result<AiScene, AiReadError>
+    fn read_file<P>(&self, _importer: &mut AiImporter, path: P) -> Result<AiScene, AiReadError>
     where
         P: AsRef<std::path::Path>,
     {
@@ -103,7 +103,7 @@ impl AiImport for Gltf2Importer {
         let mut lights = Gltf2Importer::import_lights(&document)?;
 
         //import nodes
-        let node = Gltf2Importer::import_nodes(
+        let (nodes, scene_name) = Gltf2Importer::import_nodes(
             &document,
             &buffer_data,
             &mut meshes,
@@ -114,11 +114,36 @@ impl AiImport for Gltf2Importer {
         )?;
         
         //import animations
-        //import metadata
+        let animations = Gltf2Importer::import_animations(&document, &buffer_data)?;
 
-        Err(AiReadError::UnsupportedImageFormat(
-            "t".to_string(),
-            "t".to_string(),
-        ))
+        //import metadata
+        let metadata = Gltf2Importer::import_metadata(&document)?;
+
+        let mut scene = AiScene::default();
+        scene.name = scene_name;
+        scene.animations = animations;
+        scene.cameras = cameras;
+        scene.meshes = meshes;
+        scene.lights = lights;
+        scene.materials = embedded_materials;
+        scene.textures = embedded_textures;
+        scene.nodes = nodes;
+        scene.metadata = metadata;
+
+        Ok(scene)
     }
+}
+
+
+#[test]
+fn test_read_file(){
+    let binding = std::env::current_dir().expect("Failed to get the current executable path");
+    let mut exe_path = binding.join("test").join("model");
+    exe_path.push("Avocado.glb");
+    let path = exe_path.as_path();
+
+    let importer = Gltf2Importer;
+    let mut ai_importer = AiImporter::default();
+    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    assert_eq!(scene.name, "");
 }

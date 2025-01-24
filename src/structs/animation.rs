@@ -11,9 +11,15 @@ pub enum AiAnimInterpolation {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct AiVectorKey {
-    time: f64,
-    value: AiVector3D,
-    interpolation: AiAnimInterpolation,
+    pub time: f64,
+    pub value: AiVector3D,
+    pub interpolation: AiAnimInterpolation,
+}
+
+impl AiVectorKey{
+    pub fn new(time: f64, value: AiVector3D, interpolation: AiAnimInterpolation) -> Self{
+        Self { time, value, interpolation }
+    }
 }
 
 impl Default for AiVectorKey {
@@ -46,6 +52,12 @@ pub struct AiQuatKey {
     time: f64,
     value: AiQuaternion,
     interpolation: AiAnimInterpolation,
+}
+
+impl AiQuatKey{
+    pub fn new(time: f64, value: AiQuaternion, interpolation: AiAnimInterpolation) -> Self{
+        Self { time, value, interpolation }
+    }
 }
 
 impl Default for AiQuatKey {
@@ -104,9 +116,9 @@ impl AiMeshKey {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct AiMeshMorphKey {
-    time: f64,
-    values: Vec<u32>,
-    weights: Vec<f64>,
+    pub time: f64,
+    pub values: Vec<u32>,
+    pub weights: Vec<f64>,
 }
 
 impl Default for AiMeshMorphKey {
@@ -141,13 +153,13 @@ impl Default for AiAnimBehavior {
 }
 
 #[derive(Debug, PartialEq)]
-struct AiNodeAnim {
-    node_name: String,
-    position_keys: Vec<AiVectorKey>,
-    rotation_keys: Vec<AiQuatKey>,
-    scaling_keys: Vec<AiVectorKey>,
-    pre_state: AiAnimBehavior,
-    post_state: AiAnimBehavior,
+pub struct AiNodeAnim {
+    pub node_name: String,
+    pub position_keys: Vec<AiVectorKey>,
+    pub rotation_keys: Vec<AiQuatKey>,
+    pub scaling_keys: Vec<AiVectorKey>,
+    pub pre_state: AiAnimBehavior,
+    pub post_state: AiAnimBehavior,
 }
 
 impl Default for AiNodeAnim {
@@ -164,7 +176,7 @@ impl Default for AiNodeAnim {
 }
 
 #[derive(Debug, PartialEq)]
-struct AiMeshAnim {
+pub struct AiMeshAnim {
     name: String,
     keys: Vec<AiMeshKey>,
 }
@@ -179,9 +191,9 @@ impl Default for AiMeshAnim {
 }
 
 #[derive(Debug, PartialEq)]
-struct AiMeshMorphAnim {
-    name: String,
-    keys: Vec<AiMeshMorphKey>,
+pub struct AiMeshMorphAnim {
+    pub name: String,
+    pub keys: Vec<AiMeshMorphKey>,
 }
 
 impl Default for AiMeshMorphAnim {
@@ -195,12 +207,12 @@ impl Default for AiMeshMorphAnim {
 
 #[derive(Debug, PartialEq)]
 pub struct AiAnimation {
-    name: String,
-    duration: f64,
-    ticks_per_second: f64,
-    channels: Vec<AiNodeAnim>,
-    mesh_channels: Vec<AiMeshAnim>,
-    morph_channels: Vec<AiMeshMorphAnim>,
+    pub name: String,
+    pub duration: f64,
+    pub ticks_per_second: f64,
+    pub channels: Vec<AiNodeAnim>,
+    pub mesh_channels: Vec<AiMeshAnim>,
+    pub morph_channels: Vec<AiMeshMorphAnim>,
 }
 
 impl Default for AiAnimation {

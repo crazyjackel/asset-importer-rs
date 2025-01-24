@@ -25,26 +25,29 @@ impl Gltf2Importer {
         remap_table: &Vec<Vec<u32>>,
         lights: &mut Vec<AiLight>,
         cameras: &mut Vec<AiCamera>,
-    ) -> Result<AiNodeTree, AiReadError> {
+    ) -> Result<(AiNodeTree, String), AiReadError> {
         let mut default_scene = document.default_scene();
         if default_scene.is_none() {
             default_scene = document.scenes().next();
         }
         if default_scene.is_none() {
-            return Ok(AiNodeTree::default());
+            return Ok((AiNodeTree::default(), "".to_string()));
         }
 
-        let asset_root_nodes: Vec<gltf::Node<'_>> = default_scene.unwrap().nodes().collect();
+        let asset_root_nodes: Vec<gltf::Node<'_>> = default_scene.as_ref().unwrap().nodes().collect();
         return if asset_root_nodes.len() == 1 {
-            Ok(import_node(
-                asset_root_nodes[0].clone(),
-                buffer_data,
-                meshes,
-                mesh_offsets,
-                remap_table,
-                lights,
-                cameras,
-            )?)
+            Ok((
+                import_node(
+                    asset_root_nodes[0].clone(),
+                    buffer_data,
+                    meshes,
+                    mesh_offsets,
+                    remap_table,
+                    lights,
+                    cameras,
+                )?,
+                default_scene.unwrap().name().unwrap_or("").to_string(),
+            ))
         } else if asset_root_nodes.len() > 1 {
             let mut ai_node = AiNode::default();
             ai_node.name = "ROOT".to_string();
@@ -62,14 +65,20 @@ impl Gltf2Importer {
                     cameras,
                 )?);
             }
-            Ok(default_node)
+            Ok((
+                default_node,
+                default_scene.unwrap().name().unwrap_or("").to_string(),
+            ))
         } else {
             let mut ai_node = AiNode::default();
             ai_node.name = "ROOT".to_string();
             let mut default_node = AiNodeTree::default();
             default_node.root = Some(0);
             default_node.arena.push(ai_node);
-            Ok(default_node)
+            Ok((
+                default_node,
+                default_scene.unwrap().name().unwrap_or("").to_string(),
+            ))
         };
     }
 }

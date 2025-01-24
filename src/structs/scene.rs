@@ -83,18 +83,17 @@ pub enum AiSceneFlag {
     AllowShared = 0x20,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct AiScene {
-    name: String,
-    flags: BitFlags<AiSceneFlag>,
-    root: usize,
-    nodes: AiNodeTree,
-    meshes: Vec<AiMesh>,
-    materials: Vec<AiMaterial>,
-    animations: Vec<AiAnimation>,
-    textures: Vec<AiTexture>,
-    lights: Vec<AiLight>,
-    cameras: Vec<AiCamera>,
-    skeletons: Vec<AiSkeleton>,
-    metadata: AiMetadata,
+    pub name: String,
+    pub flags: BitFlags<AiSceneFlag>,
+    pub nodes: AiNodeTree,
+    pub meshes: Vec<AiMesh>,
+    pub materials: Vec<AiMaterial>,
+    pub animations: Vec<AiAnimation>,
+    pub textures: Vec<AiTexture>,
+    pub lights: Vec<AiLight>,
+    pub cameras: Vec<AiCamera>,
+    pub skeletons: Vec<AiSkeleton>,
+    pub metadata: AiMetadata,
 }

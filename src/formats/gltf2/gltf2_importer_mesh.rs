@@ -33,11 +33,17 @@ impl<'b> GetPointer for gltf::Accessor<'b> {
             let mut result = Vec::new();
             result.reserve(count * size);
             let sliced = &data[start_index..end_index];
-            for i in (0..sliced.len()).step_by(stride) {
-                if i + size <= sliced.len() {
-                    result.extend_from_slice(&sliced[i..i + size]);
-                }
+            for i in 0..count{
+                let start = i * size + i * stride;
+                let end = start + size;
+                result.extend_from_slice(&sliced[start..end]);
             }
+
+            // for i in (0..sliced.len()).step_by(if stride == 0 { 1} else{ stride}) {
+            //     if i + size <= sliced.len() {
+            //         result.extend_from_slice(&sliced[i..i + size]);
+            //     }
+            // }
             result
         } else {
             //Early Out as we must be Sparse if we don't have a view
@@ -168,13 +174,18 @@ impl Gltf2Importer{
                         .get_pointer(buffer_data)
                         .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?; //Returns bytes equal with length equal to indices.count() * size
 
+                    let index_data: Vec<u32> = match indices.data_type(){
+                        gltf::accessor::DataType::I8 | gltf::accessor::DataType::U8 => index_data.into_iter().map(|x| x as u32).collect(),
+                        gltf::accessor::DataType::I16 | gltf::accessor::DataType::U16 => index_data.chunks_exact(2).map(|chunk|{
+                            u16::from_le_bytes([chunk[0],chunk[1]]) as u32
+                        }).collect(),
+                        gltf::accessor::DataType::U32 | gltf::accessor::DataType::F32 => index_data.chunks_exact(4).map(|chunk|{
+                            u32::from_le_bytes([chunk[0],chunk[1],chunk[2],chunk[3]])
+                        }).collect(),
+                    };
+
                     for i in 0..count {
-                        let index = u32::from_le_bytes([
-                            index_data[i * 4],
-                            index_data[i * 4 + 1],
-                            index_data[i * 4 + 2],
-                            index_data[i * 4 + 3],
-                        ]);
+                        let index = index_data[i];
                         let index_usize: usize = index as usize;
                         if index_usize >= num_all_vertices {
                             index_buffer[i] = index_usize;

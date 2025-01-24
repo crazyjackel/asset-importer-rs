@@ -16,7 +16,7 @@ impl Default for AiQuaternion{
 }
 
 impl AiQuaternion{
-    fn new(pw: AiReal, px: AiReal, py: AiReal, pz: AiReal) -> Self{
+    pub fn new(pw: AiReal, px: AiReal, py: AiReal, pz: AiReal) -> Self{
         Self { x: px, y: py, z: pz, w: pw }
     }
 }

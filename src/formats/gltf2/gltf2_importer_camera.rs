@@ -1,6 +1,5 @@
 use gltf::{
-    json::{Root, Scene},
-    Camera, Document, Gltf,
+    Camera, Document,
 };
 
 use crate::{

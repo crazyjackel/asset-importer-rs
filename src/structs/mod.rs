@@ -14,6 +14,14 @@ mod light;
 mod camera;
 mod quaternion;
 
+pub use animation::AiAnimation;
+pub use animation::AiNodeAnim;
+pub use animation::AiVectorKey;
+pub use animation::AiQuatKey;
+pub use animation::AiAnimInterpolation;
+pub use animation::AiMeshMorphAnim;
+pub use animation::AiMeshMorphKey;
+
 pub use camera::AiCamera;
 
 pub use color::AiColor3D;
@@ -55,3 +63,5 @@ pub use texture::AiTextureFormat;
 pub use type_def::base_types;
 pub use vector::AiVector2D;
 pub use vector::AiVector3D;
+
+pub use quaternion::AiQuaternion;

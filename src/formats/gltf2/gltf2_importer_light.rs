@@ -15,7 +15,7 @@ impl Gltf2Importer {
         if document.lights().is_none() {
             return Ok(Vec::new());
         }
-        let mut lights: Vec<AiLight> = Vec::new(); //Final Meshes to return
+        let mut lights: Vec<AiLight> = Vec::new(); //Final Lights to return
         let asset_lights: Vec<gltf::khr_lights_punctual::Light<'_>> =
             document.lights().unwrap().collect();
         lights.reserve(asset_lights.len());

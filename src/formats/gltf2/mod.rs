@@ -6,3 +6,5 @@ mod gltf2_importer_light;
 mod gltf2_importer_material;
 mod gltf2_importer_mesh;
 mod gltf2_importer_texture;
+mod gltf2_importer_animation;
+mod gltf2_importer_metadata;
