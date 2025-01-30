@@ -10,7 +10,7 @@ use crate::{
         importer::AiImporter,
         importer_desc::{AiImporterDesc, AiImporterFlags},
     },
-    structs::scene::AiScene,
+    structs::scene::{AiScene, AiSceneFlag},
 };
 
 #[derive(Debug)]
@@ -129,6 +129,10 @@ impl AiImport for Gltf2Importer {
         scene.textures = embedded_textures;
         scene.nodes = nodes;
         scene.metadata = metadata;
+
+        if scene.meshes.len() != 0{
+            scene.flags |= AiSceneFlag::Incomplete;
+        }
 
         Ok(scene)
     }

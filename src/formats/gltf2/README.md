@@ -11,4 +11,5 @@ Gltf-RS is missing a couple features:
 2. Sheen and Clearcoat Materials are not JSON defined.
 
 Assimp implementation differences:
-1. It might be more efficient for assimp to use memory to save the tangent weights instead of recalculating
+1. Assimp loads buffers at the time of accessing via accessor, instead of all at once. This makes our implementation more memory intensive as we have to allocate memory for every buffer instead of just the buffers we need.
+2. We save tagents weights when loading in meshes, using up memory instead of reloading the tangents, trading off memory for ease.

@@ -21,3 +21,4 @@ All documentation provided should have corresponding testing.
 Some key differences:
 - AiTexture will use an enum for format rather than a text-based hint. This should reduce memory usage and result in higher stability in terms of options
 - AiMaterial encodes AiPropertyInfo differently in order to retain semantics, taking advantage of rust's enum system for types. This makes working with it easier.
+- AiNodes are saved in an Arena instead of using a typical arena structure.

@@ -19,3 +19,19 @@ impl Display for AiReadError{
 }
 
 impl Error for AiReadError{}
+
+#[derive(Debug)]
+pub enum AiExportError{
+    FileWriteError(Box<dyn std::error::Error>),
+    ConversionError(Box<dyn std::error::Error>)
+}
+
+impl Display for AiExportError{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self{
+            AiExportError::FileWriteError(error) => write!(f, "Asset Importer File Write Error: {}", error),
+            AiExportError::ConversionError(error) => write!(f, "Asset Importer Conversion Error: {}", error),
+        }
+    }
+}
+impl Error for AiExportError{}

@@ -152,10 +152,10 @@ pub enum AiTextureOp {
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum AiTextureMapMode {
-    Wrap,
-    Clamp,
-    Mirror,
-    Decal,
+    Wrap = 3,
+    Clamp = 1,
+    Mirror = 2,
+    Decal = 4,
 }
 
 #[repr(u8)]

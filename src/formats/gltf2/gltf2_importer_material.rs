@@ -177,7 +177,7 @@ fn import_texture_property<'a, T: ImportTexture<'a>>(
             ai_material.add_property(
                 _AI_MATKEY_GLTF_MAPPINGID_BASE,
                 Some(texture_type),
-                AiPropertyTypeInfo::Binary(id.to_le_bytes().to_vec()),
+                AiPropertyTypeInfo::Binary((id as u32).to_le_bytes().to_vec()),
                 texture_index,
             );
 

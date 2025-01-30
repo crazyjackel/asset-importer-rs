@@ -55,6 +55,12 @@ impl From<[f32;4]> for AiColor4D{
     }
 }
 
+impl Into<[f32;4]> for AiColor4D{
+    fn into(self) -> [f32;4] {
+        [self.r,self.g,self.b,self.a]
+    }
+}
+
 impl AiColor4D {
     pub fn is_black(&self) -> bool {
         f32::abs(self.r) < EPSILON_F && f32::abs(self.g) < EPSILON_F && f32::abs(self.b) < EPSILON_F
