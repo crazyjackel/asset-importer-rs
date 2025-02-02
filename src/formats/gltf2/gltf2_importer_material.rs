@@ -563,7 +563,7 @@ fn handle_specular(
 ) {
     if let Some(specular) = material.pbr_specular_glossiness() {
         ai_material.add_property(
-            AI_MATKEY_COLOR_DIFFUSE,
+            matkey::AI_MATKEY_COLOR_DIFFUSE,
             Some(AiTextureType::None),
             AiPropertyTypeInfo::Binary(
                 bytemuck::bytes_of(&AiColor4D::from(specular.diffuse_factor())).to_vec(),
@@ -571,7 +571,7 @@ fn handle_specular(
             0,
         );
         ai_material.add_property(
-            AI_MATKEY_COLOR_SPECULAR,
+            matkey::AI_MATKEY_COLOR_SPECULAR,
             Some(AiTextureType::None),
             AiPropertyTypeInfo::Binary(
                 bytemuck::bytes_of(&AiColor3D::from(specular.specular_factor())).to_vec(),
@@ -580,13 +580,13 @@ fn handle_specular(
         );
         let shininess = specular.glossiness_factor() * 1000.0;
         ai_material.add_property(
-            AI_MATKEY_SHININESS,
+            matkey::AI_MATKEY_SHININESS,
             Some(AiTextureType::None),
             AiPropertyTypeInfo::Binary(shininess.to_le_bytes().to_vec()),
             0,
         );
         ai_material.add_property(
-            AI_MATKEY_GLOSSINESS_FACTOR,
+            matkey::AI_MATKEY_GLOSSINESS_FACTOR,
             Some(AiTextureType::None),
             AiPropertyTypeInfo::Binary(specular.glossiness_factor().to_le_bytes().to_vec()),
             0,
@@ -616,7 +616,7 @@ fn handle_unlit(
     _ai_material: &mut AiMaterial,
 ) {
     ai_material.add_property(
-        AI_MATKEY_SHADING_MODEL,
+        matkey::AI_MATKEY_SHADING_MODEL,
         Some(AiTextureType::None),
         AiPropertyTypeInfo::Binary(vec![AiShadingMode::PBR as u8]),
         0,

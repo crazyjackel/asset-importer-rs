@@ -7,7 +7,7 @@ use std::{
 
 
 use crate::core::{
-        config::{AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON, AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON_DEFAULT},
+        config::{AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON, AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON_DEFAULT, AI_CONFIG_USE_GLTF_PBR_SPECULAR_GLOSSINESS},
         error::AiExportError,
         export::{AiExport, ExportProperty},
     };
@@ -66,9 +66,14 @@ impl AiExport for Gltf2Exporter {
         }
 
         let mut unique_names_map: HashMap<String, u32> = HashMap::new();
+        let use_gltf_pbr_specular_glossiness = if let Some(ExportProperty::Int(i)) = properties.get(AI_CONFIG_USE_GLTF_PBR_SPECULAR_GLOSSINESS){
+            i != &0
+        }else{
+            false
+        };
         //Handle Materials
-        self.export_materials(scene, &mut root, &mut buffer_data[0], &mut unique_names_map);
-
+        self.export_materials(scene, &mut root, &mut buffer_data[0], &mut unique_names_map, use_gltf_pbr_specular_glossiness)?;
+  
 
         //Handle Nodes
 

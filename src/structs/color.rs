@@ -24,6 +24,12 @@ impl From<[f32;3]> for AiColor3D{
     }
 }
 
+impl Into<[f32;3]> for AiColor3D{
+    fn into(self) -> [f32;3] {
+        [self.r,self.g,self.b]
+    }
+}
+
 impl AiColor3D {
     pub fn is_black(&self) -> bool {
         f32::abs(self.r) < EPSILON_F && f32::abs(self.g) < EPSILON_F && f32::abs(self.b) < EPSILON_F

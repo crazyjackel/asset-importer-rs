@@ -1,9 +1,10 @@
-use bytemuck::{Pod, Zeroable};
+use bytemuck::{NoUninit, Pod, Zeroable};
 use enumflags2::bitflags;
+use num_enum::{FromPrimitive, IntoPrimitive, TryFromPrimitive};
 
 use crate::structs::error::{AiFailure, AiReturnError};
 
-use super::{type_def::base_types::AiReal, vector::AiVector2D};
+use super::{type_def::base_types::AiReal, vector::AiVector2D, AiColor3D, AiColor4D};
 
 //@todo Add an Enum to Matkey that can be used to convert to and from binary based on format
 pub mod matkey {
@@ -234,7 +235,7 @@ impl ToString for AiTextureType {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, TryFromPrimitive, IntoPrimitive)]
 pub enum AiShadingMode {
     Flat,
     Gouraud,
@@ -248,6 +249,7 @@ pub enum AiShadingMode {
     Fresnel,
     PBR,
 }
+
 
 #[bitflags]
 #[repr(u8)]
@@ -402,7 +404,69 @@ impl AiMaterial {
         return false;
     }
 
-    pub fn get_real_vector(
+    pub fn get_property_ai_color_rgba(
+        &self,
+        key: &str,
+        semantic_type: Option<AiTextureType>,
+        index: u32,
+    ) -> Option<AiColor4D>{
+        self.get_property_type_info(key, semantic_type, index)
+        .and_then(|info| match info {
+            AiPropertyTypeInfo::Binary(binary) => {
+                bytemuck::try_from_bytes::<AiColor4D>(&binary).copied()
+                    .ok()
+            }
+            _ => None,
+        })
+    } 
+    pub fn get_property_ai_color_rgb(
+        &self,
+        key: &str,
+        semantic_type: Option<AiTextureType>,
+        index: u32,
+    ) -> Option<AiColor3D>{
+        self.get_property_type_info(key, semantic_type, index)
+        .and_then(|info| match info {
+            AiPropertyTypeInfo::Binary(binary) => {
+                bytemuck::try_from_bytes::<AiColor3D>(&binary).copied()
+                    .ok()
+            }
+            _ => None,
+        })
+    } 
+    pub fn get_property_ai_float(
+        &self,
+        key: &str,
+        semantic_type: Option<AiTextureType>,
+        index: u32,
+    ) -> Option<f32>{
+        self.get_property_type_info(key, semantic_type, index)
+        .and_then(|info| match info {
+            AiPropertyTypeInfo::Binary(binary) if binary.len() == 4 => {
+                Some(f32::from_le_bytes([
+                    binary[0], binary[1], binary[2], binary[3],
+                ]))
+            }
+            _ => None,
+        })
+    } 
+
+    pub fn get_property_byte(
+        &self,
+        key: &str,
+        semantic_type: Option<AiTextureType>,
+        index: u32,
+    ) -> Option<u8>{
+        self.get_property_type_info(key, semantic_type, index)
+        .and_then(|info| match info {
+            AiPropertyTypeInfo::Binary(binary) if binary.len() == 1 => {
+                Some(binary[0])
+            }
+            _ => None,
+        })
+    } 
+
+    pub fn get_property_real_vec(
         &self,
         key: &str,
         semantic_type: Option<AiTextureType>,
