@@ -1,6 +1,6 @@
 use std::{borrow::Cow, collections::HashMap, fs, io::Write};
 
-use gltf::json::{validation::USize64, Buffer, Index, Scene};
+use gltf::json::{Buffer, Index, Scene};
 
 use crate::{core::{
     config::{
@@ -183,7 +183,7 @@ impl AiExport for Gltf2Exporter {
                     let mut writer = fs::File::create(image)
                         .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
                     writer
-                        .write_all(&texture.export())
+                        .write_all(&texture.export().unwrap())
                         .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
                 }
             }
@@ -230,30 +230,26 @@ impl AiExport for Gltf2Exporter {
 
 pub(crate) fn generate_unique_name(
     base_name: &str,
-    unique_names_map: &mut HashMap<String, u32>,
+    unique_names_map: &mut HashMap<String, u32>
 ) -> String {
-    let mut counter = *unique_names_map.entry(base_name.to_string()).or_insert(0);
 
-    let mut unique_name;
+    let mut unique_name = base_name.to_string();
+
+    if !unique_names_map.contains_key(&unique_name){
+        unique_names_map.insert(unique_name.clone(), 0);
+        return unique_name;
+    }
+
     loop {
-        unique_name = if counter == 0 {
-            base_name.to_string()
-        } else {
-            format!("{}_{}", base_name, counter)
-        };
-
-        counter += 1;
+        let counter = unique_names_map.get_mut(&unique_name).unwrap();
+        unique_name = format!("{}_{}", base_name, counter);
+        *counter += 1;
 
         // Ensure the generated name is truly unique in the map
         if !unique_names_map.contains_key(&unique_name) {
-            break;
+            return unique_name;
         }
     }
-
-    // Store the new unique name in the map
-    unique_names_map.insert(unique_name.clone(), counter);
-    unique_names_map.insert(base_name.to_string(), counter);
-    unique_name
 }
 
 
@@ -269,8 +265,27 @@ fn test_import_export_file(){
     let scene = importer.read_file(&mut ai_importer, path).unwrap();
     assert_eq!(scene.name, "");
 
-    let exporter = Gltf2Exporter { output_type: Output::Binary };
+    let exporter = Gltf2Exporter { output_type: Output::Standard };
     let mut exe_path_2 = binding.join("test").join("model");
+    exe_path_2.push("Avocado2.glb");
+    let path = exe_path_2.as_path();
+    let _ = exporter.export_file(&scene, path, &HashMap::new());
+}
+
+#[test]
+fn test_import_export_file_binary(){
+    let binding = std::env::current_dir().expect("Failed to get the current executable path");
+    let mut exe_path = binding.join("test").join("model");
+    exe_path.push("Avocado.glb");
+    let path = exe_path.as_path();
+
+    let importer = Gltf2Importer;
+    let mut ai_importer = AiImporter::default();
+    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    assert_eq!(scene.name, "");
+
+    let exporter = Gltf2Exporter { output_type: Output::Binary };
+    let mut exe_path_2 = binding.join("test_output").join("model");
     exe_path_2.push("Avocado2.glb");
     let path = exe_path_2.as_path();
     let _ = exporter.export_file(&scene, path, &HashMap::new());

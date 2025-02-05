@@ -160,7 +160,7 @@ impl AiVector3D {
     }
 
     pub fn square_length(&self) -> AiReal {
-        self.x * self.x + self.y + self.y + self.z * self.z
+        (self.x * self.x) + (self.y * self.y) + (self.z * self.z)
     }
 
     pub fn len(&self) -> AiReal {
@@ -168,8 +168,11 @@ impl AiVector3D {
     }
 
     pub fn norm(self) -> AiVector3D {
-        let length = &self.len();
-        self / *length
+        let length = self.len();
+        if length == 0.0 {
+            return self; // Avoid division by zero
+        }
+        self / length
     }
 
     pub fn to_quat(self, w: AiReal) -> AiQuaternion{

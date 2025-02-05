@@ -285,13 +285,13 @@ fn get_material_texture(
                     ai_scene
                         .textures
                         .iter()
-                        .find(|texture| texture.filename == texture_name)
+                        .find(|texture| texture_name.ends_with(&texture.filename)) //Texture Name is in Format *Name
                         .map(|ai_texture| {
                             //Handle Image
                             //If GLTF2 Exporter is binary, update the buffers, if not images will be exported based on Uri Later
                             let image = if is_binary {
                                 let buffer_offset = buffer.len();
-                                let mut exported_buffer = ai_texture.export();
+                                let mut exported_buffer = ai_texture.export().unwrap();
                                 let length = exported_buffer.len();
                                 buffer.append(&mut exported_buffer);
                                 let buffer_view = View {

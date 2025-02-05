@@ -1,6 +1,6 @@
 use std::io::{BufWriter, Cursor};
 
-use image::{codecs::png::PngEncoder, write_buffer_with_format, ExtendedColorType, ImageFormat};
+use image::{codecs::png::PngEncoder, save_buffer_with_format, write_buffer_with_format, ColorType, ExtendedColorType, ImageBuffer, ImageError, ImageFormat};
 
 use super::color::AiColor4D;
 
@@ -35,11 +35,12 @@ impl Default for AiTextureFormat {
     }
 }
 
+#[repr(C)]
 #[derive(Debug, PartialEq, Clone)]
 pub struct AiTexel {
-    pub b: u8,
-    pub g: u8,
     pub r: u8,
+    pub g: u8,
+    pub b: u8,
     pub a: u8,
 }
 
@@ -98,20 +99,26 @@ impl AiTexture {
         }
     }
 
-    pub fn export(&self) -> Vec<u8> {
-        let mut bufwriter = Cursor::new(Vec::new());
-        let texels: Vec<u8> = self.texel.iter().flat_map(|x| [x.b, x.g, x.r, x.a]).collect();
+    pub fn export(&self) -> Result<Vec<u8>, ImageError> {
+        let format = 
+        match self.ach_format_hint{
+            AiTextureFormat::Unknown | AiTextureFormat::Png => ImageFormat::Png,
+            AiTextureFormat::JPEG => ImageFormat::Jpeg
+        };
+
+        let mut bytes: Vec<u8> = Vec::new();
+        bytes.reserve((self.width * self.height * 4) as usize);
+        let byte_slice: &[u8] = unsafe {
+            std::slice::from_raw_parts(self.texel.as_ptr() as *const u8, self.texel.len() * std::mem::size_of::<AiTexel>())
+        };
         let _ = write_buffer_with_format(
-            &mut bufwriter,
-            &texels,
+            &mut Cursor::new(&mut bytes),
+            byte_slice,
             self.width,
             self.height,
-            ExtendedColorType::Bgra8,
-            match self.ach_format_hint{
-                AiTextureFormat::Unknown | AiTextureFormat::Png => ImageFormat::Png,
-                AiTextureFormat::JPEG => ImageFormat::Jpeg
-            }
+            ColorType::Rgba8,
+            format,
         );
-        bufwriter.into_inner()
+        Ok(bytes)
     }
 }

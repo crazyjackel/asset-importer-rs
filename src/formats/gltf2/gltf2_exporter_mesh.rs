@@ -1,6 +1,6 @@
 use std::{
     cmp::Ordering,
-    collections::{BTreeMap, HashMap}, str::FromStr,
+    collections::{BTreeMap, HashMap},
 };
 
 use gltf::{
