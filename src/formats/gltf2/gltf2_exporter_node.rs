@@ -19,7 +19,7 @@ impl Gltf2Exporter {
         let mut node_to_mesh_indexes: HashMap<usize, Vec<usize>> = HashMap::new();
         for (index, ai_node) in scene.nodes.arena.iter().enumerate() {
             let mut node = Node::default();
-            node.name = Some(generate_unique_name("node", unique_names_map));
+            node.name = Some(generate_unique_name(&ai_node.name, unique_names_map));
 
             node.children = if ai_node.children.len() == 0 {
                 None
@@ -32,7 +32,7 @@ impl Gltf2Exporter {
                         .collect(),
                 )
             };
-            if ai_node.transformation.is_identity(config_epsilon as AiReal){
+            if !ai_node.transformation.is_identity(config_epsilon as AiReal){
                 if use_translate_rotate_scale{
                     let decompose = ai_node.transformation.clone().decompose();
                     node.translation = Some(decompose.translation.into());

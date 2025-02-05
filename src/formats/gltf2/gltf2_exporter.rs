@@ -2,15 +2,13 @@ use std::{borrow::Cow, collections::HashMap, fs, io::Write};
 
 use gltf::json::{validation::USize64, Buffer, Index, Scene};
 
-use crate::core::{
+use crate::{core::{
     config::{
         AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON, AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON_DEFAULT,
         AI_CONFIG_EXPORT_GLTF_UNLIMITED_SKINNING_BONES_PER_VERTEX,
         AI_CONFIG_USE_GLTF_PBR_SPECULAR_GLOSSINESS, GLTF2_NODE_IN_TRS, GLTF2_TARGET_NORMAL_EXP,
-    },
-    error::AiExportError,
-    export::{AiExport, ExportProperty},
-};
+    }, error::AiExportError, export::{AiExport, ExportProperty}, import::AiImport, importer::AiImporter
+}, formats::gltf2::gltf2_importer::Gltf2Importer};
 
 use super::gltf2_importer_metadata::AI_METADATA_SOURCE_COPYRIGHT;
 
@@ -153,7 +151,7 @@ impl AiExport for Gltf2Exporter {
                 let uri = bin
                     .file_name()
                     .and_then(|x| x.to_os_string().into_string().ok());
-                root.buffers.push(Buffer {
+                root.push(Buffer {
                     byte_length: body_buffer_data.len().into(),
                     name: uri.clone(),
                     uri: uri,
@@ -190,23 +188,21 @@ impl AiExport for Gltf2Exporter {
                 }
             }
             Output::Binary => {
-                let json_string = serde_json::to_string(&root)
-                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
-                let json_offset = json_string.len();
-
                 let length = body_buffer_data.len();
-
                 //We might need to pad the bin with some extra elements to align to multiples of 4 bytes
                 let bin = body_buffer_data;
-
                 //Prepare Final Buffer
-                root.buffers.push(Buffer {
+                root.push(Buffer {
                     byte_length: length.into(),
                     extensions: Default::default(),
                     extras: Default::default(),
                     name: Default::default(),
                     uri: Default::default(),
                 });
+
+                let json_string = serde_json::to_string(&root)
+                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
+                let json_offset = json_string.len();
 
                 let glb = gltf::binary::Glb {
                     header: gltf::binary::Header {
@@ -258,4 +254,24 @@ pub(crate) fn generate_unique_name(
     unique_names_map.insert(unique_name.clone(), counter);
     unique_names_map.insert(base_name.to_string(), counter);
     unique_name
+}
+
+
+#[test]
+fn test_import_export_file(){
+    let binding = std::env::current_dir().expect("Failed to get the current executable path");
+    let mut exe_path = binding.join("test").join("model");
+    exe_path.push("Avocado.glb");
+    let path = exe_path.as_path();
+
+    let importer = Gltf2Importer;
+    let mut ai_importer = AiImporter::default();
+    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    assert_eq!(scene.name, "");
+
+    let exporter = Gltf2Exporter { output_type: Output::Binary };
+    let mut exe_path_2 = binding.join("test").join("model");
+    exe_path_2.push("Avocado2.glb");
+    let path = exe_path_2.as_path();
+    let _ = exporter.export_file(&scene, path, &HashMap::new());
 }

@@ -2,7 +2,7 @@ use std::ops;
 
 use bytemuck::{Pod, Zeroable};
 
-use super::type_def::base_types::AiReal;
+use super::{type_def::base_types::AiReal, AiQuaternion};
 
 #[repr(C)]
 #[derive(Debug, PartialEq, Pod, Clone, Copy, Zeroable)]
@@ -170,6 +170,10 @@ impl AiVector3D {
     pub fn norm(self) -> AiVector3D {
         let length = &self.len();
         self / *length
+    }
+
+    pub fn to_quat(self, w: AiReal) -> AiQuaternion{
+        AiQuaternion { w, x: self.x, y: self.y, z: self.z }
     }
 
     pub fn normalize(&mut self) {

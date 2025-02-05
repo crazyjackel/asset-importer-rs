@@ -1,6 +1,6 @@
 use std::{
     cmp::Ordering,
-    collections::{BTreeMap, HashMap},
+    collections::{BTreeMap, HashMap}, str::FromStr,
 };
 
 use gltf::{
@@ -71,10 +71,10 @@ impl Gltf2Exporter {
             attributes.insert(Checked::Valid(Semantic::Normals), root.push(normals));
 
             //handle tangents
-            let tangents = AccessorExporter::export_vector_3d(
+            let tangents = AccessorExporter::export_quaternion(
                 root,
                 buffer_data,
-                &ai_mesh.tangents.iter().map(|x| x.norm()).collect(),
+                &ai_mesh.tangents.iter().map(|x| x.norm().to_quat(1.0)).collect(),
             );
             attributes.insert(Checked::Valid(Semantic::Tangents), root.push(tangents));
 
@@ -522,8 +522,10 @@ impl AccessorExporter {
                 data.extend_from_slice(&vector.to_le_bytes());
             }
         }
-        let min = Some(Value::Number(Number::from_f64(min_x.into()).unwrap()));
-        let max = Some(Value::Number(Number::from_f64(max_x.into()).unwrap()));
+        let min = Some(Value::Array(vec![
+            Value::Number(Number::from_f64(min_x as f64).unwrap())]));
+        let max = Some(Value::Array(vec![
+            Value::Number(Number::from_f64(max_x as f64).unwrap())]));
         Self::export_data(
             root,
             buffer_data,
@@ -558,8 +560,10 @@ impl AccessorExporter {
                 data.extend_from_slice(&new_data.to_le_bytes());
             }
         }
-        let min = Some(Value::Number(Number::from(min_x)));
-        let max = Some(Value::Number(Number::from(max_x)));
+        let min = Some(Value::Array(vec![
+            Value::Number(Number::from(min_x))]));
+        let max = Some(Value::Array(vec![
+            Value::Number(Number::from(max_x))]));
         Self::export_data(
             root,
             buffer_data,
@@ -587,8 +591,10 @@ impl AccessorExporter {
 
             data.extend_from_slice(&vector.to_le_bytes());
         }
-        let min = Some(Value::Number(Number::from(min_x)));
-        let max = Some(Value::Number(Number::from(max_x)));
+        let min = Some(Value::Array(vec![
+            Value::Number(Number::from(min_x))]));
+        let max = Some(Value::Array(vec![
+            Value::Number(Number::from(max_x))]));
         Self::export_data(
             root,
             buffer_data,
@@ -616,8 +622,10 @@ impl AccessorExporter {
 
             data.extend_from_slice(&vector.to_le_bytes());
         }
-        let min = Some(Value::Number(Number::from_f64(min_x.into()).unwrap()));
-        let max = Some(Value::Number(Number::from_f64(max_x.into()).unwrap()));
+        let min = Some(Value::Array(vec![
+            Value::Number(Number::from_f64(min_x as f64).unwrap())]));
+        let max = Some(Value::Array(vec![
+            Value::Number(Number::from_f64(max_x as f64).unwrap())]));
         Self::export_data(
             root,
             buffer_data,

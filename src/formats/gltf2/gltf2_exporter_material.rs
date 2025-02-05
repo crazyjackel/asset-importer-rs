@@ -423,7 +423,7 @@ fn get_material_texture(
 
                             let texture = Texture {
                                 name: Some(ai_texture.filename.clone()),
-                                sampler: sampler,
+                                sampler,
                                 source: root.push(image),
                                 extensions: Default::default(),
                                 extras: Default::default(),
@@ -434,6 +434,10 @@ fn get_material_texture(
                         })
                 })
         });
+        
+    if result.is_none(){
+        return None;
+    }
 
     let texture_info = Info {
         index: Index::new(result.unwrap()),

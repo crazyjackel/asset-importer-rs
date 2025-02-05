@@ -287,7 +287,7 @@ impl From<[f32; 16]> for AiMatrix4x4 {
             d1: value[12] as AiReal,
             d2: value[13] as AiReal,
             d3: value[14] as AiReal,
-            d4: value[16] as AiReal,
+            d4: value[15] as AiReal,
         }
     }
 }

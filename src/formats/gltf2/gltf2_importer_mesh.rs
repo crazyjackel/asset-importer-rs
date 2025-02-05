@@ -304,7 +304,6 @@ impl Gltf2Importer{
                                     ai_mesh.bi_tangents[i] = (ai_mesh.normals[i] ^ AiVector3D::new(x, y, z)) * w;
                                     tangent_weights.push(w);
                                 }
-                                
                             }
                         }
                     
