@@ -49,9 +49,9 @@ impl AiVectorKey {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct AiQuatKey {
-    time: f64,
-    value: AiQuaternion,
-    interpolation: AiAnimInterpolation,
+    pub time: f64,
+    pub value: AiQuaternion,
+    pub interpolation: AiAnimInterpolation,
 }
 
 impl AiQuatKey{

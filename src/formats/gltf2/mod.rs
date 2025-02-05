@@ -1,6 +1,10 @@
 pub mod gltf2_importer;
 pub mod gltf2_exporter;
 pub mod gltf2_exporter_material;
+pub mod gltf2_exporter_node;
+pub mod gltf2_exporter_camera;
+pub mod gltf2_exporter_mesh;
+pub mod gltf2_exporter_animation;
 pub mod gltf2_error;
 mod gltf2_importer_node;
 mod gltf2_importer_camera;
