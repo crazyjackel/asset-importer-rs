@@ -3,7 +3,6 @@ use std::fmt;
 use super::{image::Image, root::StringIndex, validation::Checked};
 use serde::de;
 use serde::{Deserialize, Serialize};
-use serde_derive::{Deserialize, Serialize};
 
 pub const NEAREST: u32 = 9728;
 pub const LINEAR: u32 = 9729;
@@ -199,7 +198,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerWrap> {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct Sampler {
     #[serde(rename = "magFilter", skip_serializing_if = "Option::is_none")]
     mag_filter: Option<Checked<SamplerMagFilter>>,
@@ -406,7 +405,7 @@ impl<'de> Deserialize<'de> for Checked<TextureType> {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct Texture {
     #[serde(skip_serializing_if = "Option::is_none")]
     format: Option<Checked<TextureFormat>>,

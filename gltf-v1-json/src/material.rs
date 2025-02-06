@@ -1,7 +1,6 @@
 use std::{collections::BTreeMap, fmt};
 
 use serde::{de, Deserialize, Serialize};
-use serde_derive::{Deserialize, Serialize};
 
 use super::{node::Node, root::StringIndex, validation::Checked};
 
@@ -160,7 +159,7 @@ impl<'de> Deserialize<'de> for Checked<ParameterType> {
     }
 }
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, serde_derive::Serialize)]
 pub enum ParameterValue {
     Number(f32),
     Boolean(bool),
@@ -321,7 +320,7 @@ impl<'de> Deserialize<'de> for Checked<WebGLState> {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct TechniqueParameter {
     #[serde(skip_serializing_if = "Option::is_none")]
     name: Option<String>,
@@ -337,7 +336,7 @@ pub struct TechniqueParameter {
     value: Option<ParameterValue>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct TechniqueStateFunction {
     #[serde(rename = "blendColor", skip_serializing_if = "Option::is_none")]
     blend_color: Option<[f32; 4]>,
@@ -365,7 +364,7 @@ pub struct TechniqueStateFunction {
     scissor: Option<[f32; 4]>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct TechniqueState {
     #[serde(skip_serializing_if = "Option::is_none")]
     enable: Option<Vec<Checked<WebGLState>>>,
@@ -373,7 +372,7 @@ pub struct TechniqueState {
     functions: Option<TechniqueStateFunction>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct Technique {
     #[serde(skip_serializing_if = "Option::is_none")]
     parameters: Option<BTreeMap<String, TechniqueParameter>>,
@@ -388,7 +387,7 @@ pub struct Technique {
     name: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct Material {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub technique: Option<StringIndex<Technique>>,

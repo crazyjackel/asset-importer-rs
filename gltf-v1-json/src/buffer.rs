@@ -1,6 +1,5 @@
 use serde::de;
 use serde::{Deserialize, Serialize};
-use serde_derive::{Deserialize, Serialize};
 use std::fmt;
 
 use super::validation::Checked;
@@ -13,7 +12,7 @@ pub const ELEMENT_ARRAY_BUFFER: u32 = 34_963;
 
 pub const VALID_TARGETS: &[u32] = &[ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER];
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde_derive::Deserialize, serde_derive::Serialize)]
 pub enum BufferType {
     #[serde(rename = "arraybuffer")]
     ArrayBuffer,
@@ -68,7 +67,7 @@ impl<'de> Deserialize<'de> for Checked<BufferViewType> {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct Buffer {
     pub uri: String,
     #[serde(rename = "byteLength", skip_serializing_if = "Option::is_none")]
@@ -79,7 +78,7 @@ pub struct Buffer {
     pub name: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct BufferView {
     buffer: String,
     #[serde(rename = "byteOffset")]
