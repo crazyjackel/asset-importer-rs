@@ -3,7 +3,6 @@ use std::fmt;
 
 use serde::de;
 use serde::{Deserialize, Serialize};
-use serde_derive::{Deserialize, Serialize};
 
 use super::root::StringIndex;
 use super::validation::Checked;
@@ -63,7 +62,7 @@ impl<'de> Deserialize<'de> for Checked<ShaderType> {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct Shader {
     uri: String,
     #[serde(rename = "type")]
@@ -72,7 +71,7 @@ pub struct Shader {
     name: Option<String>
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct Program {
     #[serde(skip_serializing_if = "Option::is_none")]
     attributes: Option<Vec<String>>,

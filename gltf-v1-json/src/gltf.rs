@@ -1,8 +1,6 @@
 use std::collections::BTreeMap;
 
-use serde::{de, ser};
 use serde::{Deserialize, Serialize};
-use serde_derive::{Deserialize, Serialize};
 
 use super::accessor::Accessor;
 use super::animation::Animation;
@@ -19,7 +17,7 @@ use super::shader::{Program, Shader};
 use super::skin::Skin;
 use super::texture::{Sampler, Texture};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize)]
 pub struct GLTF {
     #[serde(skip_serializing_if = "Option::is_none")]
     accessors: Option<BTreeMap<String, Accessor>>,
