@@ -50,7 +50,8 @@ fn run() -> Result<(), Box<dyn StdError>> {
 #[test]
 fn import_gltf_sample_assets(){
     if let Err(error) = run() {
-        assert!(!error.is::<AiReadError>());
+        let is_ai_error = !error.is::<AiReadError>();
         println!("{}", error);
+        assert!(is_ai_error);
     }
 }
