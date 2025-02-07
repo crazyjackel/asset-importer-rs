@@ -19,7 +19,7 @@ fn run() -> Result<(), Box<dyn StdError>> {
                 let mut gltf_path = entry_path.join("glTF").join(file_name);
                 gltf_path.set_extension("gltf");
                 if gltf_path.exists() {
-                    println!("Importing {}", gltf_path);
+                    println!("Importing {}", gltf_path.display());
                     let importer = Gltf2Importer;
                     let mut ai_importer = AiImporter::default();
                     let _ = importer.read_file(&mut ai_importer, gltf_path)?;
@@ -29,7 +29,7 @@ fn run() -> Result<(), Box<dyn StdError>> {
                 let mut gle_path = entry_path.join("glTF-Embedded").join(file_name);
                 gle_path.set_extension("gltf");
                 if gle_path.exists() {
-                    println!("Importing {}", gle_path);
+                    println!("Importing {}", gle_path.display());
                     let importer = Gltf2Importer;
                     let mut ai_importer = AiImporter::default();
                     let _ = importer.read_file(&mut ai_importer, gle_path)?;
@@ -39,7 +39,7 @@ fn run() -> Result<(), Box<dyn StdError>> {
                 let mut glb_path = entry_path.join("glTF-Binary").join(file_name);
                 glb_path.set_extension("glb");
                 if glb_path.exists() {
-                    println!("Importing {}", glb_path);
+                    println!("Importing {}", glb_path.display());
                     let importer = Gltf2Importer;
                     let mut ai_importer = AiImporter::default();
                     let _ = importer.read_file(&mut ai_importer, glb_path)?;
