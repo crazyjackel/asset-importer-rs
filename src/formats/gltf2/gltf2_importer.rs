@@ -137,11 +137,26 @@ impl AiImport for Gltf2Importer {
 }
 
 
+/// This test is to make sure that basic files can be read.
 #[test]
 fn test_read_file(){
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
     let mut exe_path = binding.join("tests").join("model");
     exe_path.push("Avocado.glb");
+    let path = exe_path.as_path();
+
+    let importer = Gltf2Importer;
+    let mut ai_importer = AiImporter::default();
+    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    assert_eq!(scene.name, "");
+}
+
+/// This test is to make sure `byteStride` works.
+#[test]
+fn test_read_file_roughness(){
+    let binding = std::env::current_dir().expect("Failed to get the current executable path");
+    let mut exe_path = binding.join("tests").join("model").join("compare_roughness");
+    exe_path.push("CompareRoughness.gltf");
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;

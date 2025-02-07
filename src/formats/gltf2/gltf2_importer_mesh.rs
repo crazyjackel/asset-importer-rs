@@ -15,16 +15,19 @@ impl GetPointer for gltf::Accessor<'_> {
         let mut result = if let Some(view) = self.view() {
             //Load Accessor Buffer
             let data_index = view.buffer().index();
-
-            let start_index = self.offset() + view.offset();
-            let count = self.count();
-            let size = self.size();
-            let stride = view.stride().unwrap_or(0);
-
-            let end_index = start_index + (stride * (count - 1)) + (count * size);
             let data = buffers
                 .get(data_index)
                 .ok_or(Gtlf2Error::MissingBufferData)?;
+
+
+            let start_index = self.offset() + view.offset();
+            let count = self.count(); //how many elements there is
+            let size = self.size(); //how large each element is
+            let stride = view.stride().unwrap_or(size); //how many bytes to move to get the next element
+
+            assert!(count * stride <= view.length());
+
+            let end_index = start_index + (count * stride);
             if end_index > data.len() {
                 return Err(Gtlf2Error::ExceedsBounds);
             }
@@ -32,17 +35,16 @@ impl GetPointer for gltf::Accessor<'_> {
             //Copy Data into Result
             let mut result = Vec::with_capacity(count * size);
             let sliced = &data[start_index..end_index];
-            for i in 0..count{
-                let start = i * size + i * stride;
-                let end = start + size;
-                result.extend_from_slice(&sliced[start..end]);
+            if stride == size{
+                result.extend_from_slice(sliced);
+            }else{
+                for i in 0..count{
+                    let start = i * stride;
+                    let end = start + size;
+                    result.extend_from_slice(&sliced[start..end]);
+                }
             }
-
-            // for i in (0..sliced.len()).step_by(if stride == 0 { 1} else{ stride}) {
-            //     if i + size <= sliced.len() {
-            //         result.extend_from_slice(&sliced[i..i + size]);
-            //     }
-            // }
+            
             result
         } else {
             //Early Out as we must be Sparse if we don't have a view
