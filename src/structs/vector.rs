@@ -4,33 +4,25 @@ use bytemuck::{Pod, Zeroable};
 
 use super::{type_def::base_types::AiReal, AiQuaternion};
 
+/// A C-based Representation of a two-dimensional vector with either 32 bit or 64 bit precision
 #[repr(C)]
-#[derive(Debug, PartialEq, Pod, Clone, Copy, Zeroable)]
+#[derive(Debug, PartialEq, Pod, Clone, Copy, Zeroable, Default)]
 pub struct AiVector2D {
     pub x: AiReal,
     pub y: AiReal,
 }
 
-impl Default for AiVector2D {
-    fn default() -> Self {
-        Self {
-            x: Default::default(),
-            y: Default::default(),
-        }
+impl From<AiVector2D> for [AiReal; 2] {
+    fn from(val: AiVector2D) -> Self {
+        [val.x, val.y]
     }
 }
 
-impl Into<[f32; 2]> for AiVector2D {
-    fn into(self) -> [f32; 2] {
-        [self.x as f32, self.y as f32]
-    }
-}
-
-impl From<[f32; 2]> for AiVector2D {
-    fn from(value: [f32; 2]) -> Self {
+impl From<[AiReal; 2]> for AiVector2D {
+    fn from(value: [AiReal; 2]) -> Self {
         AiVector2D {
-            x: value[0] as AiReal,
-            y: value[1] as AiReal,
+            x: value[0],
+            y: value[1],
         }
     }
 }
@@ -104,10 +96,10 @@ impl ops::Index<u8> for AiVector2D {
     }
 }
 
-impl ops::Mul<f32> for AiVector2D {
+impl ops::Mul<AiReal> for AiVector2D {
     type Output = AiVector2D;
 
-    fn mul(mut self, rhs: f32) -> Self::Output {
+    fn mul(mut self, rhs: AiReal) -> Self::Output {
         self.x *= rhs;
         self.y *= rhs;
         self
@@ -115,35 +107,25 @@ impl ops::Mul<f32> for AiVector2D {
 }
 
 #[repr(C)]
-#[derive(Debug, PartialEq, Pod, Clone, Copy, Zeroable)]
+#[derive(Debug, PartialEq, Pod, Clone, Copy, Zeroable, Default)]
 pub struct AiVector3D {
     pub x: AiReal,
     pub y: AiReal,
     pub z: AiReal,
 }
 
-impl Default for AiVector3D {
-    fn default() -> Self {
-        Self {
-            x: Default::default(),
-            y: Default::default(),
-            z: Default::default(),
-        }
+impl From<AiVector3D> for [AiReal; 3] {
+    fn from(val: AiVector3D) -> Self {
+        [val.x, val.y, val.z]
     }
 }
 
-impl Into<[f32; 3]> for AiVector3D {
-    fn into(self) -> [f32; 3] {
-        [self.x as f32, self.y as f32, self.z as f32]
-    }
-}
-
-impl From<[f32; 3]> for AiVector3D {
-    fn from(value: [f32; 3]) -> Self {
+impl From<[AiReal; 3]> for AiVector3D {
+    fn from(value: [AiReal; 3]) -> Self {
         AiVector3D {
-            x: value[0] as AiReal,
-            y: value[1] as AiReal,
-            z: value[2] as AiReal,
+            x: value[0],
+            y: value[1],
+            z: value[2],
         }
     }
 }
@@ -290,10 +272,10 @@ impl ops::Mul<&AiVector3D> for &AiVector3D {
     }
 }
 
-impl ops::Mul<f32> for AiVector3D {
+impl ops::Mul<AiReal> for AiVector3D {
     type Output = AiVector3D;
 
-    fn mul(mut self, rhs: f32) -> Self::Output {
+    fn mul(mut self, rhs: AiReal) -> Self::Output {
         self.x *= rhs;
         self.y *= rhs;
         self.z *= rhs;

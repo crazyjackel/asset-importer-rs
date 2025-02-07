@@ -8,7 +8,10 @@ bytemuck = { version = "1.21.0", features = ["derive"] }
 enumflags2 = "0.7.10"
 gltf = { version = "1.4.1", optional = true }
 gltf-v1 = { path = "gltf-v1", optional = true, version = "0.1.0" }
-image = { version = "0.25.5", features = ["png", "jpeg"], default-features = false}
+image = { version = "0.25.5", features = [
+    "png",
+    "jpeg",
+], default-features = false }
 num_enum = "0.7.3"
 serde = "1.0.217"
 serde_derive = "1.0.217"
@@ -22,6 +25,8 @@ name = "benchmark"
 harness = false
 
 [features]
+minimal = ["asset_gltf_v1"]
+
 default = [
     "asset_gltf_v2",
     "asset_gltf_v1",
@@ -35,7 +40,7 @@ default = [
     "KHR_materials_pbrSpecularGlossiness",
     "KHR_materials_emissive_strength",
     "KHR_materials_ior",
-    "KHR_lights_punctual"
+    "KHR_lights_punctual",
 ]
 
 use_double_precision = []

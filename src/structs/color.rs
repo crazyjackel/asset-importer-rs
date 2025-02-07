@@ -1,21 +1,15 @@
 
 use bytemuck::{Pod, Zeroable};
 
-use super::type_def::EPSILON_F;
+use super::{base_types::AiReal, type_def::EPSILON_F, AiVector3D};
 
+/// A C-Based Color representation for RGB
 #[repr(C)]
-#[derive(Debug, PartialEq, Pod, Clone, Copy, Zeroable)]
+#[derive(Debug, PartialEq, Pod, Clone, Copy, Zeroable, Default)]
 pub struct AiColor3D {
     pub r: f32,
     pub g: f32,
     pub b: f32
-}
-
-
-impl Default for AiColor3D{
-    fn default() -> Self {
-        Self { r: Default::default(), g: Default::default(), b: Default::default() }
-    }
 }
 
 impl From<[f32;3]> for AiColor3D{
@@ -24,9 +18,15 @@ impl From<[f32;3]> for AiColor3D{
     }
 }
 
-impl Into<[f32;3]> for AiColor3D{
-    fn into(self) -> [f32;3] {
-        [self.r,self.g,self.b]
+impl From<AiColor3D> for [f32;3]{
+    fn from(val: AiColor3D) -> Self {
+        [val.r,val.g,val.b]
+    }
+}
+
+impl From<AiColor3D> for AiVector3D{
+    fn from(value: AiColor3D) -> Self {
+        AiVector3D { x: value.r as AiReal, y: value.g as AiReal, z: value.b as AiReal }
     }
 }
 
@@ -39,20 +39,14 @@ impl AiColor3D {
     }
 }
 
+/// A C-Based Color representation for RGBA
 #[repr(C)]
-#[derive(Debug, PartialEq, Pod, Clone, Copy, Zeroable)]
+#[derive(Debug, PartialEq, Pod, Clone, Copy, Zeroable, Default)]
 pub struct AiColor4D {
     pub r: f32,
     pub g: f32,
     pub b: f32,
     pub a: f32,
-}
-
-
-impl Default for AiColor4D{
-    fn default() -> Self {
-        Self { r: Default::default(), g: Default::default(), b: Default::default(), a: Default::default() }
-    }
 }
 
 impl From<[f32;4]> for AiColor4D{
@@ -61,9 +55,9 @@ impl From<[f32;4]> for AiColor4D{
     }
 }
 
-impl Into<[f32;4]> for AiColor4D{
-    fn into(self) -> [f32;4] {
-        [self.r,self.g,self.b,self.a]
+impl From<AiColor4D> for [f32;4]{
+    fn from(val: AiColor4D) -> Self {
+        [val.r,val.g,val.b,val.a]
     }
 }
 

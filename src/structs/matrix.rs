@@ -2,7 +2,7 @@ use std::ops;
 
 use super::{type_def::base_types::AiReal, AiQuaternion, AiVector3D};
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct AiMatrix4x4 {
     pub a1: AiReal,
     pub a2: AiReal,
@@ -22,35 +22,13 @@ pub struct AiMatrix4x4 {
     pub d4: AiReal,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct DecomposedMatrix {
     pub translation: AiVector3D,
     pub scale: AiVector3D,
     pub rotation: AiQuaternion,
 }
 
-impl Default for AiMatrix4x4 {
-    fn default() -> Self {
-        Self {
-            a1: Default::default(),
-            a2: Default::default(),
-            a3: Default::default(),
-            a4: Default::default(),
-            b1: Default::default(),
-            b2: Default::default(),
-            b3: Default::default(),
-            b4: Default::default(),
-            c1: Default::default(),
-            c2: Default::default(),
-            c3: Default::default(),
-            c4: Default::default(),
-            d1: Default::default(),
-            d2: Default::default(),
-            d3: Default::default(),
-            d4: Default::default(),
-        }
-    }
-}
 
 impl ops::MulAssign for AiMatrix4x4 {
     fn mul_assign(&mut self, rhs: Self) {
@@ -235,68 +213,68 @@ impl AiMatrix4x4 {
     }
 }
 
-impl From<[[f32; 4]; 4]> for AiMatrix4x4 {
-    fn from(value: [[f32; 4]; 4]) -> Self {
+impl From<[[AiReal; 4]; 4]> for AiMatrix4x4 {
+    fn from(value: [[AiReal; 4]; 4]) -> Self {
         AiMatrix4x4 {
-            a1: value[0][0] as AiReal,
-            a2: value[0][1] as AiReal,
-            a3: value[0][2] as AiReal,
-            a4: value[0][3] as AiReal,
-            b1: value[1][0] as AiReal,
-            b2: value[1][1] as AiReal,
-            b3: value[1][2] as AiReal,
-            b4: value[1][3] as AiReal,
-            c1: value[2][0] as AiReal,
-            c2: value[2][1] as AiReal,
-            c3: value[2][2] as AiReal,
-            c4: value[2][3] as AiReal,
-            d1: value[3][0] as AiReal,
-            d2: value[3][1] as AiReal,
-            d3: value[3][2] as AiReal,
-            d4: value[3][3] as AiReal,
+            a1: value[0][0],
+            a2: value[0][1],
+            a3: value[0][2],
+            a4: value[0][3],
+            b1: value[1][0],
+            b2: value[1][1],
+            b3: value[1][2],
+            b4: value[1][3],
+            c1: value[2][0],
+            c2: value[2][1],
+            c3: value[2][2],
+            c4: value[2][3],
+            d1: value[3][0],
+            d2: value[3][1],
+            d3: value[3][2],
+            d4: value[3][3],
         }
     }
 }
 
-impl Into<[[f32; 4]; 4]> for AiMatrix4x4 {
-    fn into(self) -> [[f32; 4]; 4] {
+impl From<AiMatrix4x4> for [[AiReal; 4]; 4] {
+    fn from(val: AiMatrix4x4) -> Self {
         [
-            [self.a1, self.a2, self.a3, self.a4],
-            [self.b1, self.b2, self.b3, self.b4],
-            [self.c1, self.c2, self.c3, self.c4],
-            [self.d1, self.d2, self.d3, self.d4],
+            [val.a1, val.a2, val.a3, val.a4],
+            [val.b1, val.b2, val.b3, val.b4],
+            [val.c1, val.c2, val.c3, val.c4],
+            [val.d1, val.d2, val.d3, val.d4],
         ]
     }
 }
 
-impl From<[f32; 16]> for AiMatrix4x4 {
-    fn from(value: [f32; 16]) -> Self {
+impl From<[AiReal; 16]> for AiMatrix4x4 {
+    fn from(value: [AiReal; 16]) -> Self {
         AiMatrix4x4 {
-            a1: value[0] as AiReal,
-            a2: value[1] as AiReal,
-            a3: value[2] as AiReal,
-            a4: value[3] as AiReal,
-            b1: value[4] as AiReal,
-            b2: value[5] as AiReal,
-            b3: value[6] as AiReal,
-            b4: value[7] as AiReal,
-            c1: value[8] as AiReal,
-            c2: value[9] as AiReal,
-            c3: value[10] as AiReal,
-            c4: value[11] as AiReal,
-            d1: value[12] as AiReal,
-            d2: value[13] as AiReal,
-            d3: value[14] as AiReal,
-            d4: value[15] as AiReal,
+            a1: value[0],
+            a2: value[1],
+            a3: value[2],
+            a4: value[3],
+            b1: value[4],
+            b2: value[5],
+            b3: value[6],
+            b4: value[7],
+            c1: value[8],
+            c2: value[9],
+            c3: value[10],
+            c4: value[11],
+            d1: value[12],
+            d2: value[13],
+            d3: value[14],
+            d4: value[15],
         }
     }
 }
 
-impl Into<[f32; 16]> for AiMatrix4x4 {
-    fn into(self) -> [f32; 16] {
+impl From<AiMatrix4x4> for [AiReal; 16] {
+    fn from(val: AiMatrix4x4) -> Self {
         [
-            self.a1, self.a2, self.a3, self.a4, self.b1, self.b2, self.b3, self.b4, self.c1,
-            self.c2, self.c3, self.c4, self.d1, self.d2, self.d3, self.d4,
+            val.a1, val.a2, val.a3, val.a4, val.b1, val.b2, val.b3, val.b4, val.c1,
+            val.c2, val.c3, val.c4, val.d1, val.d2, val.d3, val.d4,
         ]
     }
 }

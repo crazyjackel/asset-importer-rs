@@ -143,7 +143,7 @@ fn import_texture_property<'a, T: ImportTexture<'a>>(
 
         //Get Uri from Source
         let uri = match &embedded_tex_ids.get(&source.index()) {
-            Some(str) => format!("*{}", str.to_string()),
+            Some(str) => format!("*{}", str),
             None => format!("*{}", source.index()),
         };
 
@@ -331,7 +331,7 @@ fn handle_texture_transform<'a, T: ImportTexture<'a>>(
 fn handle_pbr_roughness(
     embedded_tex_ids: &HashMap<usize, usize>,
     material: &gltf::Material<'_>,
-    mut ai_material: &mut AiMaterial,
+    ai_material: &mut AiMaterial,
 ) {
     let pbr_metallic_roughness = material.pbr_metallic_roughness();
 
@@ -359,14 +359,14 @@ fn handle_pbr_roughness(
     //Handle Base Color Texture
     import_texture_property(
         &pbr_metallic_roughness.base_color_texture(),
-        &mut ai_material,
+        ai_material,
         embedded_tex_ids,
         AiTextureType::Diffuse,
         0,
     );
     import_texture_property(
         &pbr_metallic_roughness.base_color_texture(),
-        &mut ai_material,
+        ai_material,
         embedded_tex_ids,
         AiTextureType::BaseColor,
         0,
@@ -376,21 +376,21 @@ fn handle_pbr_roughness(
     // Keep AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE for backwards compatibility
     import_texture_property(
         &pbr_metallic_roughness.metallic_roughness_texture(),
-        &mut ai_material,
+        ai_material,
         embedded_tex_ids,
         AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE,
         0,
     );
     import_texture_property(
         &pbr_metallic_roughness.metallic_roughness_texture(),
-        &mut ai_material,
+        ai_material,
         embedded_tex_ids,
         AiTextureType::Metalness,
         0,
     );
     import_texture_property(
         &pbr_metallic_roughness.metallic_roughness_texture(),
-        &mut ai_material,
+        ai_material,
         embedded_tex_ids,
         AiTextureType::DiffuseRoughness,
         0,

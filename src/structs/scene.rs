@@ -1,7 +1,3 @@
-use std::{
-    cell::RefCell,
-    rc::{Rc, Weak},
-};
 
 use super::{
     animation::AiAnimation,
@@ -38,19 +34,10 @@ impl Default for AiNode {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct AiNodeTree {
     pub root: Option<usize>,
     pub arena: Vec<AiNode>,
-}
-
-impl Default for AiNodeTree {
-    fn default() -> Self {
-        Self {
-            root: Default::default(),
-            arena: Default::default(),
-        }
-    }
 }
 
 impl AiNodeTree{

@@ -152,7 +152,7 @@ fn test_texture_import() {
             },
             "images": [
                 {
-                    "uri": "test/textures/Unicode❤♻Texture.png"
+                    "uri": "tests/textures/Unicode❤♻Texture.png"
                 }
             ],
             "textures": [

@@ -1,6 +1,5 @@
 use std::{fs, io::BufReader, path::Path};
 
-use enumflags2::BitFlags;
 use gltf::Gltf;
 
 use crate::{
@@ -23,12 +22,9 @@ impl AiImport for Gltf2Importer {
             author: Default::default(),
             maintainer: Default::default(),
             comments: Default::default(),
-            flags: BitFlags::from(
-                AiImporterFlags::SupportBinaryFlavor
+            flags: (AiImporterFlags::SupportBinaryFlavor
                     | AiImporterFlags::LimitedSupport
-                    | AiImporterFlags::SupportTextFlavor
-                    | AiImporterFlags::Experimental,
-            ),
+                    | AiImporterFlags::SupportTextFlavor | AiImporterFlags::Experimental),
             min_major: 0,
             min_minor: 0,
             max_major: 0,
@@ -65,7 +61,7 @@ impl AiImport for Gltf2Importer {
         let gltf = Gltf::from_reader(reader);
 
         //If Result is Good, we can Read
-        !gltf.is_err()
+        gltf.is_ok()
     }
 
     fn read_file<P>(&self, _importer: &mut AiImporter, path: P) -> Result<AiScene, AiReadError>
@@ -119,18 +115,20 @@ impl AiImport for Gltf2Importer {
         //import metadata
         let metadata = Gltf2Importer::import_metadata(&document)?;
 
-        let mut scene = AiScene::default();
-        scene.name = scene_name;
-        scene.animations = animations;
-        scene.cameras = cameras;
-        scene.meshes = meshes;
-        scene.lights = lights;
-        scene.materials = embedded_materials;
-        scene.textures = embedded_textures;
-        scene.nodes = nodes;
-        scene.metadata = metadata;
+        let mut scene = AiScene{
+            name: scene_name,
+            animations,
+            cameras,
+            meshes,
+            lights,
+            materials: embedded_materials,
+            textures: embedded_textures,
+            nodes,
+            metadata,
+            ..AiScene::default()
+        };
 
-        if scene.meshes.len() != 0{
+        if !scene.meshes.is_empty(){
             scene.flags |= AiSceneFlag::Incomplete;
         }
 
@@ -142,7 +140,7 @@ impl AiImport for Gltf2Importer {
 #[test]
 fn test_read_file(){
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
-    let mut exe_path = binding.join("test").join("model");
+    let mut exe_path = binding.join("tests").join("model");
     exe_path.push("Avocado.glb");
     let path = exe_path.as_path();
 

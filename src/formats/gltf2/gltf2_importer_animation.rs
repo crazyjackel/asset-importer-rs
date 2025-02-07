@@ -1,4 +1,3 @@
-
 use gltf::{animation::Interpolation, buffer, Document};
 
 use crate::{
@@ -17,15 +16,17 @@ use super::{
 const MILLISECONDS_TO_SECONDS: f64 = 1000.0;
 
 impl Gltf2Importer {
-    pub(crate) fn import_animations<'a>(
+    pub(crate) fn import_animations(
         document: &Document,
-        buffer_data: &'a [buffer::Data],
+        buffer_data: &[buffer::Data],
     ) -> Result<Vec<AiAnimation>, AiReadError> {
         let mut animations: Vec<AiAnimation> = Vec::new(); //Final Animations to return
         for animation in document.animations() {
-            let mut ai_anim = AiAnimation::default();
-            ai_anim.name = animation.name().unwrap_or("").to_string();
-            ai_anim.ticks_per_second = 1000.0;
+            let mut ai_anim = AiAnimation {
+                name: animation.name().unwrap_or("").to_string(),
+                ticks_per_second: 1000.0,
+                ..AiAnimation::default()
+            };
 
             let asset_channels: Vec<gltf::animation::Channel<'_>> = animation.channels().collect();
             let mut duration = 0.0;
@@ -44,7 +45,7 @@ impl Gltf2Importer {
                             .to_string();
 
                         let input_data = input
-                            .get_pointer(&buffer_data)
+                            .get_pointer(buffer_data)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
                         let times = remap_data(None, input_data, 4, |chunk| {
@@ -52,7 +53,7 @@ impl Gltf2Importer {
                         });
 
                         let output_data = output
-                            .get_pointer(&buffer_data)
+                            .get_pointer(buffer_data)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
                         let translation = remap_data(None, output_data, 12, |chunk| {
@@ -96,7 +97,7 @@ impl Gltf2Importer {
                             .to_string();
 
                         let input_data = input
-                            .get_pointer(&buffer_data)
+                            .get_pointer(buffer_data)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
                         let times = remap_data(None, input_data, 4, |chunk| {
@@ -104,7 +105,7 @@ impl Gltf2Importer {
                         });
 
                         let output_data = output
-                            .get_pointer(&buffer_data)
+                            .get_pointer(buffer_data)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
                         let rotation_opt = match output.data_type() {
@@ -214,7 +215,7 @@ impl Gltf2Importer {
                             .to_string();
 
                         let input_data = input
-                            .get_pointer(&buffer_data)
+                            .get_pointer(buffer_data)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
                         let times = remap_data(None, input_data, 4, |chunk| {
@@ -222,7 +223,7 @@ impl Gltf2Importer {
                         });
 
                         let output_data = output
-                            .get_pointer(&buffer_data)
+                            .get_pointer(buffer_data)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
                         let scale = remap_data(None, output_data, 12, |chunk| {
@@ -266,7 +267,7 @@ impl Gltf2Importer {
                             .to_string();
 
                         let input_data = input
-                            .get_pointer(&buffer_data)
+                            .get_pointer(buffer_data)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
                         let times = remap_data(None, input_data, 4, |chunk| {
@@ -274,7 +275,7 @@ impl Gltf2Importer {
                         });
 
                         let output_data = output
-                            .get_pointer(&buffer_data)
+                            .get_pointer(buffer_data)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
                         let values = match output.data_type() {
@@ -315,15 +316,15 @@ impl Gltf2Importer {
                         } else {
                             0
                         };
-                        for i in 0..times.len() {
+                        for (time_index, time_millis) in times.iter().enumerate() {
                             let mut mesh_morph_key = AiMeshMorphKey::default();
-                            let time = times[i] as f64 * MILLISECONDS_TO_SECONDS;
+                            let time = *time_millis as f64 * MILLISECONDS_TO_SECONDS;
                             if time > duration {
                                 duration = time;
                             }
                             mesh_morph_key.time = time;
 
-                            let mut k = stride * i + offset;
+                            let mut k = stride * time_index + offset;
                             for j in 0..num_morphs {
                                 mesh_morph_key.values.push(j as u32);
                                 mesh_morph_key.weights.push(if 0.0 > values[k] {

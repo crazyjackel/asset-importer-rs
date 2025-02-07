@@ -1,4 +1,7 @@
-use std::collections::{HashMap, VecDeque};
+use std::{
+    cmp::Ordering,
+    collections::{HashMap, VecDeque},
+};
 
 use gltf::{buffer, Document, Node, Semantic};
 use serde_json::Value;
@@ -17,14 +20,14 @@ use super::{
 };
 
 impl Gltf2Importer {
-    pub(crate) fn import_nodes<'a>(
+    pub(crate) fn import_nodes(
         document: &Document,
-        buffer_data: &'a [buffer::Data],
-        meshes: &mut Vec<AiMesh>,
-        mesh_offsets: &Vec<u32>,
-        remap_table: &Vec<Vec<u32>>,
-        lights: &mut Vec<AiLight>,
-        cameras: &mut Vec<AiCamera>,
+        buffer_data: &[buffer::Data],
+        meshes: &mut [AiMesh],
+        mesh_offsets: &[u32],
+        remap_table: &[Vec<u32>],
+        lights: &mut [AiLight],
+        cameras: &mut [AiCamera],
     ) -> Result<(AiNodeTree, String), AiReadError> {
         let mut default_scene = document.default_scene();
         if default_scene.is_none() {
@@ -34,9 +37,11 @@ impl Gltf2Importer {
             return Ok((AiNodeTree::default(), "".to_string()));
         }
 
-        let asset_root_nodes: Vec<gltf::Node<'_>> = default_scene.as_ref().unwrap().nodes().collect();
-        return if asset_root_nodes.len() == 1 {
-            Ok((
+        let asset_root_nodes: Vec<gltf::Node<'_>> =
+            default_scene.as_ref().unwrap().nodes().collect();
+
+        match asset_root_nodes.len().cmp(&1) {
+            Ordering::Equal => Ok((
                 import_node(
                     asset_root_nodes[0].clone(),
                     buffer_data,
@@ -47,50 +52,60 @@ impl Gltf2Importer {
                     cameras,
                 )?,
                 default_scene.unwrap().name().unwrap_or("").to_string(),
-            ))
-        } else if asset_root_nodes.len() > 1 {
-            let mut ai_node = AiNode::default();
-            ai_node.name = "ROOT".to_string();
-            let mut default_node = AiNodeTree::default();
-            default_node.root = Some(0);
-            default_node.arena.push(ai_node);
-            for asset_root_node in asset_root_nodes {
-                default_node.merge(import_node(
-                    asset_root_node,
-                    buffer_data,
-                    meshes,
-                    mesh_offsets,
-                    remap_table,
-                    lights,
-                    cameras,
-                )?);
+            )),
+            Ordering::Greater => {
+                let ai_node = AiNode {
+                    name: "ROOT".to_string(),
+                    ..AiNode::default()
+                };
+                let mut default_node = AiNodeTree {
+                    root: Some(0),
+                    ..AiNodeTree::default()
+                };
+                default_node.arena.push(ai_node);
+                for asset_root_node in asset_root_nodes {
+                    default_node.merge(import_node(
+                        asset_root_node,
+                        buffer_data,
+                        meshes,
+                        mesh_offsets,
+                        remap_table,
+                        lights,
+                        cameras,
+                    )?);
+                }
+                Ok((
+                    default_node,
+                    default_scene.unwrap().name().unwrap_or("").to_string(),
+                ))
             }
-            Ok((
-                default_node,
-                default_scene.unwrap().name().unwrap_or("").to_string(),
-            ))
-        } else {
-            let mut ai_node = AiNode::default();
-            ai_node.name = "ROOT".to_string();
-            let mut default_node = AiNodeTree::default();
-            default_node.root = Some(0);
-            default_node.arena.push(ai_node);
-            Ok((
-                default_node,
-                default_scene.unwrap().name().unwrap_or("").to_string(),
-            ))
-        };
+            Ordering::Less => {
+                let ai_node = AiNode {
+                    name: "ROOT".to_string(),
+                    ..AiNode::default()
+                };
+                let mut default_node = AiNodeTree {
+                    root: Some(0),
+                    ..AiNodeTree::default()
+                };
+                default_node.arena.push(ai_node);
+                Ok((
+                    default_node,
+                    default_scene.unwrap().name().unwrap_or("").to_string(),
+                ))
+            }
+        }
     }
 }
 
 fn import_node<'a>(
     root_node: gltf::Node<'a>,
     buffer_data: &'a [buffer::Data],
-    meshes: &mut Vec<AiMesh>,
-    mesh_offsets: &Vec<u32>,
-    remap_table: &Vec<Vec<u32>>,
-    lights: &mut Vec<AiLight>,
-    cameras: &mut Vec<AiCamera>,
+    meshes: &mut [AiMesh],
+    mesh_offsets: &[u32],
+    remap_table: &[Vec<u32>],
+    lights: &mut [AiLight],
+    cameras: &mut [AiCamera],
 ) -> Result<AiNodeTree, AiReadError> {
     let mut ai_node_tree = AiNodeTree::default();
     let mut node_queue: VecDeque<(gltf::Node<'_>, Option<usize>)> = VecDeque::new();
@@ -103,7 +118,7 @@ fn import_node<'a>(
         //handle extras
 
         //handle transform
-        ai_node.transformation = node.transform().matrix().into();
+        ai_node.transformation = node.transform().matrix().map(|x| x.map(|y| y as AiReal)).into();
 
         //handle meshes
         if let Some(mesh) = node.mesh() {
@@ -118,22 +133,22 @@ fn import_node<'a>(
                 let bind_matrices = skin.inverse_bind_matrices().and_then(|x| {
                     let data_matrices = x.get_pointer(buffer_data).ok()?;
                     let data = remap_data(None, data_matrices, 64, |chunk| AiMatrix4x4 {
-                        a1: f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]),
-                        a2: f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]]),
-                        a3: f32::from_le_bytes([chunk[8], chunk[9], chunk[10], chunk[11]]),
-                        a4: f32::from_le_bytes([chunk[12], chunk[13], chunk[14], chunk[15]]),
-                        b1: f32::from_le_bytes([chunk[16], chunk[17], chunk[18], chunk[19]]),
-                        b2: f32::from_le_bytes([chunk[20], chunk[21], chunk[22], chunk[23]]),
-                        b3: f32::from_le_bytes([chunk[24], chunk[25], chunk[26], chunk[27]]),
-                        b4: f32::from_le_bytes([chunk[28], chunk[29], chunk[30], chunk[31]]),
-                        c1: f32::from_le_bytes([chunk[32], chunk[33], chunk[34], chunk[35]]),
-                        c2: f32::from_le_bytes([chunk[36], chunk[37], chunk[38], chunk[39]]),
-                        c3: f32::from_le_bytes([chunk[40], chunk[41], chunk[42], chunk[43]]),
-                        c4: f32::from_le_bytes([chunk[44], chunk[45], chunk[46], chunk[47]]),
-                        d1: f32::from_le_bytes([chunk[48], chunk[49], chunk[50], chunk[51]]),
-                        d2: f32::from_le_bytes([chunk[52], chunk[53], chunk[54], chunk[55]]),
-                        d3: f32::from_le_bytes([chunk[56], chunk[57], chunk[58], chunk[59]]),
-                        d4: f32::from_le_bytes([chunk[60], chunk[61], chunk[62], chunk[63]]),
+                        a1: f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal,
+                        a2: f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]]) as AiReal,
+                        a3: f32::from_le_bytes([chunk[8], chunk[9], chunk[10], chunk[11]]) as AiReal,
+                        a4: f32::from_le_bytes([chunk[12], chunk[13], chunk[14], chunk[15]]) as AiReal,
+                        b1: f32::from_le_bytes([chunk[16], chunk[17], chunk[18], chunk[19]]) as AiReal,
+                        b2: f32::from_le_bytes([chunk[20], chunk[21], chunk[22], chunk[23]]) as AiReal,
+                        b3: f32::from_le_bytes([chunk[24], chunk[25], chunk[26], chunk[27]]) as AiReal,
+                        b4: f32::from_le_bytes([chunk[28], chunk[29], chunk[30], chunk[31]]) as AiReal,
+                        c1: f32::from_le_bytes([chunk[32], chunk[33], chunk[34], chunk[35]]) as AiReal,
+                        c2: f32::from_le_bytes([chunk[36], chunk[37], chunk[38], chunk[39]]) as AiReal,
+                        c3: f32::from_le_bytes([chunk[40], chunk[41], chunk[42], chunk[43]]) as AiReal,
+                        c4: f32::from_le_bytes([chunk[44], chunk[45], chunk[46], chunk[47]]) as AiReal,
+                        d1: f32::from_le_bytes([chunk[48], chunk[49], chunk[50], chunk[51]]) as AiReal,
+                        d2: f32::from_le_bytes([chunk[52], chunk[53], chunk[54], chunk[55]]) as AiReal,
+                        d3: f32::from_le_bytes([chunk[56], chunk[57], chunk[58], chunk[59]]) as AiReal,
+                        d4: f32::from_le_bytes([chunk[60], chunk[61], chunk[62], chunk[63]]) as AiReal
                     });
                     Some(data)
                 });
@@ -266,11 +281,11 @@ fn import_node<'a>(
                             .name()
                             .unwrap_or(format!("{}{}", "bone_", i).as_str())
                             .to_string();
-                        ai_bone.offset_matrix = joint.transform().matrix().into();
+                        ai_bone.offset_matrix = joint.transform().matrix().map(|x| x.map(|y| y as AiReal)).into();
                         if let Some(bind_matrix) = &bind_matrices {
                             ai_bone.offset_matrix = bind_matrix[i].clone();
                         }
-                        if weights.len() > 0 {
+                        if !weights.is_empty() {
                             ai_bone.weights = weights.to_vec();
                         } else {
                             ai_bone.weights = vec![AiVertexWeight::new(0, 0.0)]
@@ -280,7 +295,7 @@ fn import_node<'a>(
                 }
             }
             for i in start..end {
-                ai_node.mesh_indexes.push(i as usize);
+                ai_node.mesh_indexes.push(i);
             }
         }
         //handle cameras
@@ -307,7 +322,7 @@ fn import_node<'a>(
         if parent_index.is_none() {
             ai_node_tree.root = Some(index);
         }
-        for child in node.children().into_iter() {
+        for child in node.children() {
             node_queue.push_back((child, Some(index)));
         }
     }
@@ -322,22 +337,16 @@ fn handle_extensions(ai_node: &mut AiNode, node: &gltf::Node<'_>) {
             Value::Number(number) => {
                 if let Some(num) = number.as_u64() {
                     Some(AiMetadataEntry::AiU64(num))
-                } else {
-                    if let Some(num2) = number.as_i64() {
-                        Some(AiMetadataEntry::AiI64(num2))
-                    } else if let Some(num3) = number.as_f64() {
-                        Some(AiMetadataEntry::AiF64(num3))
-                    } else {
-                        None
-                    }
-                }
+                } else if let Some(num2) = number.as_i64() {
+                    Some(AiMetadataEntry::AiI64(num2))
+                } else { number.as_f64().map(AiMetadataEntry::AiF64) }
             }
             Value::String(str) => Some(AiMetadataEntry::AiStr(str.to_string())),
             Value::Array(_) => None,
             Value::Object(map) => {
                 let mut meta_map: HashMap<String, AiMetadataEntry> = HashMap::new();
                 for (str, val) in map {
-                    if let Some(value) = parse_extension(&val) {
+                    if let Some(value) = parse_extension(val) {
                         meta_map.insert(str.to_string(), value);
                     }
                 }
@@ -349,7 +358,7 @@ fn handle_extensions(ai_node: &mut AiNode, node: &gltf::Node<'_>) {
     if let Some(ext) = node.extensions() {
         let metadata = ai_node.metadata.get_or_insert(HashMap::new());
         for (str, val) in ext {
-            if let Some(value) = parse_extension(&val) {
+            if let Some(value) = parse_extension(val) {
                 metadata.insert(str.to_string(), value);
             }
         }

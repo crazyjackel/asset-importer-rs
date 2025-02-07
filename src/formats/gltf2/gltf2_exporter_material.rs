@@ -20,22 +20,22 @@ impl Gltf2Exporter {
         scene: &AiScene,
         root: &mut Root,
         buffer_data: &mut Vec<u8>,
-        mut unique_names_map: &mut HashMap<String, u32>,
+        unique_names_map: &mut HashMap<String, u32>,
         use_gltf_pbr_specular_glossiness: bool,
     ) -> Result<(), AiExportError> {
         let mut texture_name_to_index_map: HashMap<String, u32> = HashMap::new();
         for ai_material in &scene.materials {
-            let mut material = Material::default();
-            material.name = if let Some(AiPropertyTypeInfo::Binary(binary)) =
+            let name = if let Some(AiPropertyTypeInfo::Binary(binary)) =
                 ai_material.get_property_type_info(matkey::AI_MATKEY_NAME, Some(AiTextureType::None), 0)
             {
                 let str = String::from_utf8(binary.to_vec())
                     .map_err(|err| AiExportError::ConversionError(Box::new(err)))?;
-                Some(generate_unique_name(&str, &mut unique_names_map))
+                Some(generate_unique_name(&str, unique_names_map))
             } else {
-                Some(generate_unique_name("material", &mut unique_names_map))
+                Some(generate_unique_name("material", unique_names_map))
             };
 
+            let mut material = Material{ name, ..Material::default()};
             handle_pbr(
                 scene,
                 root,
@@ -203,7 +203,7 @@ fn get_material_texture_normal(
                 }
                 _ => None,
             }).unwrap_or(1.0);
-        NormalTexture { index: x.index, scale: scale, tex_coord: x.tex_coord, extensions: Default::default(), extras: x.extras }
+        NormalTexture { index: x.index, scale, tex_coord: x.tex_coord, extensions: Default::default(), extras: x.extras }
     })
 }
 
@@ -255,7 +255,7 @@ fn get_material_texture(
     root: &mut Root,
     texture_type: AiTextureType,
     texture_name_to_index_map: &mut HashMap<String, u32>,
-    mut unique_names_map: &mut HashMap<String, u32>,
+    unique_names_map: &mut HashMap<String, u32>,
     index: u32,
     is_binary: bool,
     buffer: &mut Vec<u8>,
@@ -301,7 +301,7 @@ fn get_material_texture(
                                     byte_stride: None,
                                     name: Some(generate_unique_name(
                                         "imgdata",
-                                        &mut unique_names_map,
+                                        unique_names_map,
                                     )),
                                     target: None,
                                     extensions: Default::default(),
@@ -352,16 +352,16 @@ fn get_material_texture(
                                     }
                                     _ => None,
                                 })
-                                .and_then(|name| {
+                                .map(|name| {
                                     if let Some((index, _)) = root
                                         .samplers
                                         .iter()
                                         .enumerate()
                                         .find(|(_, sampler)| sampler.name == Some(name.clone()))
                                     {
-                                        Some(Index::new(index as u32))
+                                        Index::new(index as u32)
                                     } else {
-                                        Some(root.push(Sampler {
+                                        root.push(Sampler {
                                             mag_filter: ai_material.get_property_type_info(_AI_MATKEY_GLTF_MAPPINGFILTER_MAG_BASE, 
                                                 Some(texture_type), 0).and_then(|x|{
                                                     match x{
@@ -417,7 +417,7 @@ fn get_material_texture(
                                                 }).unwrap_or(Checked::Valid(gltf::texture::WrappingMode::ClampToEdge)),
                                             extensions: Default::default(),
                                             extras: Default::default(),
-                                        }))
+                                        })
                                     }
                                 });
 
@@ -434,13 +434,9 @@ fn get_material_texture(
                         })
                 })
         });
-        
-    if result.is_none(){
-        return None;
-    }
 
     let texture_info = Info {
-        index: Index::new(result.unwrap()),
+        index: Index::new(result?),
         tex_coord,
         extensions: Default::default(),
         extras: Default::default(),
@@ -475,7 +471,7 @@ fn handle_pbr(scene: &AiScene,
         root,
         AiTextureType::Diffuse,
         texture_name_to_index_map,
-        &mut unique_names_map,
+        unique_names_map,
         0,
         is_binary,
         buffer_data,
@@ -487,7 +483,7 @@ fn handle_pbr(scene: &AiScene,
         root,
         AiTextureType::DiffuseRoughness,
         texture_name_to_index_map,
-        &mut unique_names_map,
+        unique_names_map,
         0,
         is_binary,
         buffer_data,
@@ -498,7 +494,7 @@ fn handle_pbr(scene: &AiScene,
         root,
         AiTextureType::Metalness,
         texture_name_to_index_map,
-        &mut unique_names_map,
+        unique_names_map,
         0,
         is_binary,
         buffer_data,
@@ -509,7 +505,7 @@ fn handle_pbr(scene: &AiScene,
         root,
         AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE,
         texture_name_to_index_map,
-        &mut unique_names_map,
+        unique_names_map,
         0,
         is_binary,
         buffer_data,
@@ -519,7 +515,7 @@ fn handle_pbr(scene: &AiScene,
         .get_property_type_info(AI_MATKEY_BASE_COLOR, Some(AiTextureType::None), 0)
         .and_then(|info| match info {
             AiPropertyTypeInfo::Binary(binary) => {
-                bytemuck::try_from_bytes::<AiColor4D>(&binary)
+                bytemuck::try_from_bytes::<AiColor4D>(binary)
                     .ok()
                     .map(|x| {
                         gltf::json::material::PbrBaseColorFactor(Into::<[f32; 4]>::into(*x))
@@ -531,7 +527,7 @@ fn handle_pbr(scene: &AiScene,
             .get_property_type_info(AI_MATKEY_COLOR_DIFFUSE, Some(AiTextureType::None), 0)
             .and_then(|info| match info {
                 AiPropertyTypeInfo::Binary(binary) => {
-                    bytemuck::try_from_bytes::<AiColor4D>(&binary)
+                    bytemuck::try_from_bytes::<AiColor4D>(binary)
                         .ok()
                         .map(|x| {
                             gltf::json::material::PbrBaseColorFactor(
@@ -585,7 +581,7 @@ fn handle_pbr(scene: &AiScene,
                     )
                     .and_then(|info| match info {
                         AiPropertyTypeInfo::Binary(binary) => {
-                            bytemuck::try_from_bytes::<AiColor3D>(&binary).ok()
+                            bytemuck::try_from_bytes::<AiColor3D>(binary).ok()
                         }
                         _ => None,
                     })
@@ -594,7 +590,7 @@ fn handle_pbr(scene: &AiScene,
                         specular.r * 0.2125 + specular.g * 0.2125 + specular.b * 0.2125;
                     let mut normalized_shininess = f32::sqrt(shininess.0 / 1000.0);
                     normalized_shininess =
-                        f32::min(f32::max(normalized_shininess, 0.0), 1.0);
+                        normalized_shininess.clamp(0.0, 1.0);
                     normalized_shininess *= specular_intensity;
                     return Some(StrengthFactor(1.0 - normalized_shininess));
                 }
@@ -605,7 +601,7 @@ fn handle_pbr(scene: &AiScene,
 }
 
 
-fn handle_base(scene: &AiScene, root: &mut Root, buffer_data: &mut Vec<u8>, mut unique_names_map: &mut HashMap<String, u32>, 
+fn handle_base(scene: &AiScene, root: &mut Root, buffer_data: &mut Vec<u8>, unique_names_map: &mut HashMap<String, u32>, 
     texture_name_to_index_map: &mut HashMap<String, u32>, ai_material: &AiMaterial, material: &mut Material, is_binary: bool) {
     material.normal_texture = get_material_texture_normal(
         scene,
@@ -613,7 +609,7 @@ fn handle_base(scene: &AiScene, root: &mut Root, buffer_data: &mut Vec<u8>, mut 
         root,
         AiTextureType::Normals,
         texture_name_to_index_map,
-        &mut unique_names_map,
+        unique_names_map,
         0,
         is_binary,
         buffer_data,
@@ -624,7 +620,7 @@ fn handle_base(scene: &AiScene, root: &mut Root, buffer_data: &mut Vec<u8>, mut 
         root,
         AiTextureType::Normals,
         texture_name_to_index_map,
-        &mut unique_names_map,
+        unique_names_map,
         0,
         is_binary,
         buffer_data,
@@ -635,7 +631,7 @@ fn handle_base(scene: &AiScene, root: &mut Root, buffer_data: &mut Vec<u8>, mut 
         root,
         AiTextureType::Normals,
         texture_name_to_index_map,
-        &mut unique_names_map,
+        unique_names_map,
         0,
         is_binary,
         buffer_data,
@@ -645,14 +641,14 @@ fn handle_base(scene: &AiScene, root: &mut Root, buffer_data: &mut Vec<u8>, mut 
         .get_property_type_info(AI_MATKEY_COLOR_EMISSIVE, Some(AiTextureType::None), 0)
         .and_then(|info| match info {
             AiPropertyTypeInfo::Binary(binary) => {
-                bytemuck::try_from_bytes::<AiColor3D>(&binary)
+                bytemuck::try_from_bytes::<AiColor3D>(binary)
                     .ok()
                     .map(|x| {
                         EmissiveFactor([x.r,x.g,x.b])
                     })
             }
             _ => None,
-        }).unwrap_or(Default::default());
+        }).unwrap_or_default();
 
     material.double_sided = ai_material
         .get_property_type_info(AI_MATKEY_TWOSIDED, Some(AiTextureType::None), 0)
@@ -661,7 +657,7 @@ fn handle_base(scene: &AiScene, root: &mut Root, buffer_data: &mut Vec<u8>, mut 
                 Some(binary[0] == 1)
             }
             _ => None,
-        }).unwrap_or(Default::default());
+        }).unwrap_or_default();
     material.alpha_cutoff = ai_material
         .get_property_type_info(AI_MATKEY_GLTF_ALPHACUTOFF, Some(AiTextureType::None), 0)
         .and_then(|info| match info {
