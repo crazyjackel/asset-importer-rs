@@ -16,7 +16,7 @@ use crate::{
 
 use super::{
     gltf2_importer::Gltf2Importer,
-    gltf2_importer_mesh::{remap_data, GetPointer},
+    gltf2_importer_mesh::{remap_data, ExtractData, GetPointer},
 };
 
 impl Gltf2Importer {
@@ -25,7 +25,7 @@ impl Gltf2Importer {
         buffer_data: &[buffer::Data],
         meshes: &mut [AiMesh],
         mesh_offsets: &[u32],
-        remap_table: &[Vec<u32>],
+        remap_table: &[Vec<usize>],
         lights: &mut [AiLight],
         cameras: &mut [AiCamera],
     ) -> Result<(AiNodeTree, String), AiReadError> {
@@ -103,7 +103,7 @@ fn import_node<'a>(
     buffer_data: &'a [buffer::Data],
     meshes: &mut [AiMesh],
     mesh_offsets: &[u32],
-    remap_table: &[Vec<u32>],
+    remap_table: &[Vec<usize>],
     lights: &mut [AiLight],
     cameras: &mut [AiCamera],
 ) -> Result<AiNodeTree, AiReadError> {
@@ -118,7 +118,11 @@ fn import_node<'a>(
         //handle extras
 
         //handle transform
-        ai_node.transformation = node.transform().matrix().map(|x| x.map(|y| y as AiReal)).into();
+        ai_node.transformation = node
+            .transform()
+            .matrix()
+            .map(|x| x.map(|y| y as AiReal))
+            .into();
 
         //handle meshes
         if let Some(mesh) = node.mesh() {
@@ -135,20 +139,34 @@ fn import_node<'a>(
                     let data = remap_data(None, data_matrices, 64, |chunk| AiMatrix4x4 {
                         a1: f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal,
                         a2: f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]]) as AiReal,
-                        a3: f32::from_le_bytes([chunk[8], chunk[9], chunk[10], chunk[11]]) as AiReal,
-                        a4: f32::from_le_bytes([chunk[12], chunk[13], chunk[14], chunk[15]]) as AiReal,
-                        b1: f32::from_le_bytes([chunk[16], chunk[17], chunk[18], chunk[19]]) as AiReal,
-                        b2: f32::from_le_bytes([chunk[20], chunk[21], chunk[22], chunk[23]]) as AiReal,
-                        b3: f32::from_le_bytes([chunk[24], chunk[25], chunk[26], chunk[27]]) as AiReal,
-                        b4: f32::from_le_bytes([chunk[28], chunk[29], chunk[30], chunk[31]]) as AiReal,
-                        c1: f32::from_le_bytes([chunk[32], chunk[33], chunk[34], chunk[35]]) as AiReal,
-                        c2: f32::from_le_bytes([chunk[36], chunk[37], chunk[38], chunk[39]]) as AiReal,
-                        c3: f32::from_le_bytes([chunk[40], chunk[41], chunk[42], chunk[43]]) as AiReal,
-                        c4: f32::from_le_bytes([chunk[44], chunk[45], chunk[46], chunk[47]]) as AiReal,
-                        d1: f32::from_le_bytes([chunk[48], chunk[49], chunk[50], chunk[51]]) as AiReal,
-                        d2: f32::from_le_bytes([chunk[52], chunk[53], chunk[54], chunk[55]]) as AiReal,
-                        d3: f32::from_le_bytes([chunk[56], chunk[57], chunk[58], chunk[59]]) as AiReal,
-                        d4: f32::from_le_bytes([chunk[60], chunk[61], chunk[62], chunk[63]]) as AiReal
+                        a3: f32::from_le_bytes([chunk[8], chunk[9], chunk[10], chunk[11]])
+                            as AiReal,
+                        a4: f32::from_le_bytes([chunk[12], chunk[13], chunk[14], chunk[15]])
+                            as AiReal,
+                        b1: f32::from_le_bytes([chunk[16], chunk[17], chunk[18], chunk[19]])
+                            as AiReal,
+                        b2: f32::from_le_bytes([chunk[20], chunk[21], chunk[22], chunk[23]])
+                            as AiReal,
+                        b3: f32::from_le_bytes([chunk[24], chunk[25], chunk[26], chunk[27]])
+                            as AiReal,
+                        b4: f32::from_le_bytes([chunk[28], chunk[29], chunk[30], chunk[31]])
+                            as AiReal,
+                        c1: f32::from_le_bytes([chunk[32], chunk[33], chunk[34], chunk[35]])
+                            as AiReal,
+                        c2: f32::from_le_bytes([chunk[36], chunk[37], chunk[38], chunk[39]])
+                            as AiReal,
+                        c3: f32::from_le_bytes([chunk[40], chunk[41], chunk[42], chunk[43]])
+                            as AiReal,
+                        c4: f32::from_le_bytes([chunk[44], chunk[45], chunk[46], chunk[47]])
+                            as AiReal,
+                        d1: f32::from_le_bytes([chunk[48], chunk[49], chunk[50], chunk[51]])
+                            as AiReal,
+                        d2: f32::from_le_bytes([chunk[52], chunk[53], chunk[54], chunk[55]])
+                            as AiReal,
+                        d3: f32::from_le_bytes([chunk[56], chunk[57], chunk[58], chunk[59]])
+                            as AiReal,
+                        d4: f32::from_le_bytes([chunk[60], chunk[61], chunk[62], chunk[63]])
+                            as AiReal,
                     });
                     Some(data)
                 });
@@ -176,83 +194,102 @@ fn import_node<'a>(
                     weighting.resize(num_bones, Vec::new());
                     for (acc_joint, index) in attr_joints {
                         if let Some((acc_weight, _)) = attr_weights.iter().find(|x| x.1 == index) {
-                            let data_joint = acc_joint
-                                .get_pointer(buffer_data)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
-                            let joint_data = match acc_joint.data_type() {
+                            let joint_data: Vec<[u32; 4]> = match acc_joint.data_type() {
                                 gltf::accessor::DataType::U8 => {
-                                    remap_data(remap_table, data_joint, 4, |chunk| {
-                                        [
-                                            chunk[0] as u32,
-                                            chunk[1] as u32,
-                                            chunk[2] as u32,
-                                            chunk[3] as u32,
-                                        ]
-                                    })
+                                    let data_joint: Vec<[u8; 4]> =
+                                        acc_joint.extract_data(buffer_data, remap_table).map_err(
+                                            |err| AiReadError::FileFormatError(Box::new(err)),
+                                        )?;
+
+                                    data_joint
+                                        .iter()
+                                        .map(|chunk| {
+                                            [
+                                                chunk[0] as u32,
+                                                chunk[1] as u32,
+                                                chunk[2] as u32,
+                                                chunk[3] as u32,
+                                            ]
+                                        })
+                                        .collect()
                                 }
                                 gltf::accessor::DataType::U16 => {
-                                    remap_data(remap_table, data_joint, 8, |chunk| {
-                                        [
-                                            u16::from_le_bytes([chunk[0], chunk[1]]) as u32,
-                                            u16::from_le_bytes([chunk[2], chunk[3]]) as u32,
-                                            u16::from_le_bytes([chunk[4], chunk[5]]) as u32,
-                                            u16::from_le_bytes([chunk[6], chunk[7]]) as u32,
-                                        ]
-                                    })
+                                    let data_joint: Vec<[u16; 4]> =
+                                        acc_joint.extract_data(buffer_data, remap_table).map_err(
+                                            |err| AiReadError::FileFormatError(Box::new(err)),
+                                        )?;
+
+                                    data_joint
+                                        .iter()
+                                        .map(|chunk| {
+                                            [
+                                                chunk[0] as u32,
+                                                chunk[1] as u32,
+                                                chunk[2] as u32,
+                                                chunk[3] as u32,
+                                            ]
+                                        })
+                                        .collect()
                                 }
                                 _ => {
                                     continue;
                                 }
                             };
-                            let data_weight = acc_weight
-                                .get_pointer(buffer_data)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
-                            let weight_data = match acc_weight.data_type() {
+                            
+                            let weight_data: Vec<[f32; 4]> = match acc_weight.data_type() {
                                 gltf::accessor::DataType::U8 => {
-                                    remap_data(remap_table, data_weight, 4, |chunk| {
-                                        [
-                                            chunk[0] as AiReal / 255.0,
-                                            chunk[1] as AiReal / 255.0,
-                                            chunk[2] as AiReal / 255.0,
-                                            chunk[3] as AiReal / 255.0,
-                                        ]
-                                    })
+                                    let data_weight: Vec<[u8; 4]> =
+                                        acc_weight.extract_data(buffer_data, remap_table).map_err(
+                                            |err| AiReadError::FileFormatError(Box::new(err)),
+                                        )?;
+
+                                    data_weight
+                                        .iter()
+                                        .map(|chunk| {
+                                            [
+                                                chunk[0] as AiReal / 255.0,
+                                                chunk[1] as AiReal / 255.0,
+                                                chunk[2] as AiReal / 255.0,
+                                                chunk[3] as AiReal / 255.0,
+                                            ]
+                                        })
+                                        .collect()
                                 }
                                 gltf::accessor::DataType::U16 => {
-                                    remap_data(remap_table, data_weight, 8, |chunk| {
-                                        [
-                                            u16::from_le_bytes([chunk[0], chunk[1]]) as AiReal
-                                                / 65535.0,
-                                            u16::from_le_bytes([chunk[2], chunk[3]]) as AiReal
-                                                / 65535.0,
-                                            u16::from_le_bytes([chunk[4], chunk[5]]) as AiReal
-                                                / 65535.0,
-                                            u16::from_le_bytes([chunk[6], chunk[7]]) as AiReal
-                                                / 65535.0,
-                                        ]
-                                    })
+                                    let data_weight: Vec<[u8; 4]> =
+                                        acc_weight.extract_data(buffer_data, remap_table).map_err(
+                                            |err| AiReadError::FileFormatError(Box::new(err)),
+                                        )?;
+
+                                    data_weight
+                                        .iter()
+                                        .map(|chunk| {
+                                            [
+                                                chunk[0] as AiReal / 65535.0,
+                                                chunk[1] as AiReal / 65535.0,
+                                                chunk[2] as AiReal / 65535.0,
+                                                chunk[3] as AiReal / 65535.0,
+                                            ]
+                                        })
+                                        .collect()
                                 }
                                 gltf::accessor::DataType::F32 => {
-                                    remap_data(remap_table, data_weight, 16, |chunk| {
-                                        [
-                                            f32::from_le_bytes([
-                                                chunk[0], chunk[1], chunk[2], chunk[3],
-                                            ])
-                                                as AiReal,
-                                            f32::from_le_bytes([
-                                                chunk[4], chunk[5], chunk[6], chunk[7],
-                                            ])
-                                                as AiReal,
-                                            f32::from_le_bytes([
-                                                chunk[8], chunk[9], chunk[10], chunk[11],
-                                            ])
-                                                as AiReal,
-                                            f32::from_le_bytes([
-                                                chunk[12], chunk[13], chunk[14], chunk[15],
-                                            ])
-                                                as AiReal,
-                                        ]
-                                    })
+                                    let data_weight: Vec<[f32; 4]> =
+                                        acc_weight.extract_data(buffer_data, remap_table).map_err(
+                                            |err| AiReadError::FileFormatError(Box::new(err)),
+                                        )?;
+
+                                    data_weight
+                                        .iter()
+                                        .map(|chunk| {
+                                            [
+                                                chunk[0] as AiReal,
+                                                chunk[1] as AiReal,
+                                                chunk[2] as AiReal,
+                                                chunk[3] as AiReal,
+                                            ]
+                                        })
+                                        .collect()
                                 }
                                 _ => {
                                     continue;
@@ -281,7 +318,11 @@ fn import_node<'a>(
                             .name()
                             .unwrap_or(format!("{}{}", "bone_", i).as_str())
                             .to_string();
-                        ai_bone.offset_matrix = joint.transform().matrix().map(|x| x.map(|y| y as AiReal)).into();
+                        ai_bone.offset_matrix = joint
+                            .transform()
+                            .matrix()
+                            .map(|x| x.map(|y| y as AiReal))
+                            .into();
                         if let Some(bind_matrix) = &bind_matrices {
                             ai_bone.offset_matrix = bind_matrix[i].clone();
                         }
@@ -339,7 +380,9 @@ fn handle_extensions(ai_node: &mut AiNode, node: &gltf::Node<'_>) {
                     Some(AiMetadataEntry::AiU64(num))
                 } else if let Some(num2) = number.as_i64() {
                     Some(AiMetadataEntry::AiI64(num2))
-                } else { number.as_f64().map(AiMetadataEntry::AiF64) }
+                } else {
+                    number.as_f64().map(AiMetadataEntry::AiF64)
+                }
             }
             Value::String(str) => Some(AiMetadataEntry::AiStr(str.to_string())),
             Value::Array(_) => None,

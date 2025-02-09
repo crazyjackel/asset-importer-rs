@@ -9,7 +9,7 @@ use crate::{
         importer::AiImporter,
         importer_desc::{AiImporterDesc, AiImporterFlags},
     },
-    structs::scene::{AiScene, AiSceneFlag},
+    structs::{scene::{AiScene, AiSceneFlag}, AiMaterial},
 };
 
 #[derive(Debug)]
@@ -87,8 +87,10 @@ impl AiImport for Gltf2Importer {
         let (embedded_textures, embedded_tex_ids) =
             Gltf2Importer::import_embedded_textures(&document, Some(base), &buffer_data)?;
         //import materials
-        let embedded_materials =
+        let mut embedded_materials =
             Gltf2Importer::import_embedded_materials(&document, &embedded_tex_ids)?;
+        //add default material
+        embedded_materials.push(AiMaterial::default());
         //import meshes
         let (mut meshes, mesh_offsets, remapping_tables) =
             Gltf2Importer::import_meshes(&document, &buffer_data, embedded_materials.len() - 1)?;
@@ -178,3 +180,16 @@ fn test_read_file_rigged(){
     assert_eq!(scene.name, "");
 }
 
+#[test]
+fn test_read_file_primitive(){
+
+    let binding = std::env::current_dir().expect("Failed to get the current executable path");
+    let mut exe_path = binding.join("tests").join("model").join("primitive_modes");
+    exe_path.push("MeshPrimitiveModes.gltf");
+    let path = exe_path.as_path();
+
+    let importer = Gltf2Importer;
+    let mut ai_importer = AiImporter::default();
+    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    assert_eq!(scene.name, "");
+}

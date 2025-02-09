@@ -1,17 +1,35 @@
+use bytemuck::Pod;
 use gltf::{buffer, Document, Mesh, Semantic};
 
-use crate::{core::error::AiReadError, structs::{base_types::AiReal, AiAnimMesh, AiColor4D, AiMesh, AiPrimitiveType, AiVector3D, AI_MAX_NUMBER_OF_COLORS_SETS, AI_MAX_NUMBER_OF_TEXTURECOORDS}};
+use crate::{
+    core::error::AiReadError,
+    structs::{
+        base_types::AiReal, AiAnimMesh, AiColor4D, AiMesh, AiPrimitiveType, AiVector3D,
+        AI_MAX_NUMBER_OF_COLORS_SETS, AI_MAX_NUMBER_OF_TEXTURECOORDS,
+    },
+};
 
 use super::{gltf2_error::Gtlf2Error, gltf2_importer::Gltf2Importer};
 
-pub(crate) trait GetPointer {
-    fn get_pointer(&self, buffers: &[buffer::Data]) -> Result<Vec<u8>, Gtlf2Error>;
+pub(crate) trait ExtractData {
+    fn extract_data<T>(
+        &self,
+        buffers: &[buffer::Data],
+        vertex_remapping_table: Option<&Vec<usize>>,
+    ) -> Result<Vec<T>, Gtlf2Error>
+    where
+        T: Sized + Default + Pod;
 }
 
-impl GetPointer for gltf::Accessor<'_> {
-    fn get_pointer(&self, buffers: &[buffer::Data]) -> Result<Vec<u8>, Gtlf2Error> {
-        //Get Base Result
-        //Result is guarenteed to have a length of size * count
+impl ExtractData for gltf::Accessor<'_> {
+    fn extract_data<T>(
+        &self,
+        buffers: &[buffer::Data],
+        remapping_indices: Option<&Vec<usize>>,
+    ) -> Result<Vec<T>, Gtlf2Error>
+    where
+        T: Sized + Default + Pod,
+    {
         let mut result = if let Some(view) = self.view() {
             //Load Accessor Buffer
             let data_index = view.buffer().index();
@@ -19,43 +37,50 @@ impl GetPointer for gltf::Accessor<'_> {
                 .get(data_index)
                 .ok_or(Gtlf2Error::MissingBufferData)?;
 
+            let elem_size = self.size(); //how large each element is
+            let count = self.count(); //how many elements there is
+            let stride = view.stride().unwrap_or(elem_size); //how many bytes to move to get the next element
+
+            let target_elem_size = size_of::<T>();
 
             let start_index = self.offset() + view.offset();
-            let count = self.count(); //how many elements there is
-            let size = self.size(); //how large each element is
-            let stride = view.stride().unwrap_or(size); //how many bytes to move to get the next element
-
-            assert!(count * stride <= view.length());
-
             let end_index = start_index + (count * stride);
             if end_index > data.len() {
                 return Err(Gtlf2Error::ExceedsBounds);
             }
+            let data_slice = &data[start_index..end_index];
 
             //Copy Data into Result
-            let mut result = Vec::with_capacity(count * size);
-            let sliced = &data[start_index..end_index];
-            if stride == size{
-                result.extend_from_slice(sliced);
-            }else{
-                for i in 0..count{
+            let mut result = Vec::with_capacity(count);
+            if let Some(remap) = remapping_indices {
+                for src_index in remap {
+                    if src_index >= &count {
+                        return Err(Gtlf2Error::ExceedsBounds);
+                    }
+                    let start = src_index * stride;
+                    let end = start + elem_size;
+                    let element = bytemuck::from_bytes::<T>(&data_slice[start..end]);
+                    result.push(*element);
+                }
+            } else if stride == elem_size && target_elem_size == elem_size {
+                result.extend_from_slice(bytemuck::cast_slice::<u8, T>(data_slice));
+            } else {
+                for i in 0..count {
                     let start = i * stride;
-                    let end = start + size;
-                    result.extend_from_slice(&sliced[start..end]);
+                    let end = start + elem_size;
+                    let element = bytemuck::from_bytes::<T>(&data_slice[start..end]);
+                    result.push(*element);
                 }
             }
-            
             result
         } else {
             //Early Out as we must be Sparse if we don't have a view
             if self.sparse().is_none() {
                 return Err(Gtlf2Error::BrokenSparseDataAccess);
             }
-            //Fill up size * count with a bunch of zeroes
-            let mut result = Vec::new();
             let count = self.count();
-            let size = self.size();
-            result.resize(count * size, 0u8);
+            let mut result = Vec::with_capacity(count);
+            result.resize(count, T::default());
             result
         };
 
@@ -105,27 +130,86 @@ impl GetPointer for gltf::Accessor<'_> {
             let values = &values_data[values_data_start_index..values_data_end_index]; //Should be values_data_size * sparse.count() length
 
             //Replace Indices/Values in result
-            for (i, sparse_index) in sparse_indices.iter().enumerate(){
-                let index = values_data_size * sparse_index; //Map Index for Packed Data to Index for Unpacked Data
+            for (i, sparse_index) in sparse_indices.iter().enumerate() {
+                // let index = values_data_size * sparse_index; //Map Index for Packed Data to Index for Unpacked Data
 
                 //Get Value
                 let start_index = values_data_size * i;
                 let end_index = start_index + values_data_size;
                 let value = &values[start_index..end_index]; //Get the next values_data_size from i
 
-                result[index..index + values_data_size].copy_from_slice(value);
+                result[*sparse_index] = *bytemuck::from_bytes::<T>(value);
             }
         }
+
         Ok(result)
     }
 }
 
-impl Gltf2Importer{
-    pub(crate)  fn import_meshes<'a>(
+pub(crate) trait GetPointer {
+    fn get_pointer(&self, buffers: &[buffer::Data]) -> Result<Vec<u8>, Gtlf2Error>;
+}
+
+impl GetPointer for gltf::Accessor<'_> {
+    fn get_pointer(&self, buffers: &[buffer::Data]) -> Result<Vec<u8>, Gtlf2Error> {
+        //Get Base Result
+        //Result is guarenteed to have a length of size * count
+        let mut result = if let Some(view) = self.view() {
+            //Load Accessor Buffer
+            let data_index = view.buffer().index();
+            let data = buffers
+                .get(data_index)
+                .ok_or(Gtlf2Error::MissingBufferData)?;
+
+            let start_index = self.offset() + view.offset();
+            let count = self.count(); //how many elements there is
+            let size = self.size(); //how large each element is
+            let stride = view.stride().unwrap_or(size); //how many bytes to move to get the next element
+
+            assert!(count * stride <= view.length());
+
+            let end_index = start_index + (count * stride);
+            if end_index > data.len() {
+                return Err(Gtlf2Error::ExceedsBounds);
+            }
+
+            //Copy Data into Result
+            let mut result = Vec::with_capacity(count * size);
+            let sliced = &data[start_index..end_index];
+            if stride == size {
+                result.extend_from_slice(sliced);
+            } else {
+                for i in 0..count {
+                    let start = i * stride;
+                    let end = start + size;
+                    result.extend_from_slice(&sliced[start..end]);
+                }
+            }
+
+            result
+        } else {
+            //Early Out as we must be Sparse if we don't have a view
+            if self.sparse().is_none() {
+                return Err(Gtlf2Error::BrokenSparseDataAccess);
+            }
+            //Fill up size * count with a bunch of zeroes
+            let mut result = Vec::new();
+            let count = self.count();
+            let size = self.size();
+            result.resize(count * size, 0u8);
+            result
+        };
+
+        Ok(result)
+    }
+}
+
+impl Gltf2Importer {
+    pub(crate) fn import_meshes<'a>(
         document: &'a Document,
         buffer_data: &'a [buffer::Data],
-        last_material_index: usize
-    ) -> Result<(Vec<AiMesh>, Vec<u32>, Vec<Vec<u32>>), AiReadError> {
+        last_material_index: usize,
+    ) -> Result<(Vec<AiMesh>, Vec<u32>, Vec<Vec<usize>>), AiReadError> {
         let asset_meshes: Vec<Mesh<'_>> = document.meshes().collect();
 
         //Maps Document Mesh Index to Offset. Lets us add all primitives to a Node as Meshes
@@ -139,7 +223,7 @@ impl Gltf2Importer{
         mesh_offsets.push(cumulative_meshes); // add a last element so we can always do mesh_offsets[n+1] - mesh_offsets[n]
 
         let mut meshes: Vec<AiMesh> = Vec::new(); //Final Meshes to return
-        let mut vertex_remapping_tables: Vec<Vec<u32>> = Vec::new(); //For Each Mesh, how do we remap their indices. Is needed when building Nodes
+        let mut vertex_remapping_tables: Vec<Vec<usize>> = Vec::new(); //For Each Mesh, how do we remap their indices. Is needed when building Nodes
 
         let mut reverse_mapping_indices: Vec<u32> = Vec::new(); //Indices
         let mut index_buffer: Vec<usize> = Vec::new(); //Maps vertices back to original indices.
@@ -158,7 +242,7 @@ impl Gltf2Importer{
 
                 //If Primitive has Indices, build up a Remapping Table
                 let mut use_index_buffer = false;
-                let mut vertex_remapping_table: Option<&Vec<u32>> = None;
+                let mut vertex_remapping_table: Option<&Vec<usize>> = None;
                 if let Some(indices) = primitive.indices() {
                     use_index_buffer = true; //used to remember if we did this or not
                     let count = indices.count();
@@ -166,7 +250,7 @@ impl Gltf2Importer{
                     //recycle data structures
                     index_buffer.resize(count, 0);
                     reverse_mapping_indices.clear();
-                    
+
                     let vertex_remap_table = &mut vertex_remapping_tables[meshes.len()];
                     vertex_remap_table.reserve(count / 3);
 
@@ -174,14 +258,20 @@ impl Gltf2Importer{
                         .get_pointer(buffer_data)
                         .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?; //Returns bytes equal with length equal to indices.count() * size
 
-                    let index_data: Vec<u32> = match indices.data_type(){
-                        gltf::accessor::DataType::I8 | gltf::accessor::DataType::U8 => index_data.into_iter().map(|x| x as u32).collect(),
-                        gltf::accessor::DataType::I16 | gltf::accessor::DataType::U16 => index_data.chunks_exact(2).map(|chunk|{
-                            u16::from_le_bytes([chunk[0],chunk[1]]) as u32
-                        }).collect(),
-                        gltf::accessor::DataType::U32 | gltf::accessor::DataType::F32 => index_data.chunks_exact(4).map(|chunk|{
-                            u32::from_le_bytes([chunk[0],chunk[1],chunk[2],chunk[3]])
-                        }).collect(),
+                    let index_data: Vec<u32> = match indices.data_type() {
+                        gltf::accessor::DataType::I8 | gltf::accessor::DataType::U8 => {
+                            index_data.into_iter().map(|x| x as u32).collect()
+                        }
+                        gltf::accessor::DataType::I16 | gltf::accessor::DataType::U16 => index_data
+                            .chunks_exact(2)
+                            .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]) as u32)
+                            .collect(),
+                        gltf::accessor::DataType::U32 | gltf::accessor::DataType::F32 => index_data
+                            .chunks_exact(4)
+                            .map(|chunk| {
+                                u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]])
+                            })
+                            .collect(),
                     };
 
                     for i in 0..count {
@@ -196,7 +286,7 @@ impl Gltf2Importer{
                         }
                         if reverse_mapping_indices[index_usize] == u32::MAX {
                             reverse_mapping_indices[index_usize] = vertex_remap_table.len() as u32;
-                            vertex_remap_table.push(index);
+                            vertex_remap_table.push(index_usize);
                         }
                         index_buffer[i] = reverse_mapping_indices[index_usize] as usize;
                     }
@@ -204,14 +294,14 @@ impl Gltf2Importer{
                 }
 
                 //Construct Mesh
-                let mut ai_mesh = AiMesh{
+                let mut ai_mesh = AiMesh {
                     name: mesh
                         .name()
                         .map(|x| x.to_string())
                         .unwrap_or(mesh.index().to_string()),
                     ..AiMesh::default()
                 };
-                
+
                 if mesh.primitives().len() > 1 {
                     ai_mesh.name = format!("{}-{}", ai_mesh.name, p);
                 }
@@ -235,198 +325,275 @@ impl Gltf2Importer{
                 if let Some((_, attr_position)) =
                     primitive.attributes().find(|x| x.0 == Semantic::Positions)
                 {
-                    //Position Accessor must be VEC3 of type float (f32), thus they must chunk by 3 * 4 = 12
-                    let data = attr_position
-                        .get_pointer(buffer_data)
+                    let data: Vec<[f32; 3]> = attr_position
+                        .extract_data(buffer_data, vertex_remapping_table)
                         .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
-
-                    debug_assert!(
-                        data.len()  == attr_position.count() * 12, 
-                        "Position Accessor must be VEC3 of type float (f32), the resultant pointer should therefore always be 12x as big");
-
-                    ai_mesh.vertices = remap_data(vertex_remapping_table, data, 12, |chunk|{                 
-                        let x = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal;
-                        let y = f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]]) as AiReal;
-                        let z = f32::from_le_bytes([chunk[8], chunk[9], chunk[10], chunk[11]]) as AiReal;
-                        AiVector3D::new(x, y, z)
-                    });
+                    ai_mesh.vertices = data
+                        .iter()
+                        .map(|x| AiVector3D::new(x[0] as AiReal, x[1] as AiReal, x[2] as AiReal))
+                        .collect();
                 }
-                
+
                 //Handle Normals, Tangents, and Bitangents
                 let mut tangent_weights: Vec<AiReal> = Vec::new();
-                if let Some((_,attr_normals)) = primitive.attributes().find(|x: &(Semantic, gltf::Accessor<'_>)| x.0 == Semantic::Normals){
-                    if attr_normals.count() != num_all_vertices{
+                if let Some((_, attr_normals)) = primitive
+                    .attributes()
+                    .find(|x: &(Semantic, gltf::Accessor<'_>)| x.0 == Semantic::Normals)
+                {
+                    if attr_normals.count() != num_all_vertices {
                         println!("Normal count in mesh \"{}\" does not match the vertex count, normals ignored.", ai_mesh.name);
-                    }
-                    else{
-                        let data = attr_normals
-                            .get_pointer(buffer_data)
+                    } else {
+                        let data: Vec<[f32; 3]> = attr_normals
+                            .extract_data(buffer_data, vertex_remapping_table)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
-
-                        debug_assert!(
-                        data.len()  == attr_normals.count() * 12, 
-                        "Normal Accessor must be VEC3 of type float (f32), the resultant pointer should therefore always be 12x as big");
-
-                        //Get Vertices
-                        ai_mesh.normals = remap_data(vertex_remapping_table, data, 12, |chunk|{              
-                            let x = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal;
-                            let y = f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]]) as AiReal;
-                            let z = f32::from_le_bytes([chunk[8], chunk[9], chunk[10], chunk[11]]) as AiReal;
-                            AiVector3D::new(x, y, z)
-                        });
-
+                        ai_mesh.normals = data
+                            .iter()
+                            .map(|x| {
+                                AiVector3D::new(x[0] as AiReal, x[1] as AiReal, x[2] as AiReal)
+                            })
+                            .collect();
 
                         // only extract tangents if normals are present
-                        if let Some((_,attr_tangents)) = primitive.attributes().find(|x: &(Semantic, gltf::Accessor<'_>)| x.0 == Semantic::Tangents){
-                            if attr_tangents.count() != num_all_vertices{
+                        if let Some((_, attr_tangents)) = primitive
+                            .attributes()
+                            .find(|x: &(Semantic, gltf::Accessor<'_>)| x.0 == Semantic::Tangents)
+                        {
+                            if attr_tangents.count() != num_all_vertices {
                                 println!("Tangent count in mesh \"{}\" does not match the vertex count, tangents ignored.", ai_mesh.name);
-                            }else{
-                                let data = attr_tangents
-                                    .get_pointer(buffer_data)
+                            } else {
+                                let data: Vec<[f32; 4]> = attr_tangents
+                                    .extract_data(buffer_data, vertex_remapping_table)
                                     .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
-                                debug_assert!(
-                                    data.len() == attr_normals.count() * 16, 
-                                    "Normal Accessor must be VEC4 of type float (f32), the resultant pointer should therefore always be 16x as big");
-
-                                let tangents = remap_data(vertex_remapping_table, data, 16, |chunk|{              
-                                    let x = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal;
-                                    let y = f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]]) as AiReal;
-                                    let z = f32::from_le_bytes([chunk[8], chunk[9], chunk[10], chunk[11]]) as AiReal;
-                                    let w = f32::from_le_bytes([chunk[12], chunk[13], chunk[14], chunk[15]]) as AiReal;
-                                    (x,y,z,w)
-                                });
-
-                                ai_mesh.tangents.resize(tangents.len(), AiVector3D::default());
-                                ai_mesh.bi_tangents.resize(tangents.len(), AiVector3D::default());
-                                for (i, tangent) in tangents.iter().enumerate(){
-                                    let (x,y,z,w) = *tangent;
+                                ai_mesh.tangents.resize(data.len(), AiVector3D::default());
+                                ai_mesh
+                                    .bi_tangents
+                                    .resize(data.len(), AiVector3D::default());
+                                for (i, tangent) in data.iter().enumerate() {
+                                    let x = tangent[0];
+                                    let y = tangent[1];
+                                    let z = tangent[2];
+                                    let w = tangent[3];
                                     ai_mesh.tangents[i] = AiVector3D::new(x, y, z);
-                                    ai_mesh.bi_tangents[i] = (ai_mesh.normals[i] ^ AiVector3D::new(x, y, z)) * w;
+                                    ai_mesh.bi_tangents[i] =
+                                        (ai_mesh.normals[i] ^ AiVector3D::new(x, y, z)) * w;
                                     tangent_weights.push(w);
                                 }
                             }
                         }
-                    
                     }
                 }
 
                 //Handle Colors
-                let colors : Vec<(gltf::Accessor<'_>, u32)> = primitive.attributes().filter_map(|x| match x.0 {
-                    Semantic::Colors(n) if n < AI_MAX_NUMBER_OF_COLORS_SETS as u32 => Some((x.1, n)),
-                    _ => None
-                }).collect();
-                for (attr_color, index) in colors{
-                    let data = attr_color
-                        .get_pointer(buffer_data)
-                        .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
-
-                    ai_mesh.colors[index as usize] = match attr_color.dimensions(){
-                        gltf::accessor::Dimensions::Vec3 => match attr_color.data_type(){
-                            gltf::accessor::DataType::U8 => Some(remap_data(vertex_remapping_table, data, 3, |chunk|{
-                                AiColor4D::new(chunk[0] as f32 / 255.0, chunk[1] as f32 / 255.0, chunk[2] as f32 / 255.0, 1.0)
-                            })),
-                            gltf::accessor::DataType::U16 => Some(remap_data(vertex_remapping_table, data, 6, |chunk|{
-                                let r = u16::from_le_bytes([chunk[0], chunk[1]]);
-                                let g = u16::from_le_bytes([chunk[2], chunk[3]]);
-                                let b = u16::from_le_bytes([chunk[4], chunk[5]]);
-                                AiColor4D::new(r as f32 / 65535.0, g as f32 / 65535.0, b as f32 / 65535.0, 1.0)
-                            })),
-                            gltf::accessor::DataType::F32 => Some(remap_data(vertex_remapping_table, data, 12, |chunk|{
-                                let r = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
-                                let g = f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]]);
-                                let b = f32::from_le_bytes([chunk[8], chunk[9], chunk[10], chunk[11]]);
-                                AiColor4D::new(r,g,b, 1.0)
-                            })),
-                            _ => None
+                let colors: Vec<(gltf::Accessor<'_>, u32)> = primitive
+                    .attributes()
+                    .filter_map(|x| match x.0 {
+                        Semantic::Colors(n) if n < AI_MAX_NUMBER_OF_COLORS_SETS as u32 => {
+                            Some((x.1, n))
+                        }
+                        _ => None,
+                    })
+                    .collect();
+                for (attr_color, index) in colors {
+                    ai_mesh.colors[index as usize] = match attr_color.dimensions() {
+                        gltf::accessor::Dimensions::Vec3 => match attr_color.data_type() {
+                            gltf::accessor::DataType::U8 => {
+                                let data: Vec<[u8; 3]> = attr_color
+                                    .extract_data(buffer_data, vertex_remapping_table)
+                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                Some(
+                                    data.iter()
+                                        .map(|chunk| {
+                                            AiColor4D::new(
+                                                chunk[0] as f32 / 255.0,
+                                                chunk[1] as f32 / 255.0,
+                                                chunk[2] as f32 / 255.0,
+                                                1.0,
+                                            )
+                                        })
+                                        .collect(),
+                                )
+                            }
+                            gltf::accessor::DataType::U16 => {
+                                let data: Vec<[u16; 3]> = attr_color
+                                    .extract_data(buffer_data, vertex_remapping_table)
+                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                Some(
+                                    data.iter()
+                                        .map(|chunk| {
+                                            AiColor4D::new(
+                                                chunk[0] as f32 / 65535.0,
+                                                chunk[1] as f32 / 65535.0,
+                                                chunk[2] as f32 / 65535.0,
+                                                1.0,
+                                            )
+                                        })
+                                        .collect(),
+                                )
+                            }
+                            gltf::accessor::DataType::F32 => {
+                                let data: Vec<[f32; 3]> = attr_color
+                                    .extract_data(buffer_data, vertex_remapping_table)
+                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                Some(
+                                    data.iter()
+                                        .map(|chunk| {
+                                            AiColor4D::new(chunk[0], chunk[1], chunk[2], 1.0)
+                                        })
+                                        .collect(),
+                                )
+                            }
+                            _ => None,
                         },
-                        gltf::accessor::Dimensions::Vec4 => match attr_color.data_type(){
-                            gltf::accessor::DataType::U8 => Some(remap_data(vertex_remapping_table, data, 4, |chunk|{
-                                AiColor4D::new(chunk[0] as f32 / 255.0, chunk[1] as f32 / 255.0, chunk[2] as f32 / 255.0, chunk[3] as f32 / 255.0)
-                            })),
-                            gltf::accessor::DataType::U16 => Some(remap_data(vertex_remapping_table, data, 8, |chunk|{
-                                let r = u16::from_le_bytes([chunk[0], chunk[1]]);
-                                let g = u16::from_le_bytes([chunk[2], chunk[3]]);
-                                let b = u16::from_le_bytes([chunk[4], chunk[5]]);
-                                let a = u16::from_le_bytes([chunk[6], chunk[7]]);
-                                AiColor4D::new(r as f32 / 65535.0, g as f32 / 65535.0, b as f32 / 65535.0, a as f32 / 65535.0)
-                            })),
-                            gltf::accessor::DataType::F32 => Some(remap_data(vertex_remapping_table, data, 16, |chunk|{
-                                let r = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
-                                let g = f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]]);
-                                let b = f32::from_le_bytes([chunk[8], chunk[9], chunk[10], chunk[11]]);
-                                let a = f32::from_le_bytes([chunk[12], chunk[13], chunk[14], chunk[15]]);
-                                AiColor4D::new(r,g,b, a)
-                            })),
-                            _ => None
+                        gltf::accessor::Dimensions::Vec4 => match attr_color.data_type() {
+                            gltf::accessor::DataType::U8 => {
+                                let data: Vec<[u8; 4]> = attr_color
+                                    .extract_data(buffer_data, vertex_remapping_table)
+                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                Some(
+                                    data.iter()
+                                        .map(|chunk| {
+                                            AiColor4D::new(
+                                                chunk[0] as f32 / 255.0,
+                                                chunk[1] as f32 / 255.0,
+                                                chunk[2] as f32 / 255.0,
+                                                chunk[3] as f32 / 255.0,
+                                            )
+                                        })
+                                        .collect(),
+                                )
+                            }
+                            gltf::accessor::DataType::U16 => {
+                                let data: Vec<[u16; 4]> = attr_color
+                                    .extract_data(buffer_data, vertex_remapping_table)
+                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                Some(
+                                    data.iter()
+                                        .map(|chunk| {
+                                            AiColor4D::new(
+                                                chunk[0] as f32 / 65535.0,
+                                                chunk[1] as f32 / 65535.0,
+                                                chunk[2] as f32 / 65535.0,
+                                                chunk[3] as f32 / 65535.0,
+                                            )
+                                        })
+                                        .collect(),
+                                )
+                            }
+                            gltf::accessor::DataType::F32 => {
+                                let data: Vec<[f32; 4]> = attr_color
+                                    .extract_data(buffer_data, vertex_remapping_table)
+                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                Some(
+                                    data.iter()
+                                        .map(|chunk| {
+                                            AiColor4D::new(chunk[0], chunk[1], chunk[2], chunk[3])
+                                        })
+                                        .collect(),
+                                )
+                            }
+                            _ => None,
                         },
-                        _ => None
+                        _ => None,
                     }
                 }
-                
-                //Handle Textures
-                let texcoords : Vec<(gltf::Accessor<'_>, u32)> = primitive.attributes().filter_map(|x| match x.0 {
-                    Semantic::TexCoords(n) if n < AI_MAX_NUMBER_OF_TEXTURECOORDS as u32 => Some((x.1, n)),
-                    _ => None
-                }).collect();
-                for (attr_texcoords, index) in texcoords{
-                    let data = attr_texcoords
-                        .get_pointer(buffer_data)
-                        .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
-                    ai_mesh.texture_coords[index as usize] = match attr_texcoords.data_type(){
-                        gltf::accessor::DataType::U8 => Some(remap_data(vertex_remapping_table, data, 2, |chunk|{
-                            let u = (chunk[0] as f32 / 255.0) as AiReal;
-                            let v = (1.0 - (chunk[1] as f32 / 255.0)) as AiReal;
-                            AiVector3D::new(u, v, 0.0)
-                        })),
-                        gltf::accessor::DataType::U16 => Some(remap_data(vertex_remapping_table, data, 4, |chunk|{
-                            let u = (u16::from_le_bytes([chunk[0], chunk[1]])as f32 / 65535.0) as AiReal;
-                            let v = 1.0 - (u16::from_le_bytes([chunk[2], chunk[3]])as f32 / 65535.0) as AiReal;
-                            AiVector3D::new(u, v, 0.0)
-                        })),
-                        gltf::accessor::DataType::F32 => Some(remap_data(vertex_remapping_table, data, 8, |chunk|{
-                            let u = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal;
-                            let v = 1.0 - f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]]) as AiReal;
-                            AiVector3D::new(u, v, 0.0)
-                        })),
-                        _ => None
+                //Handle Textures
+                let texcoords: Vec<(gltf::Accessor<'_>, u32)> = primitive
+                    .attributes()
+                    .filter_map(|x| match x.0 {
+                        Semantic::TexCoords(n) if n < AI_MAX_NUMBER_OF_TEXTURECOORDS as u32 => {
+                            Some((x.1, n))
+                        }
+                        _ => None,
+                    })
+                    .collect();
+                for (attr_texcoords, index) in texcoords {
+                    ai_mesh.texture_coords[index as usize] = match attr_texcoords.data_type() {
+                        gltf::accessor::DataType::U8 => {
+                            let data: Vec<[u8; 2]> = attr_texcoords
+                                .extract_data(buffer_data, vertex_remapping_table)
+                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            Some(
+                                data.iter()
+                                    .map(|chunk| {
+                                        let u = (chunk[0] as f32 / 255.0) as AiReal;
+                                        let v = (1.0 - (chunk[1] as f32 / 255.0)) as AiReal;
+                                        AiVector3D::new(u, v, 0.0)
+                                    })
+                                    .collect(),
+                            )
+                        }
+                        gltf::accessor::DataType::U16 => {
+                            let data: Vec<[u16; 2]> = attr_texcoords
+                                .extract_data(buffer_data, vertex_remapping_table)
+                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            Some(
+                                data.iter()
+                                    .map(|chunk| {
+                                        let u = (chunk[0] as f32 / 65535.0) as AiReal;
+                                        let v = (1.0 - (chunk[1] as f32 / 65535.0)) as AiReal;
+                                        AiVector3D::new(u, v, 0.0)
+                                    })
+                                    .collect(),
+                            )
+                        }
+                        gltf::accessor::DataType::F32 => {
+                            let data: Vec<[f32; 2]> = attr_texcoords
+                                .extract_data(buffer_data, vertex_remapping_table)
+                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            Some(
+                                data.iter()
+                                    .map(|chunk| {
+                                        let u = chunk[0] as AiReal;
+                                        let v = 1.0 - chunk[1] as AiReal;
+                                        AiVector3D::new(u, v, 0.0)
+                                    })
+                                    .collect(),
+                            )
+                        }
+                        _ => None,
                     };
                 }
 
                 //Handle AnimMeshes
                 //ai_mesh.anim_meshes should be an empty vec here
-                if let Some(weights) = mesh.weights(){
-                    let targets : Vec<gltf::mesh::MorphTarget<'_>> = primitive.morph_targets().collect();
-                    if targets.len() == weights.len(){
-                        for i in 0..targets.len(){
-                            let weight =  weights[i];
+                if let Some(weights) = mesh.weights() {
+                    let targets: Vec<gltf::mesh::MorphTarget<'_>> =
+                        primitive.morph_targets().collect();
+                    if targets.len() == weights.len() {
+                        for i in 0..targets.len() {
+                            let weight = weights[i];
                             let target = &targets[i];
                             //handle name
                             //@todo: names are defined via an extra value in mesh.extra.targetNames, it is safe to go without a name for now.
-                            let mut anim_mesh = 
-                            AiAnimMesh{
+                            let mut anim_mesh = AiAnimMesh {
                                 weight,
                                 ..AiAnimMesh::default()
                             };
 
                             //handle position
-                            if let Some(positions) = target.positions(){
-                                if positions.count() == num_all_vertices{
-                                    let data = positions
-                                        .get_pointer(buffer_data)
-                                        .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            if let Some(positions) = target.positions() {
+                                if positions.count() == num_all_vertices {
+                                    let data: Vec<[f32; 3]> = positions
+                                        .extract_data(buffer_data, vertex_remapping_table)
+                                        .map_err(|err| {
+                                            AiReadError::FileFormatError(Box::new(err))
+                                        })?;
+                                    let offsets: Vec<AiVector3D> = data
+                                        .iter()
+                                        .map(|x| {
+                                            AiVector3D::new(
+                                                x[0] as AiReal,
+                                                x[1] as AiReal,
+                                                x[2] as AiReal,
+                                            )
+                                        })
+                                        .collect();
 
-                                    let offsets = remap_data(vertex_remapping_table, data, 12, |chunk|{                 
-                                        let x = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal;
-                                        let y = f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]]) as AiReal;
-                                        let z = f32::from_le_bytes([chunk[8], chunk[9], chunk[10], chunk[11]]) as AiReal;
-                                        AiVector3D::new(x, y, z)
-                                    });
-
-                                    if offsets.len() == ai_mesh.vertices.len(){
+                                    if offsets.len() == ai_mesh.vertices.len() {
                                         anim_mesh.vertices = ai_mesh.vertices.clone();
-                                        for (i, offset) in offsets.iter().enumerate(){
+                                        for (i, offset) in offsets.iter().enumerate() {
                                             anim_mesh.vertices[i] += *offset;
                                         }
                                     }
@@ -434,49 +601,56 @@ impl Gltf2Importer{
                             }
 
                             //handle normals
-                            if let Some(normals) = target.normals(){
-                                if normals.count() == num_all_vertices{
-                                    let data = normals
-                                    .get_pointer(buffer_data)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            if let Some(normals) = target.normals() {
+                                if normals.count() == num_all_vertices {
+                                    let data: Vec<[f32; 3]> = normals
+                                        .extract_data(buffer_data, vertex_remapping_table)
+                                        .map_err(|err| {
+                                            AiReadError::FileFormatError(Box::new(err))
+                                        })?;
+                                    let offsets: Vec<AiVector3D> = data
+                                        .iter()
+                                        .map(|x| {
+                                            AiVector3D::new(
+                                                x[0] as AiReal,
+                                                x[1] as AiReal,
+                                                x[2] as AiReal,
+                                            )
+                                        })
+                                        .collect();
 
-                                    let offsets = remap_data(vertex_remapping_table, data, 12, |chunk|{              
-                                        let x = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal;
-                                        let y = f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]]) as AiReal;
-                                        let z = f32::from_le_bytes([chunk[8], chunk[9], chunk[10], chunk[11]]) as AiReal;
-                                        AiVector3D::new(x, y, z)
-                                    });
-
-                                    if offsets.len() == ai_mesh.normals.len(){
+                                    if offsets.len() == ai_mesh.normals.len() {
                                         anim_mesh.normals = ai_mesh.normals.clone();
-                                        for (i, offset) in offsets.iter().enumerate(){
+                                        for (i, offset) in offsets.iter().enumerate() {
                                             anim_mesh.normals[i] += *offset;
                                         }
                                     }
                                 }
                             }
                             //handle tangents
-                            if let Some(tangents) = target.tangents(){
-                                if tangents.count() == num_all_vertices && !anim_mesh.normals.is_empty(){
-                                    let offset_data = tangents
-                                        .get_pointer(buffer_data)
-                                        .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            if let Some(tangents) = target.tangents() {
+                                if tangents.count() == num_all_vertices
+                                    && !anim_mesh.normals.is_empty()
+                                {
+                                    let tangents_offsets: Vec<[f32; 3]> = tangents
+                                        .extract_data(buffer_data, vertex_remapping_table)
+                                        .map_err(|err| {
+                                            AiReadError::FileFormatError(Box::new(err))
+                                        })?;
 
-                                    let tangents_offsets= remap_data(vertex_remapping_table, offset_data, 12, |chunk|{              
-                                        let x: AiReal = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal;
-                                        let y: AiReal = f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]]) as AiReal;
-                                        let z: AiReal = f32::from_le_bytes([chunk[8], chunk[9], chunk[10], chunk[11]]) as AiReal;
-                                        (x,y,z)
-                                    });
-
-                                    if tangents_offsets.len() == ai_mesh.tangents.len(){
+                                    if tangents_offsets.len() == ai_mesh.tangents.len() {
                                         anim_mesh.tangents = ai_mesh.tangents.clone();
                                         anim_mesh.bi_tangents = Vec::new();
-                                        anim_mesh.bi_tangents.resize(ai_mesh.tangents.len(), Default::default());
-                                        for i in 0..tangents_offsets.len(){
+                                        anim_mesh
+                                            .bi_tangents
+                                            .resize(ai_mesh.tangents.len(), Default::default());
+                                        for i in 0..tangents_offsets.len() {
                                             let offset = tangents_offsets[i];
-                                            anim_mesh.tangents[i] += AiVector3D::new(offset.0, offset.1, offset.2);
-                                            anim_mesh.bi_tangents[i] = (anim_mesh.normals[i] ^ anim_mesh.tangents[i]) * tangent_weights[i]; //Saved Tangent Weights to prevent need for re-extraction
+                                            anim_mesh.tangents[i] +=
+                                                AiVector3D::new(offset[0] as AiReal, offset[1] as AiReal, offset[2] as AiReal);
+                                            anim_mesh.bi_tangents[i] = (anim_mesh.normals[i]
+                                                ^ anim_mesh.tangents[i])
+                                                * tangent_weights[i]; //Saved Tangent Weights to prevent need for re-extraction
                                         }
                                     }
                                 }
@@ -487,12 +661,12 @@ impl Gltf2Importer{
                 }
 
                 //Handle Faces
-                ai_mesh.faces = if use_index_buffer{
-                    match primitive.mode(){
+                ai_mesh.faces = if use_index_buffer {
+                    match primitive.mode() {
                         gltf::mesh::Mode::Points => {
-                            let mut vec : Vec<Vec<usize>> = Vec::new();
-                            for a in index_buffer.iter(){
-                                if a >= &num_all_vertices{
+                            let mut vec: Vec<Vec<usize>> = Vec::new();
+                            for a in index_buffer.iter() {
+                                if a >= &num_all_vertices {
                                     continue;
                                 }
                                 vec.push(vec![*a]);
@@ -500,153 +674,169 @@ impl Gltf2Importer{
                             vec
                         }
                         gltf::mesh::Mode::Lines => {
-                            let mut vec : Vec<Vec<usize>> = Vec::new();
+                            let mut vec: Vec<Vec<usize>> = Vec::new();
                             for i in 0..(index_buffer.len() / 2) {
-                                let a = index_buffer[2*i];
-                                let b = index_buffer[2*i + 1];
-                                if a >= num_all_vertices || b >= num_all_vertices{
+                                let a = index_buffer[2 * i];
+                                let b = index_buffer[2 * i + 1];
+                                if a >= num_all_vertices || b >= num_all_vertices {
                                     continue;
                                 }
-                                vec.push(vec![a,b]);
+                                vec.push(vec![a, b]);
                             }
                             vec
-                        },
+                        }
                         gltf::mesh::Mode::LineLoop | gltf::mesh::Mode::LineStrip => {
                             //Indices represent a path, in the case of a loop, it comes back around
-                            let mut vec : Vec<Vec<usize>> = Vec::new();
-                            for i in 0..(index_buffer.len()-1){
+                            let mut vec: Vec<Vec<usize>> = Vec::new();
+                            for i in 0..(index_buffer.len() - 1) {
                                 let a = index_buffer[i];
                                 let b = index_buffer[i + 1];
-                                if a >= num_all_vertices || b >= num_all_vertices{
+                                if a >= num_all_vertices || b >= num_all_vertices {
                                     continue;
                                 }
-                                vec.push(vec![a,b]);
+                                vec.push(vec![a, b]);
                             }
-                            if primitive.mode() == gltf::mesh::Mode::LineLoop{
+                            if primitive.mode() == gltf::mesh::Mode::LineLoop {
                                 let a = index_buffer[index_buffer.len() - 1];
                                 let b = index_buffer[0];
-                                if a < num_all_vertices && b < num_all_vertices{
-                                    vec.push(vec![a,b]);    
+                                if a < num_all_vertices && b < num_all_vertices {
+                                    vec.push(vec![a, b]);
                                 }
                             }
                             vec
-                        },
-                        gltf::mesh::Mode::Triangles =>{
-                            let mut vec : Vec<Vec<usize>> = Vec::new();
+                        }
+                        gltf::mesh::Mode::Triangles => {
+                            let mut vec: Vec<Vec<usize>> = Vec::new();
                             for i in 0..(index_buffer.len() / 3) {
-                                let a = index_buffer[3*i];
-                                let b = index_buffer[3*i + 1];
-                                let c = index_buffer[3*i + 2];
-                                if a >= num_all_vertices || b >= num_all_vertices || c >= num_all_vertices{
+                                let a = index_buffer[3 * i];
+                                let b = index_buffer[3 * i + 1];
+                                let c = index_buffer[3 * i + 2];
+                                if a >= num_all_vertices
+                                    || b >= num_all_vertices
+                                    || c >= num_all_vertices
+                                {
                                     continue;
                                 }
-                                vec.push(vec![a,b,c ]);
+                                vec.push(vec![a, b, c]);
                             }
                             vec
                         }
                         gltf::mesh::Mode::TriangleStrip => {
-                            let mut vec : Vec<Vec<usize>> = Vec::new(); //Indices are strips of triangles
-                            for i in 0..(index_buffer.len()-2){
+                            let mut vec: Vec<Vec<usize>> = Vec::new(); //Indices are strips of triangles
+                            for i in 0..(index_buffer.len() - 2) {
                                 if (i + 1) % 2 == 0 {
                                     // For even n, vertices n + 1, n, and n + 2 define triangle n
                                     let a = index_buffer[i];
                                     let b = index_buffer[i + 1];
                                     let c = index_buffer[i + 2];
-                                    if a >= num_all_vertices || b >= num_all_vertices || c >= num_all_vertices{
+                                    if a >= num_all_vertices
+                                        || b >= num_all_vertices
+                                        || c >= num_all_vertices
+                                    {
                                         continue;
                                     }
-                                    vec.push(vec![b,a,c]);
+                                    vec.push(vec![b, a, c]);
                                 } else {
                                     // For odd n, vertices n, n+1, and n+2 define triangle n
                                     let a = index_buffer[i];
                                     let b = index_buffer[i + 1];
                                     let c = index_buffer[i + 2];
-                                    if a >= num_all_vertices || b >= num_all_vertices || c >= num_all_vertices{
+                                    if a >= num_all_vertices
+                                        || b >= num_all_vertices
+                                        || c >= num_all_vertices
+                                    {
                                         continue;
                                     }
-                                    vec.push(vec![a,b,c]);
+                                    vec.push(vec![a, b, c]);
                                 }
                             }
                             vec
-                        },
-                        gltf::mesh::Mode::TriangleFan =>{
-                            let mut vec : Vec<Vec<usize>> = Vec::new();
+                        }
+                        gltf::mesh::Mode::TriangleFan => {
+                            let mut vec: Vec<Vec<usize>> = Vec::new();
                             let a = index_buffer[0];
                             let b = index_buffer[1];
                             let c = index_buffer[2];
-                            if a < num_all_vertices && b < num_all_vertices && c < num_all_vertices{
-                                vec.push(vec![a,b,c]);
-                                for i in 1..(index_buffer.len()-2){
+                            if a < num_all_vertices && b < num_all_vertices && c < num_all_vertices
+                            {
+                                vec.push(vec![a, b, c]);
+                                for i in 1..(index_buffer.len() - 2) {
                                     // For even n, vertices n + 1, n, and n + 2 define triangle n
                                     let d = index_buffer[i + 1];
                                     let e = index_buffer[i + 2];
-                                    if d >= num_all_vertices || e >= num_all_vertices{
+                                    if d >= num_all_vertices || e >= num_all_vertices {
                                         continue;
                                     }
-                                    vec.push(vec![a , d, e ]);
+                                    vec.push(vec![a, d, e]);
                                 }
                             }
                             vec
-                        },
+                        }
                     }
-                }else{
-                    match primitive.mode(){
+                } else {
+                    match primitive.mode() {
                         gltf::mesh::Mode::Points => {
-                            (0..ai_mesh.vertices.len()).map(|x| vec![x]).collect() //Indices represent points
+                            (0..ai_mesh.vertices.len()).map(|x| vec![x]).collect()
+                            //Indices represent points
                         }
                         gltf::mesh::Mode::Lines => {
-                            let mut vec : Vec<Vec<usize>> = Vec::new();
+                            let mut vec: Vec<Vec<usize>> = Vec::new();
                             for i in 0..(ai_mesh.vertices.len() / 2) {
-                                vec.push(vec![2*i,2*i+1]);
+                                vec.push(vec![2 * i, 2 * i + 1]);
                             }
                             vec
-                        },
+                        }
                         gltf::mesh::Mode::LineLoop | gltf::mesh::Mode::LineStrip => {
                             //Indices represent a path, in the case of a loop, it comes back around
-                            let mut vec : Vec<Vec<usize>> = Vec::new();
-                            for i in 0..(ai_mesh.vertices.len()-1){
-                                vec.push(vec![i,i+1]);
+                            let mut vec: Vec<Vec<usize>> = Vec::new();
+                            for i in 0..(ai_mesh.vertices.len() - 1) {
+                                vec.push(vec![i, i + 1]);
                             }
-                            if primitive.mode() == gltf::mesh::Mode::LineLoop{
-                                vec.push(vec![ai_mesh.vertices.len()-1, 0]);
+                            if primitive.mode() == gltf::mesh::Mode::LineLoop {
+                                vec.push(vec![ai_mesh.vertices.len() - 1, 0]);
                             }
                             vec
-                        },
-                        gltf::mesh::Mode::Triangles =>{
-                            let mut vec : Vec<Vec<usize>> = Vec::new();
+                        }
+                        gltf::mesh::Mode::Triangles => {
+                            let mut vec: Vec<Vec<usize>> = Vec::new();
                             for i in 0..(ai_mesh.vertices.len() / 3) {
-                                vec.push(vec![i,i+1,i+2]);
+                                vec.push(vec![i, i + 1, i + 2]);
                             }
                             vec
                         }
                         gltf::mesh::Mode::TriangleStrip => {
-                            let mut vec : Vec<Vec<usize>> = Vec::new(); //Indices are strips of triangles
-                            for i in 0..(ai_mesh.vertices.len()-2){
+                            let mut vec: Vec<Vec<usize>> = Vec::new(); //Indices are strips of triangles
+                            for i in 0..(ai_mesh.vertices.len() - 2) {
                                 if (i + 1) % 2 == 0 {
                                     // For even n, vertices n + 1, n, and n + 2 define triangle n
-                                    vec.push(vec![i+1, i, i+2]);
+                                    vec.push(vec![i + 1, i, i + 2]);
                                 } else {
                                     // For odd n, vertices n, n+1, and n+2 define triangle n
-                                    vec.push(vec![i, i+1, i+2]);
+                                    vec.push(vec![i, i + 1, i + 2]);
                                 }
                             }
                             vec
-                        },
-                        gltf::mesh::Mode::TriangleFan =>{
-                            let mut vec : Vec<Vec<usize>> = Vec::new();
+                        }
+                        gltf::mesh::Mode::TriangleFan => {
+                            let mut vec: Vec<Vec<usize>> = Vec::new();
                             vec.push(vec![index_buffer[0], index_buffer[1], index_buffer[2]]);
-                            for i in 1..(index_buffer.len()-2){
+                            for i in 1..(index_buffer.len() - 2) {
                                 // For even n, vertices n + 1, n, and n + 2 define triangle n
-                                vec.push(vec![index_buffer[0] ,index_buffer[i + 1] , index_buffer[i+2] ]);
+                                vec.push(vec![
+                                    index_buffer[0],
+                                    index_buffer[i + 1],
+                                    index_buffer[i + 2],
+                                ]);
                             }
                             vec
-                        },
+                        }
                     }
                 };
 
                 //Handle Material
-                ai_mesh.material_index = primitive.material().index().unwrap_or(last_material_index) as u32;
-            
+                ai_mesh.material_index =
+                    primitive.material().index().unwrap_or(last_material_index) as u32;
+
                 meshes.push(ai_mesh);
             }
         }
@@ -654,27 +844,27 @@ impl Gltf2Importer{
     }
 }
 
-
-pub(crate) fn remap_data<B,F>(vertex_remapping_table: Option<&Vec<u32>>, data: Vec<u8>, chunk_size: usize, f: F) 
--> Vec<B> where F: FnMut(&[u8]) -> B, B:Clone + Default
-    {
-    let vertices= if let Some(remap) = vertex_remapping_table {
+pub(crate) fn remap_data<B, F>(
+    vertex_remapping_table: Option<&Vec<u32>>,
+    data: Vec<u8>,
+    chunk_size: usize,
+    f: F,
+) -> Vec<B>
+where
+    F: FnMut(&[u8]) -> B,
+    B: Clone + Default,
+{
+    let vertices = if let Some(remap) = vertex_remapping_table {
         //If we have Remap, prepare the vertices and then chunk them in
         let mut vertices: Vec<B> = Vec::new();
         vertices.resize(data.len() / chunk_size, B::default());
-        for (index, chunk) in data
-            .chunks_exact(chunk_size)
-            .map(f)
-            .enumerate()
-        {
+        for (index, chunk) in data.chunks_exact(chunk_size).map(f).enumerate() {
             vertices[remap[index] as usize] = chunk;
         }
         vertices
     } else {
         //Vertices are already sorted, no remap neccessary. Only happens when we have no Indices
-        data.chunks_exact(chunk_size)
-            .map(f)
-            .collect()
+        data.chunks_exact(chunk_size).map(f).collect()
     };
     vertices
 }
