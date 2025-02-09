@@ -152,7 +152,7 @@ fn import_node<'a>(
                     });
                     Some(data)
                 });
-                for primitive_no in 0..(start - end) {
+                for primitive_no in 0..(end - start) {
                     let ai_mesh = &mut meshes[primitive_no + start];
                     let remap_table = remap_table.get(primitive_no + start);
                     let primitive = &asset_primitives[primitive_no];
