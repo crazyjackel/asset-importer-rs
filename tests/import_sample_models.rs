@@ -49,7 +49,10 @@ const SKIP_MINIMAL: [&str; 9] = [
 
     "glTF-Sample-Assets/Models/TextureTransformMultiTest/glTF/TextureTransformMultiTest.gltf", //Requires KHR_texture_transform
     "glTF-Sample-Assets/Models/TextureTransformMultiTest/glTF-Binary/TextureTransformMultiTest.glb",
-    "glTF-Sample-Assets/Models/TextureTransformTest/glTF/TextureTransformTest.gltf"
+    "glTF-Sample-Assets/Models/TextureTransformTest/glTF/TextureTransformTest.gltf",
+    
+    "glTF-Sample-Assets/Models/UnlitTest/glTF/UnlitTest.gltf", //Requires KHR_materials_unlit
+    "glTF-Sample-Assets/Models/UnlitTest/glTF-Binary/UnlitTest.glb"
 ];
 
 fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
