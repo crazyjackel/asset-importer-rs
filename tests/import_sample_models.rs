@@ -15,7 +15,13 @@ const SKIP_FILES: [&str; 2] = [
     "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF-Binary/SheenWoodLeatherSofa.glb",
 ];
 
-fn run() -> Result<(), Box<dyn StdError>> {
+//These files should be skipped when running in minimal mode
+const SKIP_MINIMAL: [&str; 2] = [
+    "glTF-Sample-Assets/Models/DirectionalLight/glTF/DirectionalLight.gltf", //Requires Lights to Import
+    "glTF-Sample-Assets/Models/DirectionalLight/glTF-Binary/DirectionalLight.glb"
+];
+
+fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
     let sample_dir_path = path::Path::new(SAMPLE_MODELS_DIRECTORY_PATH);
     for entry in fs::read_dir(sample_dir_path)? {
         let entry = entry?;
@@ -27,13 +33,14 @@ fn run() -> Result<(), Box<dyn StdError>> {
                 gltf_path.set_extension("gltf");
                 if gltf_path.exists() {
                     let display = format!("{}", gltf_path.display());
-                    if !SKIP_FILES.contains(&display.as_str()) {
+                    if SKIP_FILES.contains(&display.as_str()) || (is_minimal && SKIP_MINIMAL.contains(&display.as_str())){
+                        println!("Skipping {}", display);
+                    }
+                    else{
                         println!("Importing {}", display);
                         let importer = Gltf2Importer;
                         let mut ai_importer = AiImporter::default();
                         let _ = importer.read_file(&mut ai_importer, gltf_path)?;
-                    } else {
-                        println!("Skipping {}", display);
                     }
                 }
 
@@ -42,13 +49,14 @@ fn run() -> Result<(), Box<dyn StdError>> {
                 gle_path.set_extension("gltf");
                 if gle_path.exists() {
                     let display = format!("{}", gle_path.display());
-                    if !SKIP_FILES.contains(&display.as_str()) {
+                    if SKIP_FILES.contains(&display.as_str()) || (is_minimal && SKIP_MINIMAL.contains(&display.as_str())){
+                        println!("Skipping {}", display);
+                    }
+                    else{
                         println!("Importing {}", display);
                         let importer = Gltf2Importer;
                         let mut ai_importer = AiImporter::default();
                         let _ = importer.read_file(&mut ai_importer, gle_path)?;
-                    } else {
-                        println!("Skipping {}", display);
                     }
                 }
 
@@ -57,13 +65,14 @@ fn run() -> Result<(), Box<dyn StdError>> {
                 glb_path.set_extension("glb");
                 if glb_path.exists() {
                     let display = format!("{}", glb_path.display());
-                    if !SKIP_FILES.contains(&display.as_str()) {
+                    if SKIP_FILES.contains(&display.as_str()) || (is_minimal && SKIP_MINIMAL.contains(&display.as_str())){
+                        println!("Skipping {}", display);
+                    }
+                    else{
                         println!("Importing {}", display);
                         let importer = Gltf2Importer;
                         let mut ai_importer = AiImporter::default();
                         let _ = importer.read_file(&mut ai_importer, glb_path)?;
-                    } else {
-                        println!("Skipping {}", display);
                     }
                 }
             }
@@ -74,7 +83,11 @@ fn run() -> Result<(), Box<dyn StdError>> {
 
 #[test]
 fn import_gltf_sample_assets() {
-    if let Err(error) = run() {
+    #[cfg(feature = "minimal")]
+    let is_minimal = true;
+    #[cfg(not(feature = "minimal"))]
+    let is_minimal = false;
+    if let Err(error) = run(is_minimal) {
         let is_ai_error = !error.is::<AiReadError>();
         println!("{}", error);
         assert!(is_ai_error);
