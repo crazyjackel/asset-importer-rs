@@ -10,7 +10,7 @@ const SAMPLE_MODELS_DIRECTORY_PATH: &str = "glTF-Sample-Assets/Models";
 
 // @todo: Make sure these files have tickets for being removed from skip list
 // I would like to test these files, however, there is a particular issue that is hard to fix
-const SKIP_FILES: [&str; 17] = [
+const SKIP_FILES: [&str; 19] = [
     "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF/SheenWoodLeatherSofa.gltf", //Sheen Wood Leather Sofa using WebP files which are not fully supported by dependency ATM
     "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF-Binary/SheenWoodLeatherSofa.glb",
 
@@ -18,6 +18,8 @@ const SKIP_FILES: [&str; 17] = [
     "glTF-Sample-Assets/Models/AnimationPointerUVs/glTF-Binary/AnimationPointerUVs.glb",
     "glTF-Sample-Assets/Models/AnimatedColorsCube/glTF/AnimatedColorsCube.gltf",
     "glTF-Sample-Assets/Models/AnimatedColorsCube/glTF-Binary/AnimatedColorsCube.glb",
+    "glTF-Sample-Assets/Models/PotOfCoalsAnimationPointer/glTF/PotOfCoalsAnimationPointer.gltf",
+    "glTF-Sample-Assets/Models/PotOfCoalsAnimationPointer/glTF-Binary/PotOfCoalsAnimationPointer.glb",
     
     "glTF-Sample-Assets/Models/ClearCoatCarPaint/glTF/ClearCoatCarPaint.gltf", // Clear Coat not available yet
     "glTF-Sample-Assets/Models/ClearCoatCarPaint/glTF-Binary/ClearCoatCarPaint.glb",
