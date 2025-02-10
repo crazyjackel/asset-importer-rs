@@ -1,6 +1,4 @@
-use gltf::{
-    Camera, Document,
-};
+use gltf::{Camera, Document};
 
 use crate::{
     core::error::AiReadError,
@@ -12,12 +10,13 @@ use super::gltf2_importer::Gltf2Importer;
 impl Gltf2Importer {
     pub(crate) fn import_cameras(document: &Document) -> Result<Vec<AiCamera>, AiReadError> {
         let asset_cameras: Vec<Camera<'_>> = document.cameras().collect();
-        let mut cameras: Vec<AiCamera> = Vec::new(); //Final Meshes to return
-        cameras.reserve(asset_cameras.len());
+        let mut cameras: Vec<AiCamera> = Vec::with_capacity(asset_cameras.len());
         for camera in asset_cameras {
-            let mut ai_camera = AiCamera::default();
-            ai_camera.name = camera.name().unwrap_or("").to_string();
-            ai_camera.look_vec = AiVector3D::new(0.0, 0.0, -1.0);
+            let mut ai_camera = AiCamera {
+                name: camera.name().unwrap_or("").to_string(),
+                look_vec: AiVector3D::new(0.0, 0.0, -1.0),
+                ..AiCamera::default()
+            };
             match camera.projection() {
                 gltf::camera::Projection::Orthographic(orthographic) => {
                     ai_camera.aspect_ratio = if orthographic.ymag() == 0.0 {

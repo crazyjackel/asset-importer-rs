@@ -1,24 +1,19 @@
 use super::{
     color::AiColor3D,
-    type_def::AiMathPI_F,
+    type_def::AI_MATH_PI_F,
     vector::{AiVector2D, AiVector3D},
 };
 
 #[repr(u8)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub enum AiLightSourceType {
+    #[default]
     Undefined,
     Directional,
     Point,
     Spot,
     Ambient,
     Area,
-}
-
-impl Default for AiLightSourceType {
-    fn default() -> Self {
-        AiLightSourceType::Undefined
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -53,8 +48,8 @@ impl Default for AiLight {
             diffuse_color: Default::default(),
             specular_color: Default::default(),
             ambient_color: Default::default(),
-            inner_cone_angle: AiMathPI_F,
-            outer_cone_angle: AiMathPI_F,
+            inner_cone_angle: AI_MATH_PI_F,
+            outer_cone_angle: AI_MATH_PI_F,
             size: Default::default(),
         }
     }

@@ -21,7 +21,8 @@ use serde_json::{Number, Value};
 use crate::{
     core::error::AiExportError,
     structs::{
-        base_types::AiReal, scene::AiScene, AiColor4D, AiMatrix4x4, AiPrimitiveType, AiQuaternion, AiVector2D, AiVector3D
+        base_types::AiReal, scene::AiScene, AiColor4D, AiMatrix4x4, AiPrimitiveType, AiQuaternion,
+        AiVector2D, AiVector3D,
     },
 };
 
@@ -40,7 +41,7 @@ impl Gltf2Exporter {
         export_anim_normals: bool,
         //export_skeleton: bool,
     ) -> Result<(), AiExportError> {
-        let create_skin = scene.meshes.iter().any(|x| x.bones.len() > 0);
+        let create_skin = scene.meshes.iter().any(|x| !x.bones.is_empty());
         let mut inverse_bind_matrices_data: Vec<AiMatrix4x4> = Vec::new();
         let mut skin = if create_skin {
             Some(Skin {
@@ -59,7 +60,8 @@ impl Gltf2Exporter {
             let mut attributes: BTreeMap<Checked<Semantic>, Index<Accessor>> = BTreeMap::new();
 
             //handle positions
-            let positions = AccessorExporter::export_vector_3d(root, buffer_data, &ai_mesh.vertices);
+            let positions =
+                AccessorExporter::export_vector_3d(root, buffer_data, &ai_mesh.vertices);
             attributes.insert(Checked::Valid(Semantic::Positions), root.push(positions));
 
             //handle normals
@@ -74,7 +76,11 @@ impl Gltf2Exporter {
             let tangents = AccessorExporter::export_quaternion(
                 root,
                 buffer_data,
-                &ai_mesh.tangents.iter().map(|x| x.norm().to_quat(1.0)).collect(),
+                &ai_mesh
+                    .tangents
+                    .iter()
+                    .map(|x| x.norm().to_quat(1.0))
+                    .collect(),
             );
             attributes.insert(Checked::Valid(Semantic::Tangents), root.push(tangents));
 
@@ -120,7 +126,7 @@ impl Gltf2Exporter {
             }
 
             //handle indices
-            let indices = if ai_mesh.faces.len() > 0 {
+            let indices = if !ai_mesh.faces.is_empty() {
                 let mut indices: Vec<u32> = Vec::new();
                 let n_indices_per_face: u32 = ai_mesh.faces[0].len() as u32;
                 indices.resize(ai_mesh.faces.len() * n_indices_per_face as usize, 0);
@@ -148,16 +154,16 @@ impl Gltf2Exporter {
 
             //handle skin
             if let Some(ref mut skin) = skin {
-                if ai_mesh.bones.len() > 0 {
+                if !ai_mesh.bones.is_empty() {
                     let num_verts = ai_mesh.vertices.len();
-                    let mut all_vertices_pairs: Vec<Vec<(usize, f32)>> = Vec::new();
+                    let mut all_vertices_pairs: Vec<Vec<(usize, AiReal)>> = Vec::new();
                     let mut joints_per_vertex: Vec<u32> = Vec::new();
                     let mut max_joint_per_vertex: u32 = 0;
                     joints_per_vertex.resize(num_verts, 0);
                     all_vertices_pairs.resize(num_verts, Vec::new());
                     for bone in &ai_mesh.bones {
                         //We do this Check to make sure nodes exist and to potentially get validate node names once GLTF-RS supports Node Names
-                        if let Some(_) = root.nodes.get(bone.node_index) {
+                        if root.nodes.get(bone.node_index).is_some() {
                             //Get Joint Index
                             let joint_index_option = skin
                                 .joints
@@ -165,8 +171,8 @@ impl Gltf2Exporter {
                                 .enumerate()
                                 .find(|(_, y)| y.value() == bone.node_index);
                             //we grab the Index Node for node names
-                            let (joint_index, _) = if joint_index_option.is_some() {
-                                joint_index_option.unwrap()
+                            let (joint_index, _) = if let Some(opt) = joint_index_option {
+                                opt
                             } else {
                                 assert_eq!(skin.joints.len(), inverse_bind_matrices_data.len());
                                 let index = Index::new(bone.node_index as u32);
@@ -196,11 +202,11 @@ impl Gltf2Exporter {
                     //Flatten and Sort Vertex Pairs into Vectors of Joint Indexes and Weight Indexes
                     let num_groups = ((max_joint_per_vertex - 1) / 4) + 1;
                     let mut vertex_joint_data: Vec<[usize; 4]> = Vec::new();
-                    let mut vertex_weight_data: Vec<[f32; 4]> = Vec::new();
+                    let mut vertex_weight_data: Vec<[AiReal; 4]> = Vec::new();
                     vertex_joint_data.resize(num_verts * num_groups as usize, Default::default());
                     vertex_weight_data.resize(num_verts * num_groups as usize, Default::default());
-                    for vertex_index in 0..num_verts {
-                        all_vertices_pairs[vertex_index].sort_by(|x, y| {
+                    for (vertex_index, vertice_pair) in all_vertices_pairs.iter_mut().enumerate() {
+                        vertice_pair.sort_by(|x, y| {
                             if x.1 == y.1 {
                                 Ordering::Equal
                             } else if x.1 > y.1 {
@@ -210,17 +216,17 @@ impl Gltf2Exporter {
                             }
                         });
                         for group_index in 0..num_groups as usize {
-                            for joint_index in 0..4 as usize {
+                            for joint_index in 0..4_usize {
                                 let index_bone = group_index * 4 + joint_index;
                                 let index_data = vertex_index + num_verts * group_index;
-                                if index_bone >= all_vertices_pairs[vertex_index].len() {
+                                if index_bone >= vertice_pair.len() {
                                     vertex_joint_data[index_data][joint_index] = 0;
                                     vertex_weight_data[index_data][joint_index] = 0.0;
                                 } else {
                                     vertex_joint_data[index_data][joint_index] =
-                                        all_vertices_pairs[vertex_index][index_bone].0;
+                                        vertice_pair[index_bone].0;
                                     vertex_weight_data[index_data][joint_index] =
-                                        all_vertices_pairs[vertex_index][index_bone].1;
+                                        vertice_pair[index_bone].1;
                                 }
                             }
                         }
@@ -238,7 +244,7 @@ impl Gltf2Exporter {
                         );
 
                         let slice = &vertex_weight_data[start_index..end_index];
-                        let joints = AccessorExporter::export_f32_4(root, buffer_data, slice);
+                        let joints = AccessorExporter::export_real_4(root, buffer_data, slice);
                         attributes.insert(
                             Checked::Valid(Semantic::Weights(group_index as u32)),
                             root.push(joints),
@@ -250,11 +256,9 @@ impl Gltf2Exporter {
             //handle targets
             let mut targets: Option<Vec<MorphTarget>> = None;
             let mut weights: Option<Vec<f32>> = None;
-            if ai_mesh.anim_meshes.len() > 0 {
-                let mut targets_vec: Vec<MorphTarget> = Vec::new();
-                targets_vec.reserve(ai_mesh.anim_meshes.len());
-                let mut weights_vec: Vec<f32> = Vec::new();
-                weights_vec.reserve(ai_mesh.anim_meshes.len());
+            if !ai_mesh.anim_meshes.is_empty() {
+                let mut targets_vec: Vec<MorphTarget> = Vec::with_capacity(ai_mesh.anim_meshes.len());
+                let mut weights_vec: Vec<f32> = Vec::with_capacity(ai_mesh.anim_meshes.len());
                 for animation in &ai_mesh.anim_meshes {
                     //@todo: handle sparse exports for anim mesh
 
@@ -265,7 +269,8 @@ impl Gltf2Exporter {
                         .zip(&ai_mesh.vertices)
                         .map(|(x, y)| *x - *y)
                         .collect();
-                    let positions = AccessorExporter::export_vector_3d(root, buffer_data, &positon_diff);
+                    let positions =
+                        AccessorExporter::export_vector_3d(root, buffer_data, &positon_diff);
                     let positions = Some(root.push(positions));
 
                     //handle normals
@@ -276,7 +281,8 @@ impl Gltf2Exporter {
                             .zip(&ai_mesh.normals)
                             .map(|(x, y)| *x - *y)
                             .collect();
-                        let normals = AccessorExporter::export_vector_3d(root, buffer_data, &normals_diff);
+                        let normals =
+                            AccessorExporter::export_vector_3d(root, buffer_data, &normals_diff);
                         Some(root.push(normals))
                     } else {
                         None
@@ -296,10 +302,10 @@ impl Gltf2Exporter {
 
             let primitive = Primitive {
                 attributes,
-                indices: indices,
+                indices,
                 material: Some(Index::new(ai_mesh.material_index)),
                 mode: Checked::Valid(mode),
-                targets: targets,
+                targets,
                 extensions: Default::default(),
                 extras: Default::default(),
             };
@@ -320,7 +326,8 @@ impl Gltf2Exporter {
         if skin.is_some() {
             let mut skin_ref = skin.unwrap();
             //export inverse_bind_matrices
-            let inverse_mat_data = AccessorExporter::export_mat4(root, buffer_data, inverse_bind_matrices_data);
+            let inverse_mat_data =
+                AccessorExporter::export_mat4(root, buffer_data, inverse_bind_matrices_data);
             skin_ref.inverse_bind_matrices = Some(root.push(inverse_mat_data));
 
             // Find nodes that contain a mesh with bones and add "skeletons" and "skin" attributes to those nodes.
@@ -381,7 +388,7 @@ impl AccessorExporter {
         buffer_data: &mut Vec<u8>,
         vector_data: Vec<AiMatrix4x4>,
     ) -> Accessor {
-        let mut min = if vector_data.len() == 0 {
+        let mut min = if vector_data.is_empty() {
             [
                 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             ]
@@ -405,7 +412,7 @@ impl AccessorExporter {
                 f32::MAX,
             ]
         };
-        let mut max = if vector_data.len() == 0 {
+        let mut max = if vector_data.is_empty() {
             [
                 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
             ]
@@ -429,16 +436,16 @@ impl AccessorExporter {
                 f32::MIN,
             ]
         };
-        let mut data: Vec<u8> = Vec::new();
-        data.reserve(vector_data.len() * 4 * 16);
+        let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4 * 16);
         for vector_base in vector_data {
-            let matrix: [f32; 16] = vector_base.into();
+            let matrix: [AiReal; 16] = vector_base.into();
             for (i, a) in matrix.iter().enumerate() {
-                if a < &min[i] {
-                    min[i] = *a;
+                let b = *a as f32;
+                if b < min[i] {
+                    min[i] = b;
                 }
-                if a > &max[i] {
-                    max[i] = *a;
+                if b > max[i] {
+                    max[i] = b;
                 }
             }
 
@@ -493,39 +500,41 @@ impl AccessorExporter {
         )
     }
 
-    pub(crate) fn export_f32_4(
+    pub(crate) fn export_real_4(
         root: &mut Root,
         buffer_data: &mut Vec<u8>,
-        vector_data: &[[f32; 4]],
+        vector_data: &[[AiReal; 4]],
     ) -> Accessor {
-        let mut min_x = if vector_data.len() == 0 {
+        let mut min_x = if vector_data.is_empty() {
             0.0
         } else {
             f32::MAX
         };
-        let mut max_x = if vector_data.len() == 0 {
+        let mut max_x = if vector_data.is_empty() {
             0.0
         } else {
             f32::MIN
         };
-        let mut data: Vec<u8> = Vec::new();
-        data.reserve(vector_data.len() * 4 * 4);
+        let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4 * 4);
         for vector_base in vector_data {
             for vector in vector_base {
-                if vector < &min_x {
-                    min_x = *vector;
+                let a = *vector as f32;
+                if a < min_x {
+                    min_x = a;
                 }
-                if vector > &max_x {
-                    max_x = *vector;
+                if a > max_x {
+                    max_x = a;
                 }
 
-                data.extend_from_slice(&vector.to_le_bytes());
+                data.extend_from_slice(&a.to_le_bytes());
             }
         }
-        let min = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(min_x as f64).unwrap())]));
-        let max = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(max_x as f64).unwrap())]));
+        let min = Some(Value::Array(vec![Value::Number(
+            Number::from_f64(min_x as f64).unwrap(),
+        )]));
+        let max = Some(Value::Array(vec![Value::Number(
+            Number::from_f64(max_x as f64).unwrap(),
+        )]));
         Self::export_data(
             root,
             buffer_data,
@@ -543,10 +552,9 @@ impl AccessorExporter {
         buffer_data: &mut Vec<u8>,
         vector_data: &[[usize; 4]],
     ) -> Accessor {
-        let mut min_x = if vector_data.len() == 0 { 0 } else { u32::MAX } as usize;
-        let mut max_x = if vector_data.len() == 0 { 0 } else { u32::MIN } as usize;
-        let mut data: Vec<u8> = Vec::new();
-        data.reserve(vector_data.len() * 4 * 4);
+        let mut min_x = if vector_data.is_empty() { 0 } else { u32::MAX } as usize;
+        let mut max_x = if vector_data.is_empty() { 0 } else { u32::MIN } as usize;
+        let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4 * 4);
         for vector_base in vector_data {
             for vector in vector_base {
                 if vector < &min_x {
@@ -560,10 +568,8 @@ impl AccessorExporter {
                 data.extend_from_slice(&new_data.to_le_bytes());
             }
         }
-        let min = Some(Value::Array(vec![
-            Value::Number(Number::from(min_x))]));
-        let max = Some(Value::Array(vec![
-            Value::Number(Number::from(max_x))]));
+        let min = Some(Value::Array(vec![Value::Number(Number::from(min_x))]));
+        let max = Some(Value::Array(vec![Value::Number(Number::from(max_x))]));
         Self::export_data(
             root,
             buffer_data,
@@ -576,11 +582,14 @@ impl AccessorExporter {
         )
     }
 
-    pub(crate) fn export_u32(root: &mut Root, buffer_data: &mut Vec<u8>, vector_data: &Vec<u32>) -> Accessor {
-        let mut min_x = if vector_data.len() == 0 { 0 } else { u32::MAX };
-        let mut max_x = if vector_data.len() == 0 { 0 } else { u32::MIN };
-        let mut data: Vec<u8> = Vec::new();
-        data.reserve(vector_data.len() * 4);
+    pub(crate) fn export_u32(
+        root: &mut Root,
+        buffer_data: &mut Vec<u8>,
+        vector_data: &Vec<u32>,
+    ) -> Accessor {
+        let mut min_x = if vector_data.is_empty() { 0 } else { u32::MAX };
+        let mut max_x = if vector_data.is_empty() { 0 } else { u32::MIN };
+        let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4);
         for vector in vector_data {
             if vector < &min_x {
                 min_x = *vector;
@@ -591,10 +600,8 @@ impl AccessorExporter {
 
             data.extend_from_slice(&vector.to_le_bytes());
         }
-        let min = Some(Value::Array(vec![
-            Value::Number(Number::from(min_x))]));
-        let max = Some(Value::Array(vec![
-            Value::Number(Number::from(max_x))]));
+        let min = Some(Value::Array(vec![Value::Number(Number::from(min_x))]));
+        let max = Some(Value::Array(vec![Value::Number(Number::from(max_x))]));
         Self::export_data(
             root,
             buffer_data,
@@ -606,12 +613,23 @@ impl AccessorExporter {
             max,
         )
     }
-    
-    pub(crate) fn export_real(root: &mut Root, buffer_data: &mut Vec<u8>, vector_data: &Vec<f32>) -> Accessor {
-        let mut min_x = if vector_data.len() == 0 { 0.0 } else { f32::MAX };
-        let mut max_x = if vector_data.len() == 0 { 0.0 } else { f32::MIN };
-        let mut data: Vec<u8> = Vec::new();
-        data.reserve(vector_data.len() * 4);
+
+    pub(crate) fn export_real(
+        root: &mut Root,
+        buffer_data: &mut Vec<u8>,
+        vector_data: &Vec<f32>,
+    ) -> Accessor {
+        let mut min_x = if vector_data.is_empty() {
+            0.0
+        } else {
+            f32::MAX
+        };
+        let mut max_x = if vector_data.is_empty() {
+            0.0
+        } else {
+            f32::MIN
+        };
+        let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4);
         for vector in vector_data {
             if vector < &min_x {
                 min_x = *vector;
@@ -622,10 +640,12 @@ impl AccessorExporter {
 
             data.extend_from_slice(&vector.to_le_bytes());
         }
-        let min = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(min_x as f64).unwrap())]));
-        let max = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(max_x as f64).unwrap())]));
+        let min = Some(Value::Array(vec![Value::Number(
+            Number::from_f64(min_x as f64).unwrap(),
+        )]));
+        let max = Some(Value::Array(vec![Value::Number(
+            Number::from_f64(max_x as f64).unwrap(),
+        )]));
         Self::export_data(
             root,
             buffer_data,
@@ -638,24 +658,22 @@ impl AccessorExporter {
         )
     }
 
-
     pub(crate) fn export_vector_2d(
         root: &mut Root,
         buffer_data: &mut Vec<u8>,
         vector_data: &Vec<AiVector2D>,
     ) -> Accessor {
-        let (mut min_x, mut min_y) = if vector_data.len() == 0 {
+        let (mut min_x, mut min_y) = if vector_data.is_empty() {
             (0.0, 0.0)
         } else {
             (AiReal::MAX, AiReal::MAX)
         };
-        let (mut max_x, mut max_y) = if vector_data.len() == 0 {
+        let (mut max_x, mut max_y) = if vector_data.is_empty() {
             (0.0, 0.0)
         } else {
             (AiReal::MIN, AiReal::MIN)
         };
-        let mut data: Vec<u8> = Vec::new();
-        data.reserve(vector_data.len() * 2 * 4);
+        let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 2 * 4);
         for vector in vector_data {
             if vector.x < min_x {
                 min_x = vector.x;
@@ -698,18 +716,17 @@ impl AccessorExporter {
         buffer_data: &mut Vec<u8>,
         vector_data: &Vec<AiVector3D>,
     ) -> Accessor {
-        let (mut min_x, mut min_y, mut min_z) = if vector_data.len() == 0 {
+        let (mut min_x, mut min_y, mut min_z) = if vector_data.is_empty() {
             (0.0, 0.0, 0.0)
         } else {
             (AiReal::MAX, AiReal::MAX, AiReal::MAX)
         };
-        let (mut max_x, mut max_y, mut max_z) = if vector_data.len() == 0 {
+        let (mut max_x, mut max_y, mut max_z) = if vector_data.is_empty() {
             (0.0, 0.0, 0.0)
         } else {
             (AiReal::MIN, AiReal::MIN, AiReal::MIN)
         };
-        let mut data: Vec<u8> = Vec::new();
-        data.reserve(vector_data.len() * 3 * 4);
+        let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 3 * 4);
         for vector in vector_data {
             if vector.x < min_x {
                 min_x = vector.x;
@@ -760,18 +777,17 @@ impl AccessorExporter {
         buffer_data: &mut Vec<u8>,
         vector_data: &Vec<AiQuaternion>,
     ) -> Accessor {
-        let (mut min_x, mut min_y, mut min_z, mut min_w) = if vector_data.len() == 0 {
+        let (mut min_x, mut min_y, mut min_z, mut min_w) = if vector_data.is_empty() {
             (0.0, 0.0, 0.0, 0.0)
         } else {
             (AiReal::MAX, AiReal::MAX, AiReal::MAX, AiReal::MAX)
         };
-        let (mut max_x, mut max_y, mut max_z, mut max_w) = if vector_data.len() == 0 {
+        let (mut max_x, mut max_y, mut max_z, mut max_w) = if vector_data.is_empty() {
             (0.0, 0.0, 0.0, 0.0)
         } else {
             (AiReal::MIN, AiReal::MIN, AiReal::MIN, AiReal::MIN)
         };
-        let mut data: Vec<u8> = Vec::new();
-        data.reserve(vector_data.len() * 3 * 4);
+        let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 3 * 4);
         for vector in vector_data {
             if vector.x < min_x {
                 min_x = vector.x;
@@ -832,18 +848,17 @@ impl AccessorExporter {
         buffer_data: &mut Vec<u8>,
         vector_data: &Vec<AiColor4D>,
     ) -> Accessor {
-        let (mut min_x, mut min_y, mut min_z, mut min_w) = if vector_data.len() == 0 {
+        let (mut min_x, mut min_y, mut min_z, mut min_w) = if vector_data.is_empty() {
             (0.0, 0.0, 0.0, 0.0)
         } else {
             (f32::MAX, f32::MAX, f32::MAX, f32::MAX)
         };
-        let (mut max_x, mut max_y, mut max_z, mut max_w) = if vector_data.len() == 0 {
+        let (mut max_x, mut max_y, mut max_z, mut max_w) = if vector_data.is_empty() {
             (0.0, 0.0, 0.0, 0.0)
         } else {
             (f32::MIN, f32::MIN, f32::MIN, f32::MAX)
         };
-        let mut data: Vec<u8> = Vec::new();
-        data.reserve(vector_data.len() * 4 * 4);
+        let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4 * 4);
         for vector in vector_data {
             if vector.r < min_x {
                 min_x = vector.r;
@@ -930,7 +945,8 @@ impl AccessorExporter {
             extras: Default::default(),
         };
 
-        let accessor = Accessor {
+        
+        Accessor {
             buffer_view: Some(root.push(buffer_view)),
             byte_offset: Some(USize64(0)),
             component_type: Checked::Valid(GenericComponentType(component_type)),
@@ -943,7 +959,6 @@ impl AccessorExporter {
             sparse: None,
             extensions: Default::default(),
             extras: Default::default(),
-        };
-        accessor
+        }
     }
 }

@@ -40,12 +40,10 @@ impl Gltf2Exporter {
                     .map(|(x, _)| x);
                 if let Some(index) = anim_node {
                     //handle position keys
-                    if channel.position_keys.len() > 0 {
+                    if !channel.position_keys.is_empty() {
                         let num_key_frames = channel.position_keys.len();
-                        let mut times: Vec<f32> = Vec::new();
-                        times.reserve(num_key_frames);
-                        let mut values: Vec<AiVector3D> = Vec::new();
-                        values.reserve(num_key_frames);
+                        let mut times: Vec<f32> = Vec::with_capacity(num_key_frames);
+                        let mut values: Vec<AiVector3D> = Vec::with_capacity(num_key_frames);
                         for (i, key) in channel.position_keys.iter().enumerate() {
                             times[i] = (key.time / anim.ticks_per_second) as f32;
                             values[i] = key.value;
@@ -76,12 +74,10 @@ impl Gltf2Exporter {
                     }
 
                     //handle rotation keys
-                    if channel.rotation_keys.len() > 0 {
+                    if !channel.rotation_keys.is_empty() {
                         let num_key_frames = channel.rotation_keys.len();
-                        let mut times: Vec<f32> = Vec::new();
-                        times.reserve(num_key_frames);
-                        let mut values: Vec<AiQuaternion> = Vec::new();
-                        values.reserve(num_key_frames);
+                        let mut times: Vec<f32> = Vec::with_capacity(num_key_frames);
+                        let mut values: Vec<AiQuaternion> = Vec::with_capacity(num_key_frames);
                         for (i, key) in channel.rotation_keys.iter().enumerate() {
                             times[i] = (key.time / anim.ticks_per_second) as f32;
                             values[i] = key.value;
@@ -113,12 +109,10 @@ impl Gltf2Exporter {
                     }
 
                     //handle scaling keys
-                    if channel.scaling_keys.len() > 0 {
+                    if !channel.scaling_keys.is_empty() {
                         let num_key_frames = channel.scaling_keys.len();
-                        let mut times: Vec<f32> = Vec::new();
-                        times.reserve(num_key_frames);
-                        let mut values: Vec<AiVector3D> = Vec::new();
-                        values.reserve(num_key_frames);
+                        let mut times: Vec<f32> = Vec::with_capacity(num_key_frames);
+                        let mut values: Vec<AiVector3D> = Vec::with_capacity(num_key_frames);
                         for (i, key) in channel.scaling_keys.iter().enumerate() {
                             times[i] = (key.time / anim.ticks_per_second) as f32;
                             values[i] = key.value;

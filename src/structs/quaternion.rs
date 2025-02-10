@@ -19,22 +19,23 @@ impl Default for AiQuaternion {
     }
 }
 
-impl Into<[f32; 4]> for AiQuaternion {
-    fn into(self) -> [f32; 4] {
-        [self.w as f32, self.x as f32, self.y as f32, self.z as f32]
+impl From<AiQuaternion> for [AiReal; 4] {
+    fn from(val: AiQuaternion) -> Self {
+        [val.w, val.x, val.y, val.z]
     }
 }
 
-impl From<[f32; 4]> for AiQuaternion {
-    fn from(value: [f32; 4]) -> Self {
+impl From<[AiReal; 4]> for AiQuaternion {
+    fn from(value: [AiReal; 4]) -> Self {
         AiQuaternion {
-            w: value[0] as AiReal,
-            x: value[1] as AiReal,
-            y: value[2] as AiReal,
-            z: value[3] as AiReal,
+            w: value[0],
+            x: value[1],
+            y: value[2],
+            z: value[3],
         }
     }
 }
+
 impl AiQuaternion {
     pub fn new(pw: AiReal, px: AiReal, py: AiReal, pz: AiReal) -> Self {
         Self {

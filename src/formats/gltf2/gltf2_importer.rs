@@ -1,6 +1,5 @@
 use std::{fs, io::BufReader, path::Path};
 
-use enumflags2::BitFlags;
 use gltf::Gltf;
 
 use crate::{
@@ -10,7 +9,7 @@ use crate::{
         importer::AiImporter,
         importer_desc::{AiImporterDesc, AiImporterFlags},
     },
-    structs::scene::{AiScene, AiSceneFlag},
+    structs::{scene::{AiScene, AiSceneFlag}, AiMaterial},
 };
 
 #[derive(Debug)]
@@ -23,12 +22,9 @@ impl AiImport for Gltf2Importer {
             author: Default::default(),
             maintainer: Default::default(),
             comments: Default::default(),
-            flags: BitFlags::from(
-                AiImporterFlags::SupportBinaryFlavor
+            flags: (AiImporterFlags::SupportBinaryFlavor
                     | AiImporterFlags::LimitedSupport
-                    | AiImporterFlags::SupportTextFlavor
-                    | AiImporterFlags::Experimental,
-            ),
+                    | AiImporterFlags::SupportTextFlavor | AiImporterFlags::Experimental),
             min_major: 0,
             min_minor: 0,
             max_major: 0,
@@ -65,7 +61,7 @@ impl AiImport for Gltf2Importer {
         let gltf = Gltf::from_reader(reader);
 
         //If Result is Good, we can Read
-        !gltf.is_err()
+        gltf.is_ok()
     }
 
     fn read_file<P>(&self, _importer: &mut AiImporter, path: P) -> Result<AiScene, AiReadError>
@@ -91,8 +87,10 @@ impl AiImport for Gltf2Importer {
         let (embedded_textures, embedded_tex_ids) =
             Gltf2Importer::import_embedded_textures(&document, Some(base), &buffer_data)?;
         //import materials
-        let embedded_materials =
+        let mut embedded_materials =
             Gltf2Importer::import_embedded_materials(&document, &embedded_tex_ids)?;
+        //add default material
+        embedded_materials.push(AiMaterial::default());
         //import meshes
         let (mut meshes, mesh_offsets, remapping_tables) =
             Gltf2Importer::import_meshes(&document, &buffer_data, embedded_materials.len() - 1)?;
@@ -119,18 +117,20 @@ impl AiImport for Gltf2Importer {
         //import metadata
         let metadata = Gltf2Importer::import_metadata(&document)?;
 
-        let mut scene = AiScene::default();
-        scene.name = scene_name;
-        scene.animations = animations;
-        scene.cameras = cameras;
-        scene.meshes = meshes;
-        scene.lights = lights;
-        scene.materials = embedded_materials;
-        scene.textures = embedded_textures;
-        scene.nodes = nodes;
-        scene.metadata = metadata;
+        let mut scene = AiScene{
+            name: scene_name,
+            animations,
+            cameras,
+            meshes,
+            lights,
+            materials: embedded_materials,
+            textures: embedded_textures,
+            nodes,
+            metadata,
+            ..AiScene::default()
+        };
 
-        if scene.meshes.len() != 0{
+        if !scene.meshes.is_empty(){
             scene.flags |= AiSceneFlag::Incomplete;
         }
 
@@ -139,11 +139,71 @@ impl AiImport for Gltf2Importer {
 }
 
 
+/// This test is to make sure that basic files can be read.
 #[test]
 fn test_read_file(){
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
-    let mut exe_path = binding.join("test").join("model");
+    let mut exe_path = binding.join("tests").join("model");
     exe_path.push("Avocado.glb");
+    let path = exe_path.as_path();
+
+    let importer = Gltf2Importer;
+    let mut ai_importer = AiImporter::default();
+    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    assert_eq!(scene.name, "");
+}
+
+/// This test is to make sure `byteStride` works.
+#[test]
+fn test_read_file_roughness(){
+    let binding = std::env::current_dir().expect("Failed to get the current executable path");
+    let mut exe_path = binding.join("tests").join("model").join("compare_roughness");
+    exe_path.push("CompareRoughness.gltf");
+    let path = exe_path.as_path();
+
+    let importer = Gltf2Importer;
+    let mut ai_importer = AiImporter::default();
+    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    assert_eq!(scene.name, "");
+}
+
+/// This test is to make sure that rigged elements load in properly
+#[test]
+fn test_read_file_rigged(){
+    let binding = std::env::current_dir().expect("Failed to get the current executable path");
+    let mut exe_path = binding.join("tests").join("model");
+    exe_path.push("RiggedFigure.glb");
+    let path = exe_path.as_path();
+
+    let importer = Gltf2Importer;
+    let mut ai_importer = AiImporter::default();
+    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    assert_eq!(scene.name, "");
+}
+
+/// This test is for different primitive modes load in and a range of indices reading in from the same positions buffer works
+#[test]
+fn test_read_file_primitive(){
+
+    let binding = std::env::current_dir().expect("Failed to get the current executable path");
+    let mut exe_path = binding.join("tests").join("model").join("primitive_modes");
+    exe_path.push("MeshPrimitiveModes.gltf");
+    let path = exe_path.as_path();
+
+    let importer = Gltf2Importer;
+    let mut ai_importer = AiImporter::default();
+    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    assert_eq!(scene.name, "");
+}
+
+
+/// This test is for sparse accessors working
+#[test]
+fn test_read_file_sparse(){
+
+    let binding = std::env::current_dir().expect("Failed to get the current executable path");
+    let mut exe_path = binding.join("tests").join("model");
+    exe_path.push("SimpleSparseAccessor.gltf");
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;

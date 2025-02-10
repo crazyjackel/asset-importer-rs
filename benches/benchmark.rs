@@ -9,9 +9,10 @@ use asset_importer_rs::{
 };
 use criterion::{criterion_group, criterion_main, Criterion};
 
+/// Reads Avocado File as a Benchmark
 fn read_file() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
-    let mut exe_path = binding.join("test").join("model");
+    let mut exe_path = binding.join("tests").join("model");
     exe_path.push("Avocado.glb");
     let path = exe_path.as_path();
 
@@ -20,9 +21,10 @@ fn read_file() {
     let _ = importer.read_file(&mut ai_importer, path).unwrap();
 }
 
+/// Reads and Re-Exports Avocado File as a Benchmark
 fn export_file() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
-    let mut exe_path = binding.join("test").join("model");
+    let mut exe_path = binding.join("tests").join("model");
     exe_path.push("Avocado.glb");
     let path = exe_path.as_path();
 

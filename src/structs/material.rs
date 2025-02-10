@@ -1,6 +1,8 @@
-use bytemuck::{NoUninit, Pod, Zeroable};
+use std::fmt::Display;
+
+use bytemuck::{Pod, Zeroable};
 use enumflags2::bitflags;
-use num_enum::{FromPrimitive, IntoPrimitive, TryFromPrimitive};
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 use crate::structs::error::{AiFailure, AiReturnError};
 
@@ -201,35 +203,35 @@ pub enum AiTextureType {
     MayaSpecularRoughness,
 }
 
-impl ToString for AiTextureType {
-    fn to_string(&self) -> String {
+impl Display for AiTextureType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            AiTextureType::None => String::from("n/a"),
-            AiTextureType::Diffuse => String::from("Diffuse"),
-            AiTextureType::Specular => String::from("Specular"),
-            AiTextureType::Ambient => String::from("Ambient"),
-            AiTextureType::Emissive => String::from("Emissive"),
-            AiTextureType::Height => String::from("Height"),
-            AiTextureType::Normals => String::from("Normals"),
-            AiTextureType::Shininess => String::from("Shininess"),
-            AiTextureType::Opacity => String::from("Opacity"),
-            AiTextureType::Displacement => String::from("Displacement"),
-            AiTextureType::Lightmap => String::from("Lightmap"),
-            AiTextureType::Reflection => String::from("Reflection"),
-            AiTextureType::BaseColor => String::from("BaseColor"),
-            AiTextureType::NormalCamera => String::from("NormalCamera"),
-            AiTextureType::EmissionColor => String::from("EmissionColor"),
-            AiTextureType::Metalness => String::from("Metalness"),
-            AiTextureType::DiffuseRoughness => String::from("DiffuseRoughness"),
-            AiTextureType::AmbientOcclusion => String::from("AmbientOcclusion"),
-            AiTextureType::Unknown => String::from("Unknown"),
-            AiTextureType::Sheen => String::from("Sheen"),
-            AiTextureType::ClearCoat => String::from("Clearcoat"),
-            AiTextureType::Transmission => String::from("Transmission"),
-            AiTextureType::MayaBase => String::from("MayaBase"),
-            AiTextureType::MayaSpecular => String::from("MayaSpecular"),
-            AiTextureType::MayaSpecularColor => String::from("MayaSpecularColor"),
-            AiTextureType::MayaSpecularRoughness => String::from("MayaSpecularRoughness"),
+            AiTextureType::None => f.write_str("n/a"),
+            AiTextureType::Diffuse => f.write_str("Diffuse"),
+            AiTextureType::Specular => f.write_str("Specular"),
+            AiTextureType::Ambient => f.write_str("Ambient"),
+            AiTextureType::Emissive => f.write_str("Emissive"),
+            AiTextureType::Height => f.write_str("Height"),
+            AiTextureType::Normals => f.write_str("Normals"),
+            AiTextureType::Shininess => f.write_str("Shininess"),
+            AiTextureType::Opacity => f.write_str("Opacity"),
+            AiTextureType::Displacement => f.write_str("Displacement"),
+            AiTextureType::Lightmap => f.write_str("Lightmap"),
+            AiTextureType::Reflection => f.write_str("Reflection"),
+            AiTextureType::BaseColor => f.write_str("BaseColor"),
+            AiTextureType::NormalCamera => f.write_str("NormalCamera"),
+            AiTextureType::EmissionColor => f.write_str("EmissionColor"),
+            AiTextureType::Metalness => f.write_str("Metalness"),
+            AiTextureType::DiffuseRoughness => f.write_str("DiffuseRoughness"),
+            AiTextureType::AmbientOcclusion => f.write_str("AmbientOcclusion"),
+            AiTextureType::Unknown => f.write_str("Unknown"),
+            AiTextureType::Sheen => f.write_str("Sheen"),
+            AiTextureType::ClearCoat => f.write_str("Clearcoat"),
+            AiTextureType::Transmission => f.write_str("Transmission"),
+            AiTextureType::MayaBase => f.write_str("MayaBase"),
+            AiTextureType::MayaSpecular => f.write_str("MayaSpecular"),
+            AiTextureType::MayaSpecularColor => f.write_str("MayaSpecularColor"),
+            AiTextureType::MayaSpecularRoughness => f.write_str("MayaSpecularRoughness"),
         }
     }
 }
@@ -249,7 +251,6 @@ pub enum AiShadingMode {
     Fresnel,
     PBR,
 }
-
 
 #[bitflags]
 #[repr(u8)]
@@ -278,9 +279,9 @@ pub struct AiUvTransform {
 impl Default for AiUvTransform {
     fn default() -> Self {
         Self {
-            translation: AiVector2D::new(0f32, 0f32),
-            scaling: AiVector2D::new(1f32, 1f32),
-            rotation: 0f32,
+            translation: AiVector2D::new(0.0, 0.0),
+            scaling: AiVector2D::new(1.0, 1.0),
+            rotation: 0.0,
         }
     }
 }
@@ -298,15 +299,27 @@ pub enum AiPropertyTypeInfo {
 
 impl AiPropertyTypeInfo {
     pub fn variant_eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (AiPropertyTypeInfo::Binary(_), AiPropertyTypeInfo::Binary(_)) => true,
-            (AiPropertyTypeInfo::FloatArray(_), AiPropertyTypeInfo::FloatArray(_)) => true,
-            (AiPropertyTypeInfo::DoubleArray(_), AiPropertyTypeInfo::DoubleArray(_)) => true,
-            (AiPropertyTypeInfo::StringArray(_), AiPropertyTypeInfo::StringArray(_)) => true,
-            (AiPropertyTypeInfo::IntegerArray(_), AiPropertyTypeInfo::IntegerArray(_)) => true,
-            (AiPropertyTypeInfo::Buffer(_), AiPropertyTypeInfo::Buffer(_)) => true,
-            _ => false,
-        }
+        matches!(
+            (self, other),
+            (AiPropertyTypeInfo::Binary(_), AiPropertyTypeInfo::Binary(_))
+                | (
+                    AiPropertyTypeInfo::FloatArray(_),
+                    AiPropertyTypeInfo::FloatArray(_)
+                )
+                | (
+                    AiPropertyTypeInfo::DoubleArray(_),
+                    AiPropertyTypeInfo::DoubleArray(_)
+                )
+                | (
+                    AiPropertyTypeInfo::StringArray(_),
+                    AiPropertyTypeInfo::StringArray(_)
+                )
+                | (
+                    AiPropertyTypeInfo::IntegerArray(_),
+                    AiPropertyTypeInfo::IntegerArray(_)
+                )
+                | (AiPropertyTypeInfo::Buffer(_), AiPropertyTypeInfo::Buffer(_))
+        )
     }
 }
 
@@ -322,17 +335,9 @@ pub struct AiMaterialProperty {
     pub property_type: AiPropertyTypeInfo,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct AiMaterial {
     properties: Vec<AiMaterialProperty>,
-}
-
-impl Default for AiMaterial {
-    fn default() -> Self {
-        Self {
-            properties: Default::default(),
-        }
-    }
 }
 
 impl AiMaterial {
@@ -358,7 +363,7 @@ impl AiMaterial {
     ) -> Option<&AiPropertyTypeInfo> {
         for property in &self.properties {
             if property.key == key
-                && (semantic_type == None || semantic_type.unwrap() == property.semantic)
+                && (semantic_type.is_none() || semantic_type.unwrap() == property.semantic)
                 && property.index == index
             {
                 return Some(&property.property_type);
@@ -374,7 +379,7 @@ impl AiMaterial {
     ) -> Option<&mut AiPropertyTypeInfo> {
         for property in self.properties.iter_mut() {
             if property.key == key
-                && (semantic_type == None || semantic_type.unwrap() == property.semantic)
+                && (semantic_type.is_none() || semantic_type.unwrap() == property.semantic)
                 && property.index == index
             {
                 return Some(&mut property.property_type);
@@ -396,12 +401,12 @@ impl AiMaterial {
         } else if let Some(semantic) = semantic_type {
             self.properties.push(AiMaterialProperty {
                 key: key.to_owned(),
-                index: index,
-                semantic: semantic,
-                property_type: property_type,
+                index,
+                semantic,
+                property_type,
             });
         }
-        return false;
+        false
     }
 
     pub fn get_property_ai_color_rgba(
@@ -409,62 +414,58 @@ impl AiMaterial {
         key: &str,
         semantic_type: Option<AiTextureType>,
         index: u32,
-    ) -> Option<AiColor4D>{
+    ) -> Option<AiColor4D> {
         self.get_property_type_info(key, semantic_type, index)
-        .and_then(|info| match info {
-            AiPropertyTypeInfo::Binary(binary) => {
-                bytemuck::try_from_bytes::<AiColor4D>(&binary).copied()
-                    .ok()
-            }
-            _ => None,
-        })
-    } 
+            .and_then(|info| match info {
+                AiPropertyTypeInfo::Binary(binary) => {
+                    bytemuck::try_from_bytes::<AiColor4D>(binary).copied().ok()
+                }
+                _ => None,
+            })
+    }
     pub fn get_property_ai_color_rgb(
         &self,
         key: &str,
         semantic_type: Option<AiTextureType>,
         index: u32,
-    ) -> Option<AiColor3D>{
+    ) -> Option<AiColor3D> {
         self.get_property_type_info(key, semantic_type, index)
-        .and_then(|info| match info {
-            AiPropertyTypeInfo::Binary(binary) => {
-                bytemuck::try_from_bytes::<AiColor3D>(&binary).copied()
-                    .ok()
-            }
-            _ => None,
-        })
-    } 
+            .and_then(|info| match info {
+                AiPropertyTypeInfo::Binary(binary) => {
+                    bytemuck::try_from_bytes::<AiColor3D>(binary).copied().ok()
+                }
+                _ => None,
+            })
+    }
     pub fn get_property_ai_float(
         &self,
         key: &str,
         semantic_type: Option<AiTextureType>,
         index: u32,
-    ) -> Option<f32>{
+    ) -> Option<f32> {
         self.get_property_type_info(key, semantic_type, index)
-        .and_then(|info| match info {
-            AiPropertyTypeInfo::Binary(binary) if binary.len() == 4 => {
-                Some(f32::from_le_bytes([
-                    binary[0], binary[1], binary[2], binary[3],
-                ]))
-            }
-            _ => None,
-        })
-    } 
+            .and_then(|info| match info {
+                AiPropertyTypeInfo::Binary(binary) if binary.len() == 4 => {
+                    Some(f32::from_le_bytes([
+                        binary[0], binary[1], binary[2], binary[3],
+                    ]))
+                }
+                _ => None,
+            })
+    }
 
     pub fn get_property_byte(
         &self,
         key: &str,
         semantic_type: Option<AiTextureType>,
         index: u32,
-    ) -> Option<u8>{
+    ) -> Option<u8> {
         self.get_property_type_info(key, semantic_type, index)
-        .and_then(|info| match info {
-            AiPropertyTypeInfo::Binary(binary) if binary.len() == 1 => {
-                Some(binary[0])
-            }
-            _ => None,
-        })
-    } 
+            .and_then(|info| match info {
+                AiPropertyTypeInfo::Binary(binary) if binary.len() == 1 => Some(binary[0]),
+                _ => None,
+            })
+    }
 
     pub fn get_property_real_vec(
         &self,
@@ -487,7 +488,7 @@ impl AiMaterial {
                 .collect::<Result<Vec<AiReal>, _>>()
                 .ok(),
             AiPropertyTypeInfo::Binary(vec) | AiPropertyTypeInfo::Buffer(vec) => {
-                String::from_utf8_lossy(&vec.as_slice())
+                String::from_utf8_lossy(vec.as_slice())
                     .split_ascii_whitespace()
                     .map(|s| s.parse::<AiReal>())
                     .collect::<Result<Vec<AiReal>, _>>()
@@ -501,7 +502,7 @@ impl AiMaterial {
 /// Check that strings made up of joined floats can be parsed successfully
 #[test]
 fn base_vec_to_real_vec() {
-    let base_vec = vec![0f32, 12f32, 509f32];
+    let base_vec = vec![0.0, 12.0, 509.0];
     let base_str = base_vec
         .iter()
         .map(|x| x.to_string())
