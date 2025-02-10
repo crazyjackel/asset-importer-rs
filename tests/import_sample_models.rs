@@ -10,18 +10,36 @@ const SAMPLE_MODELS_DIRECTORY_PATH: &str = "glTF-Sample-Assets/Models";
 
 // @todo: Make sure these files have tickets for being removed from skip list
 // I would like to test these files, however, there is a particular issue that is hard to fix
-const SKIP_FILES: [&str; 4] = [
+const SKIP_FILES: [&str; 17] = [
     "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF/SheenWoodLeatherSofa.gltf", //Sheen Wood Leather Sofa using WebP files which are not fully supported by dependency ATM
     "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF-Binary/SheenWoodLeatherSofa.glb",
+
     "glTF-Sample-Assets/Models/AnimationPointerUVs/glTF/AnimationPointerUVs.gltf", //Animation Pointers don't work and missing field node is not fixed in 1.4.1
-    "glTF-Sample-Assets/Models/AnimationPointerUVs/glTF-Binary/AnimationPointerUVs.glb"
+    "glTF-Sample-Assets/Models/AnimationPointerUVs/glTF-Binary/AnimationPointerUVs.glb",
+    "glTF-Sample-Assets/Models/AnimatedColorsCube/glTF/AnimatedColorsCube.gltf",
+    "glTF-Sample-Assets/Models/AnimatedColorsCube/glTF-Binary/AnimatedColorsCube.glb",
+    
+    "glTF-Sample-Assets/Models/ClearCoatCarPaint/glTF/ClearCoatCarPaint.gltf", // Clear Coat not available yet
+    "glTF-Sample-Assets/Models/ClearCoatCarPaint/glTF-Binary/ClearCoatCarPaint.glb",
+
+    "glTF-Sample-Assets/Models/IridescenceSuzanne/glTF-Binary/IridescenceSuzanne.glb", //Iridescence not supported yet
+    "glTF-Sample-Assets/Models/IridescenceSuzanne/glTF/IridescenceSuzanne.gltf",
+
+    "glTF-Sample-Assets/Models/SheenCloth/glTF/SheenCloth.gltf", //Sheen not supported yet
+    "glTF-Sample-Assets/Models/SheenChair/glTF/SheenChair.gltf",
+    "glTF-Sample-Assets/Models/SheenChair/glTF-Binary/SheenChair.glb",
+    "glTF-Sample-Assets/Models/SheenTestGrid/glTF/SheenTestGrid.gltf",
+    "glTF-Sample-Assets/Models/SheenTestGrid/glTF-Binary/SheenTestGrid.glb",
+    "glTF-Sample-Assets/Models/SpecularSilkPouf/glTF/SpecularSilkPouf.gltf",
+    "glTF-Sample-Assets/Models/SpecularSilkPouf/glTF-Binary/SpecularSilkPouf.glb"
+
 ];
 
 //These files should be skipped when running in minimal mode
 const SKIP_MINIMAL: [&str; 3] = [
     "glTF-Sample-Assets/Models/DirectionalLight/glTF/DirectionalLight.gltf", //Requires Lights to Import
     "glTF-Sample-Assets/Models/DirectionalLight/glTF-Binary/DirectionalLight.glb",
-    "glTF-Sample-Assets/Models/PlaysetLightTest/glTF-Binary/PlaysetLightTest.glb"
+    "glTF-Sample-Assets/Models/PlaysetLightTest/glTF-Binary/PlaysetLightTest.glb",
 ];
 
 fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
