@@ -167,6 +167,7 @@ fn test_read_file_roughness(){
     assert_eq!(scene.name, "");
 }
 
+/// This test is to make sure that rigged elements load in properly
 #[test]
 fn test_read_file_rigged(){
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
@@ -180,12 +181,29 @@ fn test_read_file_rigged(){
     assert_eq!(scene.name, "");
 }
 
+/// This test is for different primitive modes load in and a range of indices reading in from the same positions buffer works
 #[test]
 fn test_read_file_primitive(){
 
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
     let mut exe_path = binding.join("tests").join("model").join("primitive_modes");
     exe_path.push("MeshPrimitiveModes.gltf");
+    let path = exe_path.as_path();
+
+    let importer = Gltf2Importer;
+    let mut ai_importer = AiImporter::default();
+    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    assert_eq!(scene.name, "");
+}
+
+
+/// This test is for sparse accessors working
+#[test]
+fn test_read_file_sparse(){
+
+    let binding = std::env::current_dir().expect("Failed to get the current executable path");
+    let mut exe_path = binding.join("tests").join("model");
+    exe_path.push("SimpleSparseAccessor.gltf");
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;

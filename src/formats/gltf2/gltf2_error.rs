@@ -3,6 +3,7 @@ use std::{error::Error, fmt::Display};
 #[derive(Debug)]
 pub enum Gtlf2Error {
     ExceedsBounds,
+    SizeExceedsTarget,
     MissingBufferData,
     BrokenSparseDataAccess,
     AttributeNotFound,
@@ -15,10 +16,12 @@ impl Display for Gtlf2Error {
             Gtlf2Error::BrokenSparseDataAccess => {
                 write!(f, "Sparse Data Missing despite being expected")
             }
-            Gtlf2Error::ExceedsBounds => write!(f, "Calculated Bounds exceeds Loaded Bounds"),
+            Gtlf2Error::ExceedsBounds => write!(f, "Bounds Check Failed"),
             Gtlf2Error::AttributeNotFound => {
                 write!(f, "Expected Primitive Attribute Not Found")
             }
+            Gtlf2Error::SizeExceedsTarget => 
+            write!(f, "Size provided exceeds Target")
         }
     }
 }

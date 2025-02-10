@@ -16,7 +16,7 @@ use crate::{
 
 use super::{
     gltf2_importer::Gltf2Importer,
-    gltf2_importer_mesh::{remap_data, ExtractData, GetPointer},
+    gltf2_importer_mesh::ExtractData,
 };
 
 impl Gltf2Importer {
@@ -135,39 +135,9 @@ fn import_node<'a>(
                 let asset_joints: Vec<Node<'_>> = skin.joints().collect();
                 let num_bones = asset_joints.len();
                 let bind_matrices = skin.inverse_bind_matrices().and_then(|x| {
-                    let data_matrices = x.get_pointer(buffer_data).ok()?;
-                    let data = remap_data(None, data_matrices, 64, |chunk| AiMatrix4x4 {
-                        a1: f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal,
-                        a2: f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]]) as AiReal,
-                        a3: f32::from_le_bytes([chunk[8], chunk[9], chunk[10], chunk[11]])
-                            as AiReal,
-                        a4: f32::from_le_bytes([chunk[12], chunk[13], chunk[14], chunk[15]])
-                            as AiReal,
-                        b1: f32::from_le_bytes([chunk[16], chunk[17], chunk[18], chunk[19]])
-                            as AiReal,
-                        b2: f32::from_le_bytes([chunk[20], chunk[21], chunk[22], chunk[23]])
-                            as AiReal,
-                        b3: f32::from_le_bytes([chunk[24], chunk[25], chunk[26], chunk[27]])
-                            as AiReal,
-                        b4: f32::from_le_bytes([chunk[28], chunk[29], chunk[30], chunk[31]])
-                            as AiReal,
-                        c1: f32::from_le_bytes([chunk[32], chunk[33], chunk[34], chunk[35]])
-                            as AiReal,
-                        c2: f32::from_le_bytes([chunk[36], chunk[37], chunk[38], chunk[39]])
-                            as AiReal,
-                        c3: f32::from_le_bytes([chunk[40], chunk[41], chunk[42], chunk[43]])
-                            as AiReal,
-                        c4: f32::from_le_bytes([chunk[44], chunk[45], chunk[46], chunk[47]])
-                            as AiReal,
-                        d1: f32::from_le_bytes([chunk[48], chunk[49], chunk[50], chunk[51]])
-                            as AiReal,
-                        d2: f32::from_le_bytes([chunk[52], chunk[53], chunk[54], chunk[55]])
-                            as AiReal,
-                        d3: f32::from_le_bytes([chunk[56], chunk[57], chunk[58], chunk[59]])
-                            as AiReal,
-                        d4: f32::from_le_bytes([chunk[60], chunk[61], chunk[62], chunk[63]])
-                            as AiReal,
-                    });
+
+                    let data_matrices: Vec<[f32;16]> = x.extract_data(buffer_data, None).ok()?;
+                    let data: Vec<AiMatrix4x4> = data_matrices.iter().map(|x| AiMatrix4x4::from(x.map(|x| x as AiReal))).collect();
                     Some(data)
                 });
                 for primitive_no in 0..(end - start) {

@@ -30,8 +30,9 @@ impl ExtractData for gltf::Accessor<'_> {
     where
         T: Sized + Default + Pod,
     {
+        let target_elem_size = size_of::<T>();
         let mut result = if let Some(view) = self.view() {
-            //Load Accessor Buffer
+            //Get Buffer Pointer
             let data_index = view.buffer().index();
             let data = buffers
                 .get(data_index)
@@ -41,8 +42,11 @@ impl ExtractData for gltf::Accessor<'_> {
             let count = self.count(); //how many elements there is
             let stride = view.stride().unwrap_or(elem_size); //how many bytes to move to get the next element
 
-            let target_elem_size = size_of::<T>();
+            if elem_size > target_elem_size {
+                return Err(Gtlf2Error::SizeExceedsTarget);
+            }
 
+            //Get Slice of Data
             let start_index = self.offset() + view.offset();
             let end_index = start_index + (count * stride);
             if end_index > data.len() {
@@ -53,22 +57,48 @@ impl ExtractData for gltf::Accessor<'_> {
             //Copy Data into Result
             let mut result = Vec::with_capacity(count);
             if let Some(remap) = remapping_indices {
-                for src_index in remap {
-                    if src_index >= &count {
-                        return Err(Gtlf2Error::ExceedsBounds);
+                //bytemuck::from_bytes requires that slice matches size of T.
+                if target_elem_size == elem_size {
+                    for src_index in remap {
+                        if src_index >= &count {
+                            return Err(Gtlf2Error::ExceedsBounds);
+                        }
+                        let start = src_index * stride;
+                        let end = start + elem_size;
+                        let element = bytemuck::from_bytes::<T>(&data_slice[start..end]);
+                        result.push(*element);
                     }
-                    let start = src_index * stride;
-                    let end = start + elem_size;
-                    let element = bytemuck::from_bytes::<T>(&data_slice[start..end]);
-                    result.push(*element);
+                } else {
+                    for src_index in remap {
+                        if src_index >= &count {
+                            return Err(Gtlf2Error::ExceedsBounds);
+                        }
+                        let start = src_index * stride;
+                        let end = start + elem_size;
+                        let mut output: Vec<u8> = Vec::with_capacity(target_elem_size);
+                        output.extend_from_slice(&data_slice[start..end]);
+                        output.resize(target_elem_size, 0);
+                        let element = bytemuck::from_bytes::<T>(&output);
+                        result.push(*element);
+                    }
                 }
             } else if stride == elem_size && target_elem_size == elem_size {
                 result.extend_from_slice(bytemuck::cast_slice::<u8, T>(data_slice));
-            } else {
+            } else if target_elem_size == elem_size {
                 for i in 0..count {
                     let start = i * stride;
                     let end = start + elem_size;
                     let element = bytemuck::from_bytes::<T>(&data_slice[start..end]);
+                    result.push(*element);
+                }
+            } else {
+                for i in 0..count {
+                    let start = i * stride;
+                    let end = start + elem_size;
+                    let mut output: Vec<u8> = Vec::with_capacity(target_elem_size);
+                    output.extend_from_slice(&data_slice[start..end]);
+                    output.resize(target_elem_size, 0);
+                    let element = bytemuck::from_bytes::<T>(&output);
                     result.push(*element);
                 }
             }
@@ -88,7 +118,8 @@ impl ExtractData for gltf::Accessor<'_> {
         if let Some(sparse) = self.sparse() {
             //Load Index Data Buffer
             let index_data_index = sparse.indices().view().buffer().index();
-            let index_data_start_index = sparse.indices().offset();
+            let index_data_start_index =
+                sparse.indices().offset() + sparse.indices().view().offset();
             let index_data_size = sparse.indices().index_type().size();
             let index_data_end_index = index_data_start_index + index_data_size * sparse.count();
             let index_data = buffers
@@ -100,8 +131,9 @@ impl ExtractData for gltf::Accessor<'_> {
 
             //Load Value Data Buffer
             let values_data_index = sparse.values().view().buffer().index();
-            let values_data_start_index = sparse.values().offset();
-            let values_data_size = self.data_type().size();
+            let values_data_start_index =
+                sparse.values().offset() + sparse.values().view().offset();
+            let values_data_size = self.data_type().size() * self.dimensions().multiplicity();
             let values_data_end_index = values_data_start_index + values_data_size * sparse.count();
             let values_data = buffers
                 .get(values_data_index)
@@ -141,64 +173,6 @@ impl ExtractData for gltf::Accessor<'_> {
                 result[*sparse_index] = *bytemuck::from_bytes::<T>(value);
             }
         }
-
-        Ok(result)
-    }
-}
-
-pub(crate) trait GetPointer {
-    fn get_pointer(&self, buffers: &[buffer::Data]) -> Result<Vec<u8>, Gtlf2Error>;
-}
-
-impl GetPointer for gltf::Accessor<'_> {
-    fn get_pointer(&self, buffers: &[buffer::Data]) -> Result<Vec<u8>, Gtlf2Error> {
-        //Get Base Result
-        //Result is guarenteed to have a length of size * count
-        let mut result = if let Some(view) = self.view() {
-            //Load Accessor Buffer
-            let data_index = view.buffer().index();
-            let data = buffers
-                .get(data_index)
-                .ok_or(Gtlf2Error::MissingBufferData)?;
-
-            let start_index = self.offset() + view.offset();
-            let count = self.count(); //how many elements there is
-            let size = self.size(); //how large each element is
-            let stride = view.stride().unwrap_or(size); //how many bytes to move to get the next element
-
-            assert!(count * stride <= view.length());
-
-            let end_index = start_index + (count * stride);
-            if end_index > data.len() {
-                return Err(Gtlf2Error::ExceedsBounds);
-            }
-
-            //Copy Data into Result
-            let mut result = Vec::with_capacity(count * size);
-            let sliced = &data[start_index..end_index];
-            if stride == size {
-                result.extend_from_slice(sliced);
-            } else {
-                for i in 0..count {
-                    let start = i * stride;
-                    let end = start + size;
-                    result.extend_from_slice(&sliced[start..end]);
-                }
-            }
-
-            result
-        } else {
-            //Early Out as we must be Sparse if we don't have a view
-            if self.sparse().is_none() {
-                return Err(Gtlf2Error::BrokenSparseDataAccess);
-            }
-            //Fill up size * count with a bunch of zeroes
-            let mut result = Vec::new();
-            let count = self.count();
-            let size = self.size();
-            result.resize(count * size, 0u8);
-            result
-        };
 
         Ok(result)
     }
@@ -254,24 +228,22 @@ impl Gltf2Importer {
                     let vertex_remap_table = &mut vertex_remapping_tables[meshes.len()];
                     vertex_remap_table.reserve(count / 3);
 
-                    let index_data = indices
-                        .get_pointer(buffer_data)
-                        .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?; //Returns bytes equal with length equal to indices.count() * size
-
                     let index_data: Vec<u32> = match indices.data_type() {
                         gltf::accessor::DataType::I8 | gltf::accessor::DataType::U8 => {
+                            let index_data: Vec<u8> = indices.extract_data(buffer_data, None)
+                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?; 
                             index_data.into_iter().map(|x| x as u32).collect()
                         }
-                        gltf::accessor::DataType::I16 | gltf::accessor::DataType::U16 => index_data
-                            .chunks_exact(2)
-                            .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]) as u32)
-                            .collect(),
-                        gltf::accessor::DataType::U32 | gltf::accessor::DataType::F32 => index_data
-                            .chunks_exact(4)
-                            .map(|chunk| {
-                                u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]])
-                            })
-                            .collect(),
+                        gltf::accessor::DataType::I16 | gltf::accessor::DataType::U16 => {
+                            let index_data: Vec<u16> = indices.extract_data(buffer_data, None)
+                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?; 
+                            index_data.into_iter().map(|x| x as u32).collect()
+                        }
+                        gltf::accessor::DataType::U32 | gltf::accessor::DataType::F32 => {
+                            let index_data: Vec<u32> = indices.extract_data(buffer_data, None)
+                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?; 
+                            index_data
+                        }
                     };
 
                     for i in 0..count {
@@ -646,8 +618,11 @@ impl Gltf2Importer {
                                             .resize(ai_mesh.tangents.len(), Default::default());
                                         for i in 0..tangents_offsets.len() {
                                             let offset = tangents_offsets[i];
-                                            anim_mesh.tangents[i] +=
-                                                AiVector3D::new(offset[0] as AiReal, offset[1] as AiReal, offset[2] as AiReal);
+                                            anim_mesh.tangents[i] += AiVector3D::new(
+                                                offset[0] as AiReal,
+                                                offset[1] as AiReal,
+                                                offset[2] as AiReal,
+                                            );
                                             anim_mesh.bi_tangents[i] = (anim_mesh.normals[i]
                                                 ^ anim_mesh.tangents[i])
                                                 * tangent_weights[i]; //Saved Tangent Weights to prevent need for re-extraction
