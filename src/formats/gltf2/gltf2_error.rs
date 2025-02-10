@@ -3,6 +3,7 @@ use std::{error::Error, fmt::Display};
 #[derive(Debug)]
 pub enum Gtlf2Error {
     ExceedsBounds,
+    InvalidStride,
     SizeExceedsTarget,
     MissingBufferData,
     BrokenSparseDataAccess,
@@ -21,7 +22,8 @@ impl Display for Gtlf2Error {
                 write!(f, "Expected Primitive Attribute Not Found")
             }
             Gtlf2Error::SizeExceedsTarget => 
-            write!(f, "Size provided exceeds Target")
+            write!(f, "Size provided exceeds Target"),
+            Gtlf2Error::InvalidStride => write!(f, "Stride is Less than Element Size"),
         }
     }
 }

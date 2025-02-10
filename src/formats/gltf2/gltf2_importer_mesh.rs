@@ -42,13 +42,17 @@ impl ExtractData for gltf::Accessor<'_> {
             let count = self.count(); //how many elements there is
             let stride = view.stride().unwrap_or(elem_size); //how many bytes to move to get the next element
 
+            if stride < elem_size{
+                return Err(Gtlf2Error::InvalidStride);
+            }
+
             if elem_size > target_elem_size {
                 return Err(Gtlf2Error::SizeExceedsTarget);
             }
 
             //Get Slice of Data
             let start_index = self.offset() + view.offset();
-            let end_index = start_index + (count * stride);
+            let end_index = start_index + (count - 1) * stride + elem_size; //The Last Element
             if end_index > data.len() {
                 return Err(Gtlf2Error::ExceedsBounds);
             }
