@@ -274,7 +274,7 @@ impl Gltf2Importer {
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
 
-                        let values: Vec<f32> = match output.data_type() {
+                        let values: Vec<AiReal> = match output.data_type() {
                             gltf::accessor::DataType::I8 => {
                                 let output_data: Vec<i8> = output
                                     .extract_data(buffer_data, None)

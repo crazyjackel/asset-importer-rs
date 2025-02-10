@@ -346,10 +346,10 @@ impl Gltf2Importer {
                                     .bi_tangents
                                     .resize(data.len(), AiVector3D::default());
                                 for (i, tangent) in data.iter().enumerate() {
-                                    let x = tangent[0];
-                                    let y = tangent[1];
-                                    let z = tangent[2];
-                                    let w = tangent[3];
+                                    let x = tangent[0] as AiReal;
+                                    let y = tangent[1] as AiReal;
+                                    let z = tangent[2] as AiReal;
+                                    let w = tangent[3] as AiReal;
                                     ai_mesh.tangents[i] = AiVector3D::new(x, y, z);
                                     ai_mesh.bi_tangents[i] =
                                         (ai_mesh.normals[i] ^ AiVector3D::new(x, y, z)) * w;

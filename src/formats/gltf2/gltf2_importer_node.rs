@@ -205,7 +205,7 @@ fn import_node<'a>(
                                 }
                             };
 
-                            let weight_data: Vec<[f32; 4]> = match acc_weight.data_type() {
+                            let weight_data: Vec<[AiReal; 4]> = match acc_weight.data_type() {
                                 gltf::accessor::DataType::U8 => {
                                     let data_weight: Vec<[u8; 4]> =
                                         acc_weight.extract_data(buffer_data, remap_table).map_err(
