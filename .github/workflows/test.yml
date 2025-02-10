@@ -22,7 +22,7 @@ jobs:
           path: glTF-Sample-Assets
 
       - name: Tests (minimal features)
-        run: cargo test --all --release --features minimal -- --nocapture
+        run: cargo test --all --release --no-default-features --features minimal -- --nocapture
 
       - name: Tests (all features)
         run: cargo test --all --all-features --release -- --nocapture

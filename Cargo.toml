@@ -11,6 +11,7 @@ gltf-v1 = { path = "gltf-v1", optional = true, version = "0.1.0" }
 image = { version = "0.25.5", features = [
     "png",
     "jpeg",
+    "webp"
 ], default-features = false }
 num_enum = "0.7.3"
 serde = "1.0.217"
@@ -25,7 +26,7 @@ name = "benchmark"
 harness = false
 
 [features]
-minimal = ["asset_gltf_v1"]
+minimal = ["asset_gltf_v2"]
 
 default = [
     "asset_gltf_v2",
@@ -62,3 +63,4 @@ KHR_materials_pbrSpecularGlossiness = [
 ]
 KHR_materials_emissive_strength = ["gltf/KHR_materials_emissive_strength"]
 KHR_lights_punctual = ["gltf/KHR_lights_punctual"]
+# gltf_EXT_texture_webp = ["gltf/EXT_texture_webp", "image/webp"]

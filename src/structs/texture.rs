@@ -8,24 +8,27 @@ use super::color::AiColor4D;
 pub enum AiTextureFormat {
     #[default]
     Unknown,
-    Png,
+    PNG,
     JPEG,
+    WEBP
 }
 
 impl AiTextureFormat {
     pub fn get_mime_type(&self) -> String {
         match self {
             AiTextureFormat::Unknown => "image/unknown".to_string(),
-            AiTextureFormat::Png => "image/png".to_string(),
+            AiTextureFormat::PNG => "image/png".to_string(),
             AiTextureFormat::JPEG => "image/jpg".to_string(),
+            AiTextureFormat::WEBP => "image/webp".to_string(),
         }
     }
 
     pub fn get_extension(&self) -> String {
         match self {
             AiTextureFormat::Unknown => "unknown".to_string(),
-            AiTextureFormat::Png => "png".to_string(),
+            AiTextureFormat::PNG => "png".to_string(),
             AiTextureFormat::JPEG => "jpeg".to_string(),
+            AiTextureFormat::WEBP => "webp".to_string(),
         }
     }
 }
@@ -85,8 +88,9 @@ impl AiTexture {
     pub fn export(&self) -> Result<Vec<u8>, ImageError> {
         let format = 
         match self.ach_format_hint{
-            AiTextureFormat::Unknown | AiTextureFormat::Png => ImageFormat::Png,
-            AiTextureFormat::JPEG => ImageFormat::Jpeg
+            AiTextureFormat::Unknown | AiTextureFormat::PNG => ImageFormat::Png,
+            AiTextureFormat::JPEG => ImageFormat::Jpeg,
+            AiTextureFormat::WEBP => ImageFormat::WebP,
         };
 
         let mut bytes: Vec<u8> = Vec::with_capacity((self.width * self.height * 4) as usize);

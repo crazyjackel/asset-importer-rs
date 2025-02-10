@@ -35,10 +35,12 @@ impl Gltf2Importer {
             };
 
             //@todo: add better mime_type predictions
-            let format = match mime_type {
+            //format is used for exporting from texels
+            let format: AiTextureFormat = match mime_type {
                 Some(mime_type_str) => match mime_type_str {
                     "image/jpeg" => AiTextureFormat::JPEG,
-                    "image/png" => AiTextureFormat::Png,
+                    "image/png" => AiTextureFormat::PNG,
+                    "image/webp" => AiTextureFormat::WEBP,
                     _ => AiTextureFormat::Unknown,
                 },
                 None => AiTextureFormat::Unknown,
