@@ -38,7 +38,7 @@ const SKIP_FILES: [&str; 19] = [
 ];
 
 //These files should be skipped when running in minimal mode
-const SKIP_MINIMAL: [&str; 9] = [
+const SKIP_MINIMAL: [&str; 11] = [
     "glTF-Sample-Assets/Models/DirectionalLight/glTF/DirectionalLight.gltf", //Requires Lights to Import
     "glTF-Sample-Assets/Models/DirectionalLight/glTF-Binary/DirectionalLight.glb",
     "glTF-Sample-Assets/Models/PlaysetLightTest/glTF-Binary/PlaysetLightTest.glb",
