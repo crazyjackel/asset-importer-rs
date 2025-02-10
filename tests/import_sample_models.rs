@@ -11,8 +11,8 @@ const SAMPLE_MODELS_DIRECTORY_PATH: &str = "glTF-Sample-Assets/Models";
 // @todo: Make sure these files have tickets for being removed from skip list
 // I would like to test these files, however, there is a particular issue that is hard to fix
 const SKIP_FILES: [&str; 2] = [
-    "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF/SheenWoodLeatherSofa.gltf",
-    "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF-Binary/SheenWoodLeatherSofa.glb"
+    "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF/SheenWoodLeatherSofa.gltf", //Sheen Wood Leather Sofa using WebP files which are not fully supported by dependency ATM
+    "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF-Binary/SheenWoodLeatherSofa.glb",
 ];
 
 fn run() -> Result<(), Box<dyn StdError>> {
@@ -27,12 +27,12 @@ fn run() -> Result<(), Box<dyn StdError>> {
                 gltf_path.set_extension("gltf");
                 if gltf_path.exists() {
                     let display = format!("{}", gltf_path.display());
-                    if !SKIP_FILES.contains(&display.as_str()){
+                    if !SKIP_FILES.contains(&display.as_str()) {
                         println!("Importing {}", display);
                         let importer = Gltf2Importer;
                         let mut ai_importer = AiImporter::default();
                         let _ = importer.read_file(&mut ai_importer, gltf_path)?;
-                    }else{
+                    } else {
                         println!("Skipping {}", display);
                     }
                 }
@@ -42,12 +42,12 @@ fn run() -> Result<(), Box<dyn StdError>> {
                 gle_path.set_extension("gltf");
                 if gle_path.exists() {
                     let display = format!("{}", gle_path.display());
-                    if !SKIP_FILES.contains(&display.as_str()){
+                    if !SKIP_FILES.contains(&display.as_str()) {
                         println!("Importing {}", display);
                         let importer = Gltf2Importer;
                         let mut ai_importer = AiImporter::default();
                         let _ = importer.read_file(&mut ai_importer, gle_path)?;
-                    }else{
+                    } else {
                         println!("Skipping {}", display);
                     }
                 }
@@ -57,12 +57,12 @@ fn run() -> Result<(), Box<dyn StdError>> {
                 glb_path.set_extension("glb");
                 if glb_path.exists() {
                     let display = format!("{}", glb_path.display());
-                    if !SKIP_FILES.contains(&display.as_str()){
+                    if !SKIP_FILES.contains(&display.as_str()) {
                         println!("Importing {}", display);
                         let importer = Gltf2Importer;
                         let mut ai_importer = AiImporter::default();
                         let _ = importer.read_file(&mut ai_importer, glb_path)?;
-                    }else{
+                    } else {
                         println!("Skipping {}", display);
                     }
                 }
@@ -73,7 +73,7 @@ fn run() -> Result<(), Box<dyn StdError>> {
 }
 
 #[test]
-fn import_gltf_sample_assets(){
+fn import_gltf_sample_assets() {
     if let Err(error) = run() {
         let is_ai_error = !error.is::<AiReadError>();
         println!("{}", error);

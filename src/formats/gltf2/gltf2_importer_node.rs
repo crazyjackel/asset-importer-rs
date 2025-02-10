@@ -14,10 +14,7 @@ use crate::{
     },
 };
 
-use super::{
-    gltf2_importer::Gltf2Importer,
-    gltf2_importer_mesh::ExtractData,
-};
+use super::{gltf2_importer::Gltf2Importer, gltf2_importer_mesh::ExtractData};
 
 impl Gltf2Importer {
     pub(crate) fn import_nodes(
@@ -135,9 +132,11 @@ fn import_node<'a>(
                 let asset_joints: Vec<Node<'_>> = skin.joints().collect();
                 let num_bones = asset_joints.len();
                 let bind_matrices = skin.inverse_bind_matrices().and_then(|x| {
-
-                    let data_matrices: Vec<[f32;16]> = x.extract_data(buffer_data, None).ok()?;
-                    let data: Vec<AiMatrix4x4> = data_matrices.iter().map(|x| AiMatrix4x4::from(x.map(|x| x as AiReal))).collect();
+                    let data_matrices: Vec<[f32; 16]> = x.extract_data(buffer_data, None).ok()?;
+                    let data: Vec<AiMatrix4x4> = data_matrices
+                        .iter()
+                        .map(|x| AiMatrix4x4::from(x.map(|x| x as AiReal)))
+                        .collect();
                     Some(data)
                 });
                 for primitive_no in 0..(end - start) {
@@ -205,7 +204,7 @@ fn import_node<'a>(
                                     continue;
                                 }
                             };
-                            
+
                             let weight_data: Vec<[f32; 4]> = match acc_weight.data_type() {
                                 gltf::accessor::DataType::U8 => {
                                     let data_weight: Vec<[u8; 4]> =
@@ -316,16 +315,7 @@ fn import_node<'a>(
             }
         }
         //handle lights
-        if let Some(light) = node.light() {
-            if let Some(ai_light) = lights.get_mut(light.index()) {
-                ai_light.name = ai_node.name.to_string();
-            }
-
-            if let Some(range) = light.range() {
-                let hashmap = ai_node.metadata.get_or_insert(HashMap::new());
-                hashmap.insert("PBR_LightRange".to_string(), AiMetadataEntry::AiF32(range));
-            }
-        }
+        handle_lights(lights, &mut ai_node, &node);
 
         ai_node.parent = parent_index;
         ai_node_tree.arena.push(ai_node);
@@ -340,6 +330,25 @@ fn import_node<'a>(
     Ok(ai_node_tree)
 }
 
+#[cfg(not(feature = "KHR_lights_punctual"))]
+fn handle_lights(_lights: &mut [AiLight], _ai_node: &mut AiNode, _node: &Node<'_>) {}
+#[cfg(feature = "KHR_lights_punctual")]
+fn handle_lights(lights: &mut [AiLight], ai_node: &mut AiNode, node: &Node<'_>) {
+    if let Some(light) = node.light() {
+        if let Some(ai_light) = lights.get_mut(light.index()) {
+            ai_light.name = ai_node.name.to_string();
+        }
+
+        if let Some(range) = light.range() {
+            let hashmap = ai_node.metadata.get_or_insert(HashMap::new());
+            hashmap.insert("PBR_LightRange".to_string(), AiMetadataEntry::AiF32(range));
+        }
+    }
+}
+
+#[cfg(not(feature = "gltf_extensions"))]
+fn handle_extensions(ai_node: &mut AiNode, node: &gltf::Node<'_>) {}
+#[cfg(feature = "gltf_extensions")]
 fn handle_extensions(ai_node: &mut AiNode, node: &gltf::Node<'_>) {
     fn parse_extension(value: &Value) -> Option<AiMetadataEntry> {
         match value {

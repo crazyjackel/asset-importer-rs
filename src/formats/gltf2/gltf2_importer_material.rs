@@ -34,6 +34,7 @@ pub const _AI_MATKEY_GLTF_STRENGTH_BASE: &str = "$tex.strength";
 trait ImportTexture<'a> {
     fn texture(&self) -> gltf::Texture<'a>;
     fn tex_coord(&self) -> u32;
+    #[cfg(feature = "KHR_texture_transform")]
     fn texture_transform(&self) -> Option<gltf::texture::TextureTransform<'a>>;
 }
 
@@ -46,6 +47,7 @@ impl<'a> ImportTexture<'a> for texture::Info<'a> {
         self.tex_coord()
     }
 
+    #[cfg(feature = "KHR_texture_transform")]
     fn texture_transform(&self) -> Option<gltf::texture::TextureTransform<'a>> {
         self.texture_transform()
     }
@@ -61,6 +63,7 @@ impl<'a> ImportTexture<'a> for NormalTexture<'a> {
     }
 
     //@todo: When supported, update here: https://github.com/gltf-rs/gltf/pull/412
+    #[cfg(feature = "KHR_texture_transform")]
     fn texture_transform(&self) -> Option<gltf::texture::TextureTransform<'a>> {
         None
     }
@@ -74,6 +77,7 @@ impl<'a> ImportTexture<'a> for OcclusionTexture<'a> {
         self.tex_coord()
     }
 
+    #[cfg(feature = "KHR_texture_transform")]
     fn texture_transform(&self) -> Option<gltf::texture::TextureTransform<'a>> {
         None
     }
@@ -615,7 +619,8 @@ fn handle_unlit(
     _material: &gltf::Material<'_>,
     _ai_material: &mut AiMaterial,
 ) {
-    ai_material.add_property(
+    use crate::structs::{matkey::AI_MATKEY_SHADING_MODEL, AiShadingMode};
+    _ai_material.add_property(
         matkey::AI_MATKEY_SHADING_MODEL,
         Some(AiTextureType::None),
         AiPropertyTypeInfo::Binary(vec![AiShadingMode::PBR as u8]),
