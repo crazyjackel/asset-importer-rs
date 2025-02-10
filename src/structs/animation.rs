@@ -18,9 +18,13 @@ pub struct AiVectorKey {
     pub interpolation: AiAnimInterpolation,
 }
 
-impl AiVectorKey{
-    pub fn new(time: f64, value: AiVector3D, interpolation: AiAnimInterpolation) -> Self{
-        Self { time, value, interpolation }
+impl AiVectorKey {
+    pub fn new(time: f64, value: AiVector3D, interpolation: AiAnimInterpolation) -> Self {
+        Self {
+            time,
+            value,
+            interpolation,
+        }
     }
 }
 
@@ -56,9 +60,13 @@ pub struct AiQuatKey {
     pub interpolation: AiAnimInterpolation,
 }
 
-impl AiQuatKey{
-    pub fn new(time: f64, value: AiQuaternion, interpolation: AiAnimInterpolation) -> Self{
-        Self { time, value, interpolation }
+impl AiQuatKey {
+    pub fn new(time: f64, value: AiQuaternion, interpolation: AiAnimInterpolation) -> Self {
+        Self {
+            time,
+            value,
+            interpolation,
+        }
     }
 }
 

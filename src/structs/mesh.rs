@@ -186,9 +186,7 @@ impl AiMesh {
 
     fn get_num_color_channels(&self) -> u32 {
         let mut n: u32 = 0;
-        while n < AI_MAX_NUMBER_OF_COLORS_SETS
-            .try_into()
-            .unwrap_or(u32::MAX)
+        while n < AI_MAX_NUMBER_OF_COLORS_SETS.try_into().unwrap_or(u32::MAX)
             && self.colors[n as usize].is_some()
         {
             n += 1;

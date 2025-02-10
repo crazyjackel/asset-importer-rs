@@ -781,8 +781,7 @@ fn handle_emissive_strength(
 
 #[test]
 fn test_material_import() {
-    let gltf_data = 
-        r#"{
+    let gltf_data = r#"{
             "asset": {
                 "generator": "COLLADA2GLTF",
                 "version": "2.0"

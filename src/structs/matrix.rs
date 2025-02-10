@@ -29,7 +29,6 @@ pub struct DecomposedMatrix {
     pub rotation: AiQuaternion,
 }
 
-
 impl ops::MulAssign for AiMatrix4x4 {
     fn mul_assign(&mut self, rhs: Self) {
         let new_self = AiMatrix4x4 {
@@ -273,8 +272,8 @@ impl From<[AiReal; 16]> for AiMatrix4x4 {
 impl From<AiMatrix4x4> for [AiReal; 16] {
     fn from(val: AiMatrix4x4) -> Self {
         [
-            val.a1, val.a2, val.a3, val.a4, val.b1, val.b2, val.b3, val.b4, val.c1,
-            val.c2, val.c3, val.c4, val.d1, val.d2, val.d3, val.d4,
+            val.a1, val.a2, val.a3, val.a4, val.b1, val.b2, val.b3, val.b4, val.c1, val.c2, val.c3,
+            val.c4, val.d1, val.d2, val.d3, val.d4,
         ]
     }
 }

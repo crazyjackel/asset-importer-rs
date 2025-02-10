@@ -1,4 +1,3 @@
-
 use super::{
     animation::AiAnimation,
     camera::AiCamera,
@@ -40,20 +39,24 @@ pub struct AiNodeTree {
     pub arena: Vec<AiNode>,
 }
 
-impl AiNodeTree{
-    pub fn merge(&mut self, other: AiNodeTree){
+impl AiNodeTree {
+    pub fn merge(&mut self, other: AiNodeTree) {
         let offset = self.arena.len();
-        let mut new_nodes : Vec<AiNode> = other.arena.into_iter().map(|mut node|{
-            if let Some(parent_idx) = node.parent{
-                node.parent = Some(parent_idx + offset);
-            }else{
-                node.parent = self.root;
-            }
-            for child in &mut node.children{
-                *child += offset;
-            }
-            node
-        }).collect();
+        let mut new_nodes: Vec<AiNode> = other
+            .arena
+            .into_iter()
+            .map(|mut node| {
+                if let Some(parent_idx) = node.parent {
+                    node.parent = Some(parent_idx + offset);
+                } else {
+                    node.parent = self.root;
+                }
+                for child in &mut node.children {
+                    *child += offset;
+                }
+                node
+            })
+            .collect();
         self.arena.append(&mut new_nodes);
     }
 }

@@ -42,7 +42,7 @@ impl ExtractData for gltf::Accessor<'_> {
             let count = self.count(); //how many elements there is
             let stride = view.stride().unwrap_or(elem_size); //how many bytes to move to get the next element
 
-            if stride < elem_size{
+            if stride < elem_size {
                 return Err(Gtlf2Error::InvalidStride);
             }
 
@@ -234,18 +234,21 @@ impl Gltf2Importer {
 
                     let index_data: Vec<u32> = match indices.data_type() {
                         gltf::accessor::DataType::I8 | gltf::accessor::DataType::U8 => {
-                            let index_data: Vec<u8> = indices.extract_data(buffer_data, None)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?; 
+                            let index_data: Vec<u8> = indices
+                                .extract_data(buffer_data, None)
+                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
                             index_data.into_iter().map(|x| x as u32).collect()
                         }
                         gltf::accessor::DataType::I16 | gltf::accessor::DataType::U16 => {
-                            let index_data: Vec<u16> = indices.extract_data(buffer_data, None)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?; 
+                            let index_data: Vec<u16> = indices
+                                .extract_data(buffer_data, None)
+                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
                             index_data.into_iter().map(|x| x as u32).collect()
                         }
                         gltf::accessor::DataType::U32 | gltf::accessor::DataType::F32 => {
-                            let index_data: Vec<u32> = indices.extract_data(buffer_data, None)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?; 
+                            let index_data: Vec<u32> = indices
+                                .extract_data(buffer_data, None)
+                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
                             index_data
                         }
                     };

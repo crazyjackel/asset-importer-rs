@@ -1,4 +1,3 @@
-
 use std::fmt;
 
 use serde::{de, ser};
@@ -30,7 +29,7 @@ pub struct Ortographic {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CameraType {
     Perspective,
-    Orthographic
+    Orthographic,
 }
 
 impl<'de> de::Deserialize<'de> for Checked<CameraType> {
@@ -83,7 +82,7 @@ pub struct Camera {
     #[serde(rename = "type")]
     camera_type: Checked<CameraType>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>
+    name: Option<String>,
 }
 
 #[test]

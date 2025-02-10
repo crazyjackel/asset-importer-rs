@@ -21,8 +21,7 @@ impl Display for Gtlf2Error {
             Gtlf2Error::AttributeNotFound => {
                 write!(f, "Expected Primitive Attribute Not Found")
             }
-            Gtlf2Error::SizeExceedsTarget => 
-            write!(f, "Size provided exceeds Target"),
+            Gtlf2Error::SizeExceedsTarget => write!(f, "Size provided exceeds Target"),
             Gtlf2Error::InvalidStride => write!(f, "Stride is Less than Element Size"),
         }
     }

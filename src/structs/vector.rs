@@ -157,8 +157,13 @@ impl AiVector3D {
         self / length
     }
 
-    pub fn to_quat(self, w: AiReal) -> AiQuaternion{
-        AiQuaternion { w, x: self.x, y: self.y, z: self.z }
+    pub fn to_quat(self, w: AiReal) -> AiQuaternion {
+        AiQuaternion {
+            w,
+            x: self.x,
+            y: self.y,
+            z: self.z,
+        }
     }
 
     pub fn normalize(&mut self) {
@@ -283,14 +288,14 @@ impl ops::Mul<AiReal> for AiVector3D {
     }
 }
 
-impl ops::Sub<AiVector3D> for AiVector3D{
+impl ops::Sub<AiVector3D> for AiVector3D {
     type Output = AiVector3D;
 
     fn sub(self, rhs: AiVector3D) -> Self::Output {
-        AiVector3D{
+        AiVector3D {
             x: self.x - rhs.x,
             y: self.y - rhs.y,
-            z: self.z - rhs.z
+            z: self.z - rhs.z,
         }
     }
 }

@@ -10,7 +10,7 @@ pub enum AiTextureFormat {
     Unknown,
     PNG,
     JPEG,
-    WEBP
+    WEBP,
 }
 
 impl AiTextureFormat {
@@ -86,8 +86,7 @@ impl AiTexture {
     }
 
     pub fn export(&self) -> Result<Vec<u8>, ImageError> {
-        let format = 
-        match self.ach_format_hint{
+        let format = match self.ach_format_hint {
             AiTextureFormat::Unknown | AiTextureFormat::PNG => ImageFormat::Png,
             AiTextureFormat::JPEG => ImageFormat::Jpeg,
             AiTextureFormat::WEBP => ImageFormat::WebP,
@@ -95,7 +94,10 @@ impl AiTexture {
 
         let mut bytes: Vec<u8> = Vec::with_capacity((self.width * self.height * 4) as usize);
         let byte_slice: &[u8] = unsafe {
-            std::slice::from_raw_parts(self.texel.as_ptr() as *const u8, self.texel.len() * std::mem::size_of::<AiTexel>())
+            std::slice::from_raw_parts(
+                self.texel.as_ptr() as *const u8,
+                self.texel.len() * std::mem::size_of::<AiTexel>(),
+            )
         };
         let _ = write_buffer_with_format(
             &mut Cursor::new(&mut bytes),

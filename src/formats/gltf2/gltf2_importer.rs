@@ -9,7 +9,10 @@ use crate::{
         importer::AiImporter,
         importer_desc::{AiImporterDesc, AiImporterFlags},
     },
-    structs::{scene::{AiScene, AiSceneFlag}, AiMaterial},
+    structs::{
+        scene::{AiScene, AiSceneFlag},
+        AiMaterial,
+    },
 };
 
 #[derive(Debug)]
@@ -23,8 +26,9 @@ impl AiImport for Gltf2Importer {
             maintainer: Default::default(),
             comments: Default::default(),
             flags: (AiImporterFlags::SupportBinaryFlavor
-                    | AiImporterFlags::LimitedSupport
-                    | AiImporterFlags::SupportTextFlavor | AiImporterFlags::Experimental),
+                | AiImporterFlags::LimitedSupport
+                | AiImporterFlags::SupportTextFlavor
+                | AiImporterFlags::Experimental),
             min_major: 0,
             min_minor: 0,
             max_major: 0,
@@ -110,14 +114,14 @@ impl AiImport for Gltf2Importer {
             &mut lights,
             &mut cameras,
         )?;
-        
+
         //import animations
         let animations = Gltf2Importer::import_animations(&document, &buffer_data)?;
 
         //import metadata
         let metadata = Gltf2Importer::import_metadata(&document)?;
 
-        let mut scene = AiScene{
+        let mut scene = AiScene {
             name: scene_name,
             animations,
             cameras,
@@ -130,7 +134,7 @@ impl AiImport for Gltf2Importer {
             ..AiScene::default()
         };
 
-        if !scene.meshes.is_empty(){
+        if !scene.meshes.is_empty() {
             scene.flags |= AiSceneFlag::Incomplete;
         }
 
@@ -138,10 +142,9 @@ impl AiImport for Gltf2Importer {
     }
 }
 
-
 /// This test is to make sure that basic files can be read.
 #[test]
-fn test_read_file(){
+fn test_read_file() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
     let mut exe_path = binding.join("tests").join("model");
     exe_path.push("Avocado.glb");
@@ -155,9 +158,12 @@ fn test_read_file(){
 
 /// This test is to make sure `byteStride` works.
 #[test]
-fn test_read_file_roughness(){
+fn test_read_file_roughness() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
-    let mut exe_path = binding.join("tests").join("model").join("compare_roughness");
+    let mut exe_path = binding
+        .join("tests")
+        .join("model")
+        .join("compare_roughness");
     exe_path.push("CompareRoughness.gltf");
     let path = exe_path.as_path();
 
@@ -169,7 +175,7 @@ fn test_read_file_roughness(){
 
 /// This test is to make sure that rigged elements load in properly
 #[test]
-fn test_read_file_rigged(){
+fn test_read_file_rigged() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
     let mut exe_path = binding.join("tests").join("model");
     exe_path.push("RiggedFigure.glb");
@@ -183,8 +189,7 @@ fn test_read_file_rigged(){
 
 /// This test is for different primitive modes load in and a range of indices reading in from the same positions buffer works
 #[test]
-fn test_read_file_primitive(){
-
+fn test_read_file_primitive() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
     let mut exe_path = binding.join("tests").join("model").join("primitive_modes");
     exe_path.push("MeshPrimitiveModes.gltf");
@@ -196,11 +201,9 @@ fn test_read_file_primitive(){
     assert_eq!(scene.name, "");
 }
 
-
 /// This test is for sparse accessors working
 #[test]
-fn test_read_file_sparse(){
-
+fn test_read_file_sparse() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
     let mut exe_path = binding.join("tests").join("model");
     exe_path.push("SimpleSparseAccessor.gltf");
@@ -212,10 +215,8 @@ fn test_read_file_sparse(){
     assert_eq!(scene.name, "");
 }
 
-
 #[test]
-fn test_read_file_clearcoat(){
-
+fn test_read_file_clearcoat() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
     let mut exe_path = binding.join("tests").join("model").join("clearcoat");
     exe_path.push("ClearCoatTest.gltf");

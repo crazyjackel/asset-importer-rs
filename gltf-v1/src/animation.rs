@@ -1,8 +1,4 @@
-
-
 use super::Document;
-
-
 
 /// A keyframe animation.
 #[derive(Clone, Debug)]
@@ -14,5 +10,5 @@ pub struct Animation<'a> {
     index: String,
 
     /// The corresponding JSON struct.
-    json: &'a gltf_v1_json::Animation
+    json: &'a gltf_v1_json::Animation,
 }

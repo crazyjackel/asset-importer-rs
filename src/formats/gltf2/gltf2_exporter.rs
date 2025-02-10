@@ -7,7 +7,9 @@ use crate::core::{
         AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON, AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON_DEFAULT,
         AI_CONFIG_EXPORT_GLTF_UNLIMITED_SKINNING_BONES_PER_VERTEX,
         AI_CONFIG_USE_GLTF_PBR_SPECULAR_GLOSSINESS, GLTF2_NODE_IN_TRS, GLTF2_TARGET_NORMAL_EXP,
-    }, error::AiExportError, export::{AiExport, ExportProperty}, 
+    },
+    error::AiExportError,
+    export::{AiExport, ExportProperty},
 };
 
 use super::gltf2_importer_metadata::AI_METADATA_SOURCE_COPYRIGHT;
@@ -230,12 +232,11 @@ impl AiExport for Gltf2Exporter {
 
 pub(crate) fn generate_unique_name(
     base_name: &str,
-    unique_names_map: &mut HashMap<String, u32>
+    unique_names_map: &mut HashMap<String, u32>,
 ) -> String {
-
     let mut unique_name = base_name.to_string();
 
-    if !unique_names_map.contains_key(&unique_name){
+    if !unique_names_map.contains_key(&unique_name) {
         unique_names_map.insert(unique_name.clone(), 0);
         return unique_name;
     }
@@ -252,12 +253,11 @@ pub(crate) fn generate_unique_name(
     }
 }
 
-
 #[test]
-fn test_import_export_file(){
-    use crate::formats::gltf2::gltf2_importer::Gltf2Importer;
-    use crate::core::importer::AiImporter;
+fn test_import_export_file() {
     use crate::core::import::AiImport;
+    use crate::core::importer::AiImporter;
+    use crate::formats::gltf2::gltf2_importer::Gltf2Importer;
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
     let mut exe_path = binding.join("tests").join("model");
     exe_path.push("Avocado.glb");
@@ -268,7 +268,9 @@ fn test_import_export_file(){
     let scene = importer.read_file(&mut ai_importer, path).unwrap();
     assert_eq!(scene.name, "");
 
-    let exporter = Gltf2Exporter { output_type: Output::Standard };
+    let exporter = Gltf2Exporter {
+        output_type: Output::Standard,
+    };
     let mut exe_path_2 = binding.join("test").join("model");
     exe_path_2.push("Avocado2.glb");
     let path = exe_path_2.as_path();
@@ -276,10 +278,10 @@ fn test_import_export_file(){
 }
 
 #[test]
-fn test_import_export_file_binary(){
-    use crate::formats::gltf2::gltf2_importer::Gltf2Importer;
-    use crate::core::importer::AiImporter;
+fn test_import_export_file_binary() {
     use crate::core::import::AiImport;
+    use crate::core::importer::AiImporter;
+    use crate::formats::gltf2::gltf2_importer::Gltf2Importer;
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
     let mut exe_path = binding.join("tests").join("model");
     exe_path.push("Avocado.glb");
@@ -290,7 +292,9 @@ fn test_import_export_file_binary(){
     let scene = importer.read_file(&mut ai_importer, path).unwrap();
     assert_eq!(scene.name, "");
 
-    let exporter = Gltf2Exporter { output_type: Output::Binary };
+    let exporter = Gltf2Exporter {
+        output_type: Output::Binary,
+    };
     let mut exe_path_2 = binding.join("test_output").join("model");
     exe_path_2.push("Avocado2.glb");
     let path = exe_path_2.as_path();

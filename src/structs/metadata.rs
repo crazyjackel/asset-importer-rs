@@ -4,7 +4,7 @@ use super::AiVector3D;
 
 #[repr(u8)]
 #[derive(Clone, Debug, PartialEq)]
-pub enum AiMetadataEntry{
+pub enum AiMetadataEntry {
     AiBool(bool),
     AiI32(i32),
     AiU64(u64),
@@ -14,7 +14,7 @@ pub enum AiMetadataEntry{
     AiVec3D(AiVector3D),
     AiMetadata(HashMap<String, AiMetadataEntry>),
     AiI64(i64),
-    AiU32(u32)
+    AiU32(u32),
 }
 
 pub type AiMetadata = HashMap<String, AiMetadataEntry>;

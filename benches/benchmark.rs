@@ -47,13 +47,13 @@ fn criterion_benchmark(c: &mut Criterion) {
         let mut group = c.benchmark_group("Import Group");
         group.sample_size(10);
         group.measurement_time(Duration::from_millis(1500));
-        group.bench_function("import avocado", |b| b.iter(|| read_file()));
+        group.bench_function("import avocado", |b| b.iter(read_file));
     }
     {
         let mut group_2 = c.benchmark_group("Export Group");
         group_2.sample_size(10);
         group_2.measurement_time(Duration::from_millis(3000));
-        group_2.bench_function("export avocado", |b| b.iter(|| export_file()));
+        group_2.bench_function("export avocado", |b| b.iter(export_file));
     }
 }
 

@@ -257,7 +257,8 @@ impl Gltf2Exporter {
             let mut targets: Option<Vec<MorphTarget>> = None;
             let mut weights: Option<Vec<f32>> = None;
             if !ai_mesh.anim_meshes.is_empty() {
-                let mut targets_vec: Vec<MorphTarget> = Vec::with_capacity(ai_mesh.anim_meshes.len());
+                let mut targets_vec: Vec<MorphTarget> =
+                    Vec::with_capacity(ai_mesh.anim_meshes.len());
                 let mut weights_vec: Vec<f32> = Vec::with_capacity(ai_mesh.anim_meshes.len());
                 for animation in &ai_mesh.anim_meshes {
                     //@todo: handle sparse exports for anim mesh
@@ -945,7 +946,6 @@ impl AccessorExporter {
             extras: Default::default(),
         };
 
-        
         Accessor {
             buffer_view: Some(root.push(buffer_view)),
             byte_offset: Some(USize64(0)),

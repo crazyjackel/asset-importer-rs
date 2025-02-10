@@ -1,7 +1,5 @@
 use std::collections::BTreeMap;
 
-use serde::{Deserialize, Serialize};
-
 use super::accessor::Accessor;
 use super::animation::Animation;
 use super::asset::Asset;

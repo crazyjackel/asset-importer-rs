@@ -13,20 +13,16 @@ const SAMPLE_MODELS_DIRECTORY_PATH: &str = "glTF-Sample-Assets/Models";
 const SKIP_FILES: [&str; 19] = [
     "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF/SheenWoodLeatherSofa.gltf", //Sheen Wood Leather Sofa using WebP files which are not fully supported by dependency ATM
     "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF-Binary/SheenWoodLeatherSofa.glb",
-
     "glTF-Sample-Assets/Models/AnimationPointerUVs/glTF/AnimationPointerUVs.gltf", //Animation Pointers don't work and missing field node is not fixed in 1.4.1
     "glTF-Sample-Assets/Models/AnimationPointerUVs/glTF-Binary/AnimationPointerUVs.glb",
     "glTF-Sample-Assets/Models/AnimatedColorsCube/glTF/AnimatedColorsCube.gltf",
     "glTF-Sample-Assets/Models/AnimatedColorsCube/glTF-Binary/AnimatedColorsCube.glb",
     "glTF-Sample-Assets/Models/PotOfCoalsAnimationPointer/glTF/PotOfCoalsAnimationPointer.gltf",
     "glTF-Sample-Assets/Models/PotOfCoalsAnimationPointer/glTF-Binary/PotOfCoalsAnimationPointer.glb",
-    
     "glTF-Sample-Assets/Models/ClearCoatCarPaint/glTF/ClearCoatCarPaint.gltf", // Clear Coat not available yet
     "glTF-Sample-Assets/Models/ClearCoatCarPaint/glTF-Binary/ClearCoatCarPaint.glb",
-
     "glTF-Sample-Assets/Models/IridescenceSuzanne/glTF-Binary/IridescenceSuzanne.glb", //Iridescence not supported yet
     "glTF-Sample-Assets/Models/IridescenceSuzanne/glTF/IridescenceSuzanne.gltf",
-
     "glTF-Sample-Assets/Models/SheenCloth/glTF/SheenCloth.gltf", //Sheen not supported yet
     "glTF-Sample-Assets/Models/SheenChair/glTF/SheenChair.gltf",
     "glTF-Sample-Assets/Models/SheenChair/glTF-Binary/SheenChair.glb",
@@ -34,7 +30,6 @@ const SKIP_FILES: [&str; 19] = [
     "glTF-Sample-Assets/Models/SheenTestGrid/glTF-Binary/SheenTestGrid.glb",
     "glTF-Sample-Assets/Models/SpecularSilkPouf/glTF/SpecularSilkPouf.gltf",
     "glTF-Sample-Assets/Models/SpecularSilkPouf/glTF-Binary/SpecularSilkPouf.glb"
-
 ];
 
 //These files should be skipped when running in minimal mode
@@ -43,18 +38,15 @@ const SKIP_MINIMAL: [&str; 13] = [
     "glTF-Sample-Assets/Models/DirectionalLight/glTF-Binary/DirectionalLight.glb",
     "glTF-Sample-Assets/Models/PlaysetLightTest/glTF-Binary/PlaysetLightTest.glb",
     "glTF-Sample-Assets/Models/NodePerformanceTest/glTF-Binary/NodePerformanceTest.glb",
-
     "glTF-Sample-Assets/Models/SpecGlossVsMetalRough/glTF/SpecGlossVsMetalRough.gltf", //Requires KHR_materials_pbrSpecularGlossiness
     "glTF-Sample-Assets/Models/SpecGlossVsMetalRough/glTF-Binary/SpecGlossVsMetalRough.glb",
-
     "glTF-Sample-Assets/Models/TextureTransformMultiTest/glTF/TextureTransformMultiTest.gltf", //Requires KHR_texture_transform
     "glTF-Sample-Assets/Models/TextureTransformMultiTest/glTF-Binary/TextureTransformMultiTest.glb",
     "glTF-Sample-Assets/Models/TextureTransformTest/glTF/TextureTransformTest.gltf",
     "glTF-Sample-Assets/Models/GlamVelvetSofa/glTF/GlamVelvetSofa.gltf",
     "glTF-Sample-Assets/Models/GlamVelvetSofa/glTF-Binary/GlamVelvetSofa.glb",
-    
     "glTF-Sample-Assets/Models/UnlitTest/glTF/UnlitTest.gltf", //Requires KHR_materials_unlit
-    "glTF-Sample-Assets/Models/UnlitTest/glTF-Binary/UnlitTest.glb"
+    "glTF-Sample-Assets/Models/UnlitTest/glTF-Binary/UnlitTest.glb",
 ];
 
 fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
@@ -69,10 +61,11 @@ fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
                 gltf_path.set_extension("gltf");
                 if gltf_path.exists() {
                     let display = format!("{}", gltf_path.display());
-                    if SKIP_FILES.contains(&display.as_str()) || (is_minimal && SKIP_MINIMAL.contains(&display.as_str())){
+                    if SKIP_FILES.contains(&display.as_str())
+                        || (is_minimal && SKIP_MINIMAL.contains(&display.as_str()))
+                    {
                         println!("Skipping {}", display);
-                    }
-                    else{
+                    } else {
                         println!("Importing {}", display);
                         let importer = Gltf2Importer;
                         let mut ai_importer = AiImporter::default();
@@ -85,10 +78,11 @@ fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
                 gle_path.set_extension("gltf");
                 if gle_path.exists() {
                     let display = format!("{}", gle_path.display());
-                    if SKIP_FILES.contains(&display.as_str()) || (is_minimal && SKIP_MINIMAL.contains(&display.as_str())){
+                    if SKIP_FILES.contains(&display.as_str())
+                        || (is_minimal && SKIP_MINIMAL.contains(&display.as_str()))
+                    {
                         println!("Skipping {}", display);
-                    }
-                    else{
+                    } else {
                         println!("Importing {}", display);
                         let importer = Gltf2Importer;
                         let mut ai_importer = AiImporter::default();
@@ -101,10 +95,11 @@ fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
                 glb_path.set_extension("glb");
                 if glb_path.exists() {
                     let display = format!("{}", glb_path.display());
-                    if SKIP_FILES.contains(&display.as_str()) || (is_minimal && SKIP_MINIMAL.contains(&display.as_str())){
+                    if SKIP_FILES.contains(&display.as_str())
+                        || (is_minimal && SKIP_MINIMAL.contains(&display.as_str()))
+                    {
                         println!("Skipping {}", display);
-                    }
-                    else{
+                    } else {
                         println!("Importing {}", display);
                         let importer = Gltf2Importer;
                         let mut ai_importer = AiImporter::default();

@@ -3,8 +3,7 @@ use enumflags2::bitflags;
 #[bitflags]
 #[repr(u32)]
 #[derive(Debug, Copy, Clone)]
-pub enum AiPostProcessSteps
-{
+pub enum AiPostProcessSteps {
     CalcTangentSpaces = 0x1,
     JoinIdenticalVertices = 0x2,
     MakeLeftHanded = 0x4,
@@ -26,15 +25,15 @@ pub enum AiPostProcessSteps
     GenUVCoords = 0x40000,
     TransformUVCoords = 0x80000,
     FindInstances = 0x100000,
-    OptimizeMeshes  = 0x200000,
-    OptimizeGraph  = 0x400000,
+    OptimizeMeshes = 0x200000,
+    OptimizeGraph = 0x400000,
     FlipUVs = 0x800000,
-    FlipWindingOrder  = 0x1000000,
-    SplitByBoneCount  = 0x2000000,
+    FlipWindingOrder = 0x1000000,
+    SplitByBoneCount = 0x2000000,
     Debone = 0x4000000,
     GlobalScale = 0x8000000,
-    EmbedTextures  = 0x10000000,
+    EmbedTextures = 0x10000000,
     ForceGenNormals = 0x20000000,
     DropNormals = 0x40000000,
-    GenBoundingBoxes = 0x80000000
+    GenBoundingBoxes = 0x80000000,
 }

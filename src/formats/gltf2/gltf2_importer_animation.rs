@@ -8,10 +8,7 @@ use crate::{
     },
 };
 
-use super::{
-    gltf2_importer::Gltf2Importer,
-    gltf2_importer_mesh::ExtractData,
-};
+use super::{gltf2_importer::Gltf2Importer, gltf2_importer_mesh::ExtractData};
 
 const MILLISECONDS_TO_SECONDS: f64 = 1000.0;
 
@@ -273,19 +270,23 @@ impl Gltf2Importer {
                             .extract_data(buffer_data, None)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
-
                         let values: Vec<AiReal> = match output.data_type() {
                             gltf::accessor::DataType::I8 => {
-                                let output_data: Vec<i8> = output
-                                    .extract_data(buffer_data, None)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                let output_data: Vec<i8> =
+                                    output.extract_data(buffer_data, None).map_err(|err| {
+                                        AiReadError::FileFormatError(Box::new(err))
+                                    })?;
 
-                                output_data.iter().map(|x| (*x as AiReal / 127.0).max(-1.0)).collect()
+                                output_data
+                                    .iter()
+                                    .map(|x| (*x as AiReal / 127.0).max(-1.0))
+                                    .collect()
                             }
                             gltf::accessor::DataType::U8 => {
-                                let output_data: Vec<u8> = output
-                                    .extract_data(buffer_data, None)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                let output_data: Vec<u8> =
+                                    output.extract_data(buffer_data, None).map_err(|err| {
+                                        AiReadError::FileFormatError(Box::new(err))
+                                    })?;
 
                                 output_data.iter().map(|x| (*x as AiReal / 255.0)).collect()
                             }
@@ -294,14 +295,20 @@ impl Gltf2Importer {
                                     .extract_data(buffer_data, None)
                                     .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
-                                output_data.iter().map(|x| (*x as AiReal / 32767.0).max(-1.0)).collect()
+                                output_data
+                                    .iter()
+                                    .map(|x| (*x as AiReal / 32767.0).max(-1.0))
+                                    .collect()
                             }
                             gltf::accessor::DataType::U16 => {
                                 let output_data: Vec<u16> = output
                                     .extract_data(buffer_data, None)
                                     .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
-                                output_data.iter().map(|x| (*x as AiReal / 65535.0)).collect()
+                                output_data
+                                    .iter()
+                                    .map(|x| (*x as AiReal / 65535.0))
+                                    .collect()
                             }
                             gltf::accessor::DataType::U32 | gltf::accessor::DataType::F32 => {
                                 let output_data: Vec<f32> = output

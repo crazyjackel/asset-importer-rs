@@ -109,7 +109,7 @@ fn test_get_camera_matrix() {
     };
 
     let view_matrix = camera.get_camera_matrix();
-    let base_matrix = AiMatrix4x4{
+    let base_matrix = AiMatrix4x4 {
         a1: -1.0,
         a2: 0.0,
         a3: 0.0,
@@ -121,11 +121,11 @@ fn test_get_camera_matrix() {
         c1: 0.0,
         c2: 0.0,
         c3: -1.0,
-        c4: 5.0, 
+        c4: 5.0,
         d1: 0.0,
         d2: 0.0,
         d3: 0.0,
-        d4: 1.0
+        d4: 1.0,
     };
     assert_eq!(base_matrix, view_matrix);
 }

@@ -38,15 +38,16 @@ impl<'de, T> serde::Deserialize<'de> for StringIndex<T> {
             }
 
             fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
-                where
-                    E: serde::de::Error, {
+            where
+                E: serde::de::Error,
+            {
                 Ok(StringIndex::new(v.to_string()))
             }
 
             fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
-                where
-                    E: serde::de::Error, {
-                
+            where
+                E: serde::de::Error,
+            {
                 Ok(StringIndex::new(v))
             }
         }

@@ -1,12 +1,12 @@
 use std::{collections::BTreeMap, fmt};
 
 use super::{accessor::Accessor, root::StringIndex, validation::Checked};
-use serde_derive::{Serialize, Deserialize};
-use serde::{de,ser};
+use serde::{de, ser};
+use serde_derive::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-enum SamplerInterpolation{
-    Linear
+enum SamplerInterpolation {
+    Linear,
 }
 
 impl ser::Serialize for SamplerInterpolation {
@@ -47,27 +47,27 @@ impl<'de> de::Deserialize<'de> for Checked<SamplerInterpolation> {
     }
 }
 #[derive(Clone, Debug, Deserialize, Serialize)]
-struct AnimationChannelTarget{
+struct AnimationChannelTarget {
     id: StringIndex<String>,
-    path: String
+    path: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-struct AnimationChannel{
+struct AnimationChannel {
     sampler: String,
-    target: AnimationChannelTarget
+    target: AnimationChannelTarget,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-struct AnimationSampler{
+struct AnimationSampler {
     input: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     interpolation: Option<Checked<SamplerInterpolation>>,
-    output: String
+    output: String,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Animation{
+pub struct Animation {
     #[serde(skip_serializing_if = "Option::is_none")]
     channels: Option<Vec<AnimationChannel>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -75,11 +75,11 @@ pub struct Animation{
     #[serde(skip_serializing_if = "Option::is_none")]
     samplers: Option<BTreeMap<String, AnimationSampler>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>
+    name: Option<String>,
 }
 
 #[test]
-fn test_animation_deserialize(){
+fn test_animation_deserialize() {
     let data = r#"{
             "channels": [
                 {
@@ -138,5 +138,8 @@ fn test_animation_deserialize(){
     let animation: Result<Animation, _> = serde_json::from_str(data);
     let animation_unwrap = animation.unwrap();
     println!("{}", serde_json::to_string(&animation_unwrap).unwrap());
-    assert_eq!(Some("user-defined animation name".to_string()), animation_unwrap.name); 
+    assert_eq!(
+        Some("user-defined animation name".to_string()),
+        animation_unwrap.name
+    );
 }

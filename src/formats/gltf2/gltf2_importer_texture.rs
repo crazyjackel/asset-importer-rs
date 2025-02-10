@@ -142,13 +142,10 @@ impl Gltf2Importer {
 
 #[test]
 fn test_texture_import() {
-    let binding = std::env::current_dir()
-        .expect("Failed to get the current executable path");
-    let exe_path = binding
-        .as_path();
+    let binding = std::env::current_dir().expect("Failed to get the current executable path");
+    let exe_path = binding.as_path();
 
-    let gltf_data = 
-        r#"{
+    let gltf_data = r#"{
             "asset": {
                 "version": "2.0"
             },
@@ -165,6 +162,7 @@ fn test_texture_import() {
         }"#;
     let scene = serde_json::from_str(gltf_data).unwrap();
     let document = Document::from_json_without_validation(scene);
-    let (embedded_textures, _tex_ids) = Gltf2Importer::import_embedded_textures(&document, Some(exe_path), &[]).unwrap();
+    let (embedded_textures, _tex_ids) =
+        Gltf2Importer::import_embedded_textures(&document, Some(exe_path), &[]).unwrap();
     assert_eq!(1, embedded_textures.len());
 }
