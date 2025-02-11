@@ -208,7 +208,7 @@ pub struct Sampler {
     wrap_s: Option<Checked<SamplerWrap>>,
     #[serde(rename = "wrapT", skip_serializing_if = "Option::is_none")]
     wrap_t: Option<Checked<SamplerWrap>>,
-    name: Option<String>
+    name: Option<String>,
 }
 
 pub const ALPHA: u32 = 6406;

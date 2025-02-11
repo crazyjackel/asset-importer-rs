@@ -1,4 +1,3 @@
-
 use std::fmt;
 
 use serde::de;
@@ -12,9 +11,9 @@ pub const VERTEX_SHADER: u32 = 35633;
 pub const VALID_SHADER_TYPE: &[u32] = &[FRAGMENT_SHADER, VERTEX_SHADER];
 
 #[derive(Clone, Debug, Copy)]
-pub enum ShaderType{
+pub enum ShaderType {
     FragmentShader,
-    VertexShader
+    VertexShader,
 }
 impl ShaderType {
     pub const fn to_repr(self) -> u32 {
@@ -68,7 +67,7 @@ pub struct Shader {
     #[serde(rename = "type")]
     shader_type: Checked<ShaderType>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>
+    name: Option<String>,
 }
 
 #[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize)]
@@ -79,9 +78,8 @@ pub struct Program {
     fragment_shader: StringIndex<Shader>,
     #[serde(rename = "vertexShader")]
     vertex_shader: StringIndex<Shader>,
-    name: Option<String>
+    name: Option<String>,
 }
-
 
 #[test]
 fn test_program_deserialize() {

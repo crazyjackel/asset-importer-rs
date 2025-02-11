@@ -1,9 +1,11 @@
 use super::{quaternion::AiQuaternion, vector::AiVector3D};
 
+/// Interpolation Method Animation Keys from previous
 #[repr(u8)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub enum AiAnimInterpolation {
     Step,
+    #[default]
     Linear,
     SphericalLinear,
     CubicSpline,
@@ -16,9 +18,13 @@ pub struct AiVectorKey {
     pub interpolation: AiAnimInterpolation,
 }
 
-impl AiVectorKey{
-    pub fn new(time: f64, value: AiVector3D, interpolation: AiAnimInterpolation) -> Self{
-        Self { time, value, interpolation }
+impl AiVectorKey {
+    pub fn new(time: f64, value: AiVector3D, interpolation: AiAnimInterpolation) -> Self {
+        Self {
+            time,
+            value,
+            interpolation,
+        }
     }
 }
 
@@ -54,9 +60,13 @@ pub struct AiQuatKey {
     pub interpolation: AiAnimInterpolation,
 }
 
-impl AiQuatKey{
-    pub fn new(time: f64, value: AiQuaternion, interpolation: AiAnimInterpolation) -> Self{
-        Self { time, value, interpolation }
+impl AiQuatKey {
+    pub fn new(time: f64, value: AiQuaternion, interpolation: AiAnimInterpolation) -> Self {
+        Self {
+            time,
+            value,
+            interpolation,
+        }
     }
 }
 
@@ -138,21 +148,16 @@ impl PartialOrd for AiMeshMorphKey {
 }
 
 #[repr(u8)]
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub enum AiAnimBehavior {
+    #[default]
     Default,
     Constant,
     Linear,
     Repeat,
 }
 
-impl Default for AiAnimBehavior {
-    fn default() -> Self {
-        AiAnimBehavior::Default
-    }
-}
-
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct AiNodeAnim {
     pub node_name: String,
     pub position_keys: Vec<AiVectorKey>,
@@ -162,47 +167,16 @@ pub struct AiNodeAnim {
     pub post_state: AiAnimBehavior,
 }
 
-impl Default for AiNodeAnim {
-    fn default() -> Self {
-        Self {
-            node_name: Default::default(),
-            position_keys: Default::default(),
-            rotation_keys: Default::default(),
-            scaling_keys: Default::default(),
-            pre_state: Default::default(),
-            post_state: Default::default(),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct AiMeshAnim {
     name: String,
     keys: Vec<AiMeshKey>,
 }
 
-impl Default for AiMeshAnim {
-    fn default() -> Self {
-        Self {
-            name: Default::default(),
-            keys: Default::default(),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct AiMeshMorphAnim {
     pub name: String,
     pub keys: Vec<AiMeshMorphKey>,
-}
-
-impl Default for AiMeshMorphAnim {
-    fn default() -> Self {
-        Self {
-            name: Default::default(),
-            keys: Default::default(),
-        }
-    }
 }
 
 #[derive(Debug, PartialEq)]

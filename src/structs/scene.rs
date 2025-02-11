@@ -1,8 +1,3 @@
-use std::{
-    cell::RefCell,
-    rc::{Rc, Weak},
-};
-
 use super::{
     animation::AiAnimation,
     camera::AiCamera,
@@ -38,35 +33,30 @@ impl Default for AiNode {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Default)]
 pub struct AiNodeTree {
     pub root: Option<usize>,
     pub arena: Vec<AiNode>,
 }
 
-impl Default for AiNodeTree {
-    fn default() -> Self {
-        Self {
-            root: Default::default(),
-            arena: Default::default(),
-        }
-    }
-}
-
-impl AiNodeTree{
-    pub fn merge(&mut self, other: AiNodeTree){
+impl AiNodeTree {
+    pub fn merge(&mut self, other: AiNodeTree) {
         let offset = self.arena.len();
-        let mut new_nodes : Vec<AiNode> = other.arena.into_iter().map(|mut node|{
-            if let Some(parent_idx) = node.parent{
-                node.parent = Some(parent_idx + offset);
-            }else{
-                node.parent = self.root;
-            }
-            for child in &mut node.children{
-                *child += offset;
-            }
-            node
-        }).collect();
+        let mut new_nodes: Vec<AiNode> = other
+            .arena
+            .into_iter()
+            .map(|mut node| {
+                if let Some(parent_idx) = node.parent {
+                    node.parent = Some(parent_idx + offset);
+                } else {
+                    node.parent = self.root;
+                }
+                for child in &mut node.children {
+                    *child += offset;
+                }
+                node
+            })
+            .collect();
         self.arena.append(&mut new_nodes);
     }
 }

@@ -18,7 +18,7 @@ pub struct Asset {
     premultiplied_alpha: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     profile: Option<AssetProfile>,
-    version: String
+    version: String,
 }
 
 #[test]

@@ -8,7 +8,7 @@ pub struct Scene {
     #[serde(skip_serializing_if = "Option::is_none")]
     nodes: Option<Vec<StringIndex<Node>>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>
+    name: Option<String>,
 }
 
 #[test]

@@ -340,7 +340,10 @@ pub struct TechniqueParameter {
 pub struct TechniqueStateFunction {
     #[serde(rename = "blendColor", skip_serializing_if = "Option::is_none")]
     blend_color: Option<[f32; 4]>,
-    #[serde(rename = "blendEquationSeparate", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "blendEquationSeparate",
+        skip_serializing_if = "Option::is_none"
+    )]
     blend_equation_seperate: Option<[u32; 2]>,
     #[serde(rename = "blendFuncSeparate", skip_serializing_if = "Option::is_none")]
     blend_func_seperate: Option<[u32; 4]>,

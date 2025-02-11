@@ -1,6 +1,5 @@
-use serde::{Serialize, Serializer};
 use serde::ser;
-
+use serde::{Serialize, Serializer};
 
 /// Specifies a type that has been pre-validated during deserialization or otherwise.
 #[derive(Debug, Eq, Hash, PartialEq, Ord, PartialOrd)]

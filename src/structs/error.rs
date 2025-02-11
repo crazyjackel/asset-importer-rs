@@ -1,11 +1,10 @@
 use core::error;
 use std::fmt::Display;
 
-
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct AiFailure;
 
-impl Display for AiFailure{
+impl Display for AiFailure {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Failed to run Assimp Function")
     }
@@ -13,10 +12,10 @@ impl Display for AiFailure{
 
 impl error::Error for AiFailure {}
 
-#[derive(Debug,Clone)]
+#[derive(Debug, Clone)]
 pub struct AiOutOfMemory;
 
-impl Display for AiOutOfMemory{
+impl Display for AiOutOfMemory {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Assimp Function does not have enough Memory to Execute")
     }
@@ -25,14 +24,14 @@ impl Display for AiOutOfMemory{
 impl error::Error for AiOutOfMemory {}
 
 #[derive(Debug, Clone)]
-pub enum AiReturnError{
+pub enum AiReturnError {
     Failure(AiFailure),
-    OutOfMemory(AiOutOfMemory)
+    OutOfMemory(AiOutOfMemory),
 }
 
-impl Display for AiReturnError{
+impl Display for AiReturnError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self{
+        match self {
             AiReturnError::Failure(ai_failure) => write!(f, "{}", ai_failure),
             AiReturnError::OutOfMemory(ai_out_of_memory) => write!(f, "{}", ai_out_of_memory),
         }

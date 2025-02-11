@@ -1,4 +1,3 @@
-
 mod animation;
 
 /// glTF JSON wrapper.

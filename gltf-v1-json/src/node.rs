@@ -3,7 +3,7 @@ use serde_derive::{Deserialize, Serialize};
 use super::{camera::Camera, mesh::Mesh, root::StringIndex, skin::Skin};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Node{
+pub struct Node {
     #[serde(skip_serializing_if = "Option::is_none")]
     camera: Option<StringIndex<Camera>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -19,13 +19,13 @@ pub struct Node{
     #[serde(skip_serializing_if = "Option::is_none")]
     meshes: Option<Vec<StringIndex<Mesh>>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    rotation: Option<[f32;4]>,
+    rotation: Option<[f32; 4]>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    scale: Option<[f32;3]>,
+    scale: Option<[f32; 3]>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    translation: Option<[f32;3]>,
+    translation: Option<[f32; 3]>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>
+    name: Option<String>,
 }
 
 #[test]

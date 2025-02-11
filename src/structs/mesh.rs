@@ -9,7 +9,7 @@ pub const AI_MAX_NUMBER_OF_TEXTURECOORDS: usize = 0x8;
 
 pub type AiFace = Vec<usize>;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct AiVertexWeight {
     pub vertex_id: usize,
     pub weight: AiReal,
@@ -24,16 +24,7 @@ impl AiVertexWeight {
     }
 }
 
-impl Default for AiVertexWeight {
-    fn default() -> Self {
-        Self {
-            vertex_id: Default::default(),
-            weight: Default::default(),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct AiBone {
     pub name: String,
     pub weights: Vec<AiVertexWeight>,
@@ -42,20 +33,8 @@ pub struct AiBone {
     pub offset_matrix: AiMatrix4x4,
 }
 
-impl Default for AiBone {
-    fn default() -> Self {
-        Self {
-            name: Default::default(),
-            weights: Default::default(),
-            node_index: Default::default(),
-            armature_index: Default::default(),
-            offset_matrix: Default::default(),
-        }
-    }
-}
-
 impl AiBone {
-    fn copyVertexWeights(&mut self, other: AiBone) {
+    fn copy_vertex_weights(&mut self, other: AiBone) {
         if other.weights.is_empty() {
             self.weights.clear();
             return;
@@ -111,8 +90,7 @@ unsafe impl ::enumflags2::_internal::RawBitFlags for AiPrimitiveType {
     type Numeric = u8;
     const EMPTY: Self::Numeric = 0;
     const DEFAULT: Self::Numeric = 0;
-    const ALL_BITS: Self::Numeric = 0
-        | (Self::Point as u8)
+    const ALL_BITS: Self::Numeric = (Self::Point as u8)
         | (Self::Line as u8)
         | (Self::Triangle as u8)
         | (Self::Polygon as u8)
@@ -136,7 +114,7 @@ impl AiPrimitiveType {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct AiAnimMesh {
     pub name: String,
     pub vertices: Vec<AiVector3D>,
@@ -146,21 +124,6 @@ pub struct AiAnimMesh {
     pub colors: [Option<Vec<AiColor4D>>; AI_MAX_NUMBER_OF_COLORS_SETS],
     pub texture_coords: [Option<Vec<AiVector3D>>; AI_MAX_NUMBER_OF_TEXTURECOORDS],
     pub weight: f32,
-}
-
-impl Default for AiAnimMesh {
-    fn default() -> Self {
-        Self {
-            name: Default::default(),
-            vertices: Default::default(),
-            normals: Default::default(),
-            tangents: Default::default(),
-            bi_tangents: Default::default(),
-            colors: Default::default(),
-            texture_coords: Default::default(),
-            weight: Default::default(),
-        }
-    }
 }
 
 impl AiAnimMesh {
@@ -181,21 +144,16 @@ impl AiAnimMesh {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub enum AiMorphingTarget {
+    #[default]
     Unknown = 0x00,
     VertexBlend = 0x01,
     MorphNormalized = 0x02,
     MorphRelative = 0x03,
 }
 
-impl Default for AiMorphingTarget {
-    fn default() -> Self {
-        AiMorphingTarget::Unknown
-    }
-}
-
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct AiMesh {
     pub name: String,
     pub primitive_types: BitFlags<AiPrimitiveType>,
@@ -215,29 +173,6 @@ pub struct AiMesh {
     pub texture_coordinate_names: [String; AI_MAX_NUMBER_OF_TEXTURECOORDS],
 }
 
-impl Default for AiMesh {
-    fn default() -> Self {
-        Self {
-            name: Default::default(),
-            primitive_types: Default::default(),
-            vertices: Default::default(),
-            normals: Default::default(),
-            tangents: Default::default(),
-            bi_tangents: Default::default(),
-            colors: Default::default(),
-            texture_coords: Default::default(),
-            //num_uv_components: Default::default(),
-            faces: Default::default(),
-            bones: Default::default(),
-            material_index: Default::default(),
-            anim_meshes: Default::default(),
-            method: Default::default(),
-            aabb: Default::default(),
-            texture_coordinate_names: Default::default(),
-        }
-    }
-}
-
 impl AiMesh {
     fn get_num_uv_channels(&self) -> u32 {
         let mut n: u32 = 0;
@@ -251,9 +186,7 @@ impl AiMesh {
 
     fn get_num_color_channels(&self) -> u32 {
         let mut n: u32 = 0;
-        while n < AI_MAX_NUMBER_OF_COLORS_SETS
-            .try_into()
-            .unwrap_or_else(|_| u32::MAX)
+        while n < AI_MAX_NUMBER_OF_COLORS_SETS.try_into().unwrap_or(u32::MAX)
             && self.colors[n as usize].is_some()
         {
             n += 1;

@@ -1,4 +1,3 @@
-
 use gltf::{animation::Interpolation, buffer, Document};
 
 use crate::{
@@ -9,23 +8,22 @@ use crate::{
     },
 };
 
-use super::{
-    gltf2_importer::Gltf2Importer,
-    gltf2_importer_mesh::{remap_data, GetPointer},
-};
+use super::{gltf2_importer::Gltf2Importer, gltf2_importer_mesh::ExtractData};
 
 const MILLISECONDS_TO_SECONDS: f64 = 1000.0;
 
 impl Gltf2Importer {
-    pub(crate) fn import_animations<'a>(
+    pub(crate) fn import_animations(
         document: &Document,
-        buffer_data: &'a [buffer::Data],
+        buffer_data: &[buffer::Data],
     ) -> Result<Vec<AiAnimation>, AiReadError> {
         let mut animations: Vec<AiAnimation> = Vec::new(); //Final Animations to return
         for animation in document.animations() {
-            let mut ai_anim = AiAnimation::default();
-            ai_anim.name = animation.name().unwrap_or("").to_string();
-            ai_anim.ticks_per_second = 1000.0;
+            let mut ai_anim = AiAnimation {
+                name: animation.name().unwrap_or("").to_string(),
+                ticks_per_second: 1000.0,
+                ..AiAnimation::default()
+            };
 
             let asset_channels: Vec<gltf::animation::Channel<'_>> = animation.channels().collect();
             let mut duration = 0.0;
@@ -43,27 +41,24 @@ impl Gltf2Importer {
                             .unwrap_or(node.index().to_string().as_str())
                             .to_string();
 
-                        let input_data = input
-                            .get_pointer(&buffer_data)
+                        let times: Vec<f32> = input
+                            .extract_data(buffer_data, None)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
-                        let times = remap_data(None, input_data, 4, |chunk| {
-                            f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]])
-                        });
-
-                        let output_data = output
-                            .get_pointer(&buffer_data)
+                        let output_translation: Vec<[f32; 3]> = output
+                            .extract_data(buffer_data, None)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
-                        let translation = remap_data(None, output_data, 12, |chunk| {
-                            let x = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]])
-                                as AiReal;
-                            let y = f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]])
-                                as AiReal;
-                            let z = f32::from_le_bytes([chunk[8], chunk[9], chunk[10], chunk[11]])
-                                as AiReal;
-                            AiVector3D::new(x, y, z)
-                        });
+                        let translation: Vec<AiVector3D> = output_translation
+                            .iter()
+                            .map(|chunk| {
+                                AiVector3D::new(
+                                    chunk[0] as AiReal,
+                                    chunk[1] as AiReal,
+                                    chunk[2] as AiReal,
+                                )
+                            })
+                            .collect();
                         for i in 0..times.len() {
                             let time = times[i] as f64 * MILLISECONDS_TO_SECONDS;
                             if time > duration {
@@ -95,87 +90,95 @@ impl Gltf2Importer {
                             .unwrap_or(node.index().to_string().as_str())
                             .to_string();
 
-                        let input_data = input
-                            .get_pointer(&buffer_data)
+                        let times: Vec<f32> = input
+                            .extract_data(buffer_data, None)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
-                        let times = remap_data(None, input_data, 4, |chunk| {
-                            f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]])
-                        });
-
-                        let output_data = output
-                            .get_pointer(&buffer_data)
-                            .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
-
-                        let rotation_opt = match output.data_type() {
+                        let rotation_opt: Option<Vec<AiQuaternion>> = match output.data_type() {
                             gltf::accessor::DataType::I8 => {
-                                Some(remap_data(None, output_data, 4, |chunk| {
-                                    let x =
-                                        (i8::from_le_bytes([chunk[0]]) as AiReal / 127.0).max(-1.0);
-                                    let y =
-                                        (i8::from_le_bytes([chunk[1]]) as AiReal / 127.0).max(-1.0);
-                                    let z =
-                                        (i8::from_le_bytes([chunk[2]]) as AiReal / 127.0).max(-1.0);
-                                    let w =
-                                        (i8::from_le_bytes([chunk[3]]) as AiReal / 127.0).max(-1.0);
-                                    AiQuaternion::new(x, y, z, w)
-                                }))
+                                let output_rotation: Vec<[i8; 4]> = output
+                                    .extract_data(buffer_data, None)
+                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                Some(
+                                    output_rotation
+                                        .iter()
+                                        .map(|chunk| {
+                                            let x = (chunk[0] as AiReal / 127.0).max(-1.0);
+                                            let y = (chunk[1] as AiReal / 127.0).max(-1.0);
+                                            let z = (chunk[2] as AiReal / 127.0).max(-1.0);
+                                            let w = (chunk[3] as AiReal / 127.0).max(-1.0);
+                                            AiQuaternion::new(x, y, z, w)
+                                        })
+                                        .collect(),
+                                )
                             }
                             gltf::accessor::DataType::U8 => {
-                                Some(remap_data(None, output_data, 4, |chunk| {
-                                    let x = chunk[0] as AiReal / 255.0;
-                                    let y = chunk[1] as AiReal / 255.0;
-                                    let z = chunk[2] as AiReal / 255.0;
-                                    let w = chunk[3] as AiReal / 255.0;
-                                    AiQuaternion::new(x, y, z, w)
-                                }))
+                                let output_rotation: Vec<[u8; 4]> = output
+                                    .extract_data(buffer_data, None)
+                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                Some(
+                                    output_rotation
+                                        .iter()
+                                        .map(|chunk| {
+                                            let x = chunk[0] as AiReal / 255.0;
+                                            let y = chunk[1] as AiReal / 255.0;
+                                            let z = chunk[2] as AiReal / 255.0;
+                                            let w = chunk[3] as AiReal / 255.0;
+                                            AiQuaternion::new(x, y, z, w)
+                                        })
+                                        .collect(),
+                                )
                             }
                             gltf::accessor::DataType::I16 => {
-                                Some(remap_data(None, output_data, 8, |chunk| {
-                                    let x = (i16::from_le_bytes([chunk[0], chunk[1]]) as AiReal
-                                        / 32767.0)
-                                        .max(-1.0);
-                                    let y = (i16::from_le_bytes([chunk[2], chunk[3]]) as AiReal
-                                        / 32767.0)
-                                        .max(-1.0);
-                                    let z = (i16::from_le_bytes([chunk[4], chunk[5]]) as AiReal
-                                        / 32767.0)
-                                        .max(-1.0);
-                                    let w = (i16::from_le_bytes([chunk[6], chunk[7]]) as AiReal
-                                        / 32767.0)
-                                        .max(-1.0);
-                                    AiQuaternion::new(x, y, z, w)
-                                }))
+                                let output_rotation: Vec<[i16; 4]> = output
+                                    .extract_data(buffer_data, None)
+                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                Some(
+                                    output_rotation
+                                        .iter()
+                                        .map(|chunk| {
+                                            let x = (chunk[0] as AiReal / 32767.0).max(-1.0);
+                                            let y = (chunk[1] as AiReal / 32767.0).max(-1.0);
+                                            let z = (chunk[2] as AiReal / 32767.0).max(-1.0);
+                                            let w = (chunk[3] as AiReal / 32767.0).max(-1.0);
+                                            AiQuaternion::new(x, y, z, w)
+                                        })
+                                        .collect(),
+                                )
                             }
                             gltf::accessor::DataType::U16 => {
-                                Some(remap_data(None, output_data, 8, |chunk| {
-                                    let x = u16::from_le_bytes([chunk[0], chunk[1]]) as AiReal
-                                        / 65535.0;
-                                    let y = u16::from_le_bytes([chunk[2], chunk[3]]) as AiReal
-                                        / 65535.0;
-                                    let w = u16::from_le_bytes([chunk[4], chunk[5]]) as AiReal
-                                        / 65535.0;
-                                    let z = u16::from_le_bytes([chunk[6], chunk[7]]) as AiReal
-                                        / 65535.0;
-                                    AiQuaternion::new(x, y, z, w)
-                                }))
+                                let output_rotation: Vec<[u16; 4]> = output
+                                    .extract_data(buffer_data, None)
+                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                Some(
+                                    output_rotation
+                                        .iter()
+                                        .map(|chunk| {
+                                            let x = chunk[0] as AiReal / 65535.0;
+                                            let y = chunk[1] as AiReal / 65535.0;
+                                            let z = chunk[2] as AiReal / 65535.0;
+                                            let w = chunk[3] as AiReal / 65535.0;
+                                            AiQuaternion::new(x, y, z, w)
+                                        })
+                                        .collect(),
+                                )
                             }
                             gltf::accessor::DataType::F32 => {
-                                Some(remap_data(None, output_data, 16, |chunk| {
-                                    let x = f32::from_le_bytes([
-                                        chunk[0], chunk[1], chunk[2], chunk[3],
-                                    ]) as AiReal;
-                                    let y = f32::from_le_bytes([
-                                        chunk[4], chunk[5], chunk[6], chunk[7],
-                                    ]) as AiReal;
-                                    let z = f32::from_le_bytes([
-                                        chunk[8], chunk[9], chunk[10], chunk[11],
-                                    ]) as AiReal;
-                                    let w = f32::from_le_bytes([
-                                        chunk[12], chunk[13], chunk[14], chunk[15],
-                                    ]) as AiReal;
-                                    AiQuaternion::new(x, y, z, w)
-                                }))
+                                let output_rotation: Vec<[f32; 4]> = output
+                                    .extract_data(buffer_data, None)
+                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                Some(
+                                    output_rotation
+                                        .iter()
+                                        .map(|chunk| {
+                                            let x = chunk[0] as AiReal;
+                                            let y = chunk[1] as AiReal;
+                                            let z = chunk[2] as AiReal;
+                                            let w = chunk[3] as AiReal;
+                                            AiQuaternion::new(x, y, z, w)
+                                        })
+                                        .collect(),
+                                )
                             }
                             _ => None,
                         };
@@ -213,27 +216,25 @@ impl Gltf2Importer {
                             .unwrap_or(node.index().to_string().as_str())
                             .to_string();
 
-                        let input_data = input
-                            .get_pointer(&buffer_data)
+                        let times: Vec<f32> = input
+                            .extract_data(buffer_data, None)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
-                        let times = remap_data(None, input_data, 4, |chunk| {
-                            f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]])
-                        });
-
-                        let output_data = output
-                            .get_pointer(&buffer_data)
+                        let output_scale: Vec<[f32; 3]> = output
+                            .extract_data(buffer_data, None)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
-                        let scale = remap_data(None, output_data, 12, |chunk| {
-                            let x = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]])
-                                as AiReal;
-                            let y = f32::from_le_bytes([chunk[4], chunk[5], chunk[6], chunk[7]])
-                                as AiReal;
-                            let z = f32::from_le_bytes([chunk[8], chunk[9], chunk[10], chunk[11]])
-                                as AiReal;
-                            AiVector3D::new(x, y, z)
-                        });
+                        let scale: Vec<AiVector3D> = output_scale
+                            .iter()
+                            .map(|chunk| {
+                                AiVector3D::new(
+                                    chunk[0] as AiReal,
+                                    chunk[1] as AiReal,
+                                    chunk[2] as AiReal,
+                                )
+                            })
+                            .collect();
+
                         for i in 0..times.len() {
                             let time = times[i] as f64 * MILLISECONDS_TO_SECONDS;
                             if time > duration {
@@ -265,43 +266,56 @@ impl Gltf2Importer {
                             .unwrap_or(node.index().to_string().as_str())
                             .to_string();
 
-                        let input_data = input
-                            .get_pointer(&buffer_data)
+                        let times: Vec<f32> = input
+                            .extract_data(buffer_data, None)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
 
-                        let times = remap_data(None, input_data, 4, |chunk| {
-                            f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]])
-                        });
-
-                        let output_data = output
-                            .get_pointer(&buffer_data)
-                            .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
-
-                        let values = match output.data_type() {
+                        let values: Vec<AiReal> = match output.data_type() {
                             gltf::accessor::DataType::I8 => {
-                                remap_data(None, output_data, 1, |chunk| {
-                                    (i8::from_le_bytes([chunk[0]]) as AiReal / 127.0).max(-1.0)
-                                })
+                                let output_data: Vec<i8> =
+                                    output.extract_data(buffer_data, None).map_err(|err| {
+                                        AiReadError::FileFormatError(Box::new(err))
+                                    })?;
+
+                                output_data
+                                    .iter()
+                                    .map(|x| (*x as AiReal / 127.0).max(-1.0))
+                                    .collect()
                             }
                             gltf::accessor::DataType::U8 => {
-                                remap_data(None, output_data, 1, |chunk| chunk[0] as AiReal / 255.0)
+                                let output_data: Vec<u8> =
+                                    output.extract_data(buffer_data, None).map_err(|err| {
+                                        AiReadError::FileFormatError(Box::new(err))
+                                    })?;
+
+                                output_data.iter().map(|x| (*x as AiReal / 255.0)).collect()
                             }
                             gltf::accessor::DataType::I16 => {
-                                remap_data(None, output_data, 2, |chunk| {
-                                    (i16::from_le_bytes([chunk[0], chunk[1]]) as AiReal / 32767.0)
-                                        .max(-1.0)
-                                })
+                                let output_data: Vec<i16> = output
+                                    .extract_data(buffer_data, None)
+                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+
+                                output_data
+                                    .iter()
+                                    .map(|x| (*x as AiReal / 32767.0).max(-1.0))
+                                    .collect()
                             }
                             gltf::accessor::DataType::U16 => {
-                                remap_data(None, output_data, 2, |chunk| {
-                                    u16::from_le_bytes([chunk[0], chunk[1]]) as AiReal / 65535.0
-                                })
+                                let output_data: Vec<u16> = output
+                                    .extract_data(buffer_data, None)
+                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+
+                                output_data
+                                    .iter()
+                                    .map(|x| (*x as AiReal / 65535.0))
+                                    .collect()
                             }
                             gltf::accessor::DataType::U32 | gltf::accessor::DataType::F32 => {
-                                remap_data(None, output_data, 4, |chunk| {
-                                    f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]])
-                                        as AiReal
-                                })
+                                let output_data: Vec<f32> = output
+                                    .extract_data(buffer_data, None)
+                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+
+                                output_data.iter().map(|x| (*x as AiReal)).collect()
                             }
                         };
                         let stride = output.count() / times.len();
@@ -315,15 +329,15 @@ impl Gltf2Importer {
                         } else {
                             0
                         };
-                        for i in 0..times.len() {
+                        for (time_index, time_millis) in times.iter().enumerate() {
                             let mut mesh_morph_key = AiMeshMorphKey::default();
-                            let time = times[i] as f64 * MILLISECONDS_TO_SECONDS;
+                            let time = *time_millis as f64 * MILLISECONDS_TO_SECONDS;
                             if time > duration {
                                 duration = time;
                             }
                             mesh_morph_key.time = time;
 
-                            let mut k = stride * i + offset;
+                            let mut k = stride * time_index + offset;
                             for j in 0..num_morphs {
                                 mesh_morph_key.values.push(j as u32);
                                 mesh_morph_key.weights.push(if 0.0 > values[k] {

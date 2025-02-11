@@ -1,37 +1,35 @@
-use std::io::{BufWriter, Cursor};
+use std::io::Cursor;
 
-use image::{codecs::png::PngEncoder, save_buffer_with_format, write_buffer_with_format, ColorType, ExtendedColorType, ImageBuffer, ImageError, ImageFormat};
+use image::{write_buffer_with_format, ColorType, ImageError, ImageFormat};
 
 use super::color::AiColor4D;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub enum AiTextureFormat {
+    #[default]
     Unknown,
-    Png,
+    PNG,
     JPEG,
+    WEBP,
 }
 
 impl AiTextureFormat {
     pub fn get_mime_type(&self) -> String {
         match self {
             AiTextureFormat::Unknown => "image/unknown".to_string(),
-            AiTextureFormat::Png => "image/png".to_string(),
+            AiTextureFormat::PNG => "image/png".to_string(),
             AiTextureFormat::JPEG => "image/jpg".to_string(),
+            AiTextureFormat::WEBP => "image/webp".to_string(),
         }
     }
 
     pub fn get_extension(&self) -> String {
         match self {
             AiTextureFormat::Unknown => "unknown".to_string(),
-            AiTextureFormat::Png => "png".to_string(),
+            AiTextureFormat::PNG => "png".to_string(),
             AiTextureFormat::JPEG => "jpeg".to_string(),
+            AiTextureFormat::WEBP => "webp".to_string(),
         }
-    }
-}
-
-impl Default for AiTextureFormat {
-    fn default() -> Self {
-        AiTextureFormat::Unknown
     }
 }
 
@@ -61,25 +59,13 @@ impl From<AiTexel> for AiColor4D {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Default)]
 pub struct AiTexture {
     pub filename: String,
     pub width: u32,
     pub height: u32,
     pub ach_format_hint: AiTextureFormat,
     pub texel: Vec<AiTexel>,
-}
-
-impl Default for AiTexture {
-    fn default() -> Self {
-        Self {
-            filename: Default::default(),
-            width: Default::default(),
-            height: Default::default(),
-            ach_format_hint: Default::default(),
-            texel: Default::default(),
-        }
-    }
 }
 
 impl AiTexture {
@@ -100,16 +86,18 @@ impl AiTexture {
     }
 
     pub fn export(&self) -> Result<Vec<u8>, ImageError> {
-        let format = 
-        match self.ach_format_hint{
-            AiTextureFormat::Unknown | AiTextureFormat::Png => ImageFormat::Png,
-            AiTextureFormat::JPEG => ImageFormat::Jpeg
+        let format = match self.ach_format_hint {
+            AiTextureFormat::Unknown | AiTextureFormat::PNG => ImageFormat::Png,
+            AiTextureFormat::JPEG => ImageFormat::Jpeg,
+            AiTextureFormat::WEBP => ImageFormat::WebP,
         };
 
-        let mut bytes: Vec<u8> = Vec::new();
-        bytes.reserve((self.width * self.height * 4) as usize);
+        let mut bytes: Vec<u8> = Vec::with_capacity((self.width * self.height * 4) as usize);
         let byte_slice: &[u8] = unsafe {
-            std::slice::from_raw_parts(self.texel.as_ptr() as *const u8, self.texel.len() * std::mem::size_of::<AiTexel>())
+            std::slice::from_raw_parts(
+                self.texel.as_ptr() as *const u8,
+                self.texel.len() * std::mem::size_of::<AiTexel>(),
+            )
         };
         let _ = write_buffer_with_format(
             &mut Cursor::new(&mut bytes),

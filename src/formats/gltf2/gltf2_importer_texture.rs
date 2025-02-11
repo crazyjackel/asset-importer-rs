@@ -35,10 +35,12 @@ impl Gltf2Importer {
             };
 
             //@todo: add better mime_type predictions
-            let format = match mime_type {
+            //format is used for exporting from texels
+            let format: AiTextureFormat = match mime_type {
                 Some(mime_type_str) => match mime_type_str {
                     "image/jpeg" => AiTextureFormat::JPEG,
-                    "image/png" => AiTextureFormat::Png,
+                    "image/png" => AiTextureFormat::PNG,
+                    "image/webp" => AiTextureFormat::WEBP,
                     _ => AiTextureFormat::Unknown,
                 },
                 None => AiTextureFormat::Unknown,
@@ -140,19 +142,16 @@ impl Gltf2Importer {
 
 #[test]
 fn test_texture_import() {
-    let binding = std::env::current_dir()
-        .expect("Failed to get the current executable path");
-    let exe_path = binding
-        .as_path();
+    let binding = std::env::current_dir().expect("Failed to get the current executable path");
+    let exe_path = binding.as_path();
 
-    let gltf_data = 
-        r#"{
+    let gltf_data = r#"{
             "asset": {
                 "version": "2.0"
             },
             "images": [
                 {
-                    "uri": "test/textures/Unicode❤♻Texture.png"
+                    "uri": "tests/textures/Unicode❤♻Texture.png"
                 }
             ],
             "textures": [
@@ -163,6 +162,7 @@ fn test_texture_import() {
         }"#;
     let scene = serde_json::from_str(gltf_data).unwrap();
     let document = Document::from_json_without_validation(scene);
-    let (embedded_textures, _tex_ids) = Gltf2Importer::import_embedded_textures(&document, Some(exe_path), &[]).unwrap();
+    let (embedded_textures, _tex_ids) =
+        Gltf2Importer::import_embedded_textures(&document, Some(exe_path), &[]).unwrap();
     assert_eq!(1, embedded_textures.len());
 }

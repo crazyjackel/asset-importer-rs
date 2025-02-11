@@ -1,4 +1,3 @@
-
 use std::{collections::BTreeMap, fmt};
 
 use serde::{de, ser};
@@ -21,7 +20,7 @@ pub const VALID_PRIMITIVE_MODES: &[u32] = &[
     LINE_STRIP,
     TRIANGLES,
     TRIANGLE_STRIP,
-    TRIANGLE_FAN
+    TRIANGLE_FAN,
 ];
 
 #[repr(u8)]
@@ -92,24 +91,23 @@ impl<'de> de::Deserialize<'de> for Checked<PrimitiveMode> {
     }
 }
 
-
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Primitive{
+pub struct Primitive {
     #[serde(skip_serializing_if = "Option::is_none")]
     attributes: Option<BTreeMap<String, StringIndex<Accessor>>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     indices: Option<StringIndex<Accessor>>,
     material: StringIndex<Material>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    mode: Option<Checked<PrimitiveMode>>
+    mode: Option<Checked<PrimitiveMode>>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Mesh{
+pub struct Mesh {
     #[serde(skip_serializing_if = "Option::is_none")]
     primitives: Option<Vec<Primitive>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>
+    name: Option<String>,
 }
 
 #[test]

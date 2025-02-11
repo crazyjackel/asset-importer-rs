@@ -1,10 +1,10 @@
-use serde_derive::{Serialize,Deserialize};
+use serde_derive::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Image{
+pub struct Image {
     pub uri: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>
+    pub name: Option<String>,
 }
 
 #[test]

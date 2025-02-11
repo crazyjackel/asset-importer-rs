@@ -34,6 +34,7 @@ pub const _AI_MATKEY_GLTF_STRENGTH_BASE: &str = "$tex.strength";
 trait ImportTexture<'a> {
     fn texture(&self) -> gltf::Texture<'a>;
     fn tex_coord(&self) -> u32;
+    #[cfg(feature = "KHR_texture_transform")]
     fn texture_transform(&self) -> Option<gltf::texture::TextureTransform<'a>>;
 }
 
@@ -46,6 +47,7 @@ impl<'a> ImportTexture<'a> for texture::Info<'a> {
         self.tex_coord()
     }
 
+    #[cfg(feature = "KHR_texture_transform")]
     fn texture_transform(&self) -> Option<gltf::texture::TextureTransform<'a>> {
         self.texture_transform()
     }
@@ -61,6 +63,7 @@ impl<'a> ImportTexture<'a> for NormalTexture<'a> {
     }
 
     //@todo: When supported, update here: https://github.com/gltf-rs/gltf/pull/412
+    #[cfg(feature = "KHR_texture_transform")]
     fn texture_transform(&self) -> Option<gltf::texture::TextureTransform<'a>> {
         None
     }
@@ -74,6 +77,7 @@ impl<'a> ImportTexture<'a> for OcclusionTexture<'a> {
         self.tex_coord()
     }
 
+    #[cfg(feature = "KHR_texture_transform")]
     fn texture_transform(&self) -> Option<gltf::texture::TextureTransform<'a>> {
         None
     }
@@ -143,7 +147,7 @@ fn import_texture_property<'a, T: ImportTexture<'a>>(
 
         //Get Uri from Source
         let uri = match &embedded_tex_ids.get(&source.index()) {
-            Some(str) => format!("*{}", str.to_string()),
+            Some(str) => format!("*{}", str),
             None => format!("*{}", source.index()),
         };
 
@@ -331,7 +335,7 @@ fn handle_texture_transform<'a, T: ImportTexture<'a>>(
 fn handle_pbr_roughness(
     embedded_tex_ids: &HashMap<usize, usize>,
     material: &gltf::Material<'_>,
-    mut ai_material: &mut AiMaterial,
+    ai_material: &mut AiMaterial,
 ) {
     let pbr_metallic_roughness = material.pbr_metallic_roughness();
 
@@ -359,14 +363,14 @@ fn handle_pbr_roughness(
     //Handle Base Color Texture
     import_texture_property(
         &pbr_metallic_roughness.base_color_texture(),
-        &mut ai_material,
+        ai_material,
         embedded_tex_ids,
         AiTextureType::Diffuse,
         0,
     );
     import_texture_property(
         &pbr_metallic_roughness.base_color_texture(),
-        &mut ai_material,
+        ai_material,
         embedded_tex_ids,
         AiTextureType::BaseColor,
         0,
@@ -376,21 +380,21 @@ fn handle_pbr_roughness(
     // Keep AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE for backwards compatibility
     import_texture_property(
         &pbr_metallic_roughness.metallic_roughness_texture(),
-        &mut ai_material,
+        ai_material,
         embedded_tex_ids,
         AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE,
         0,
     );
     import_texture_property(
         &pbr_metallic_roughness.metallic_roughness_texture(),
-        &mut ai_material,
+        ai_material,
         embedded_tex_ids,
         AiTextureType::Metalness,
         0,
     );
     import_texture_property(
         &pbr_metallic_roughness.metallic_roughness_texture(),
-        &mut ai_material,
+        ai_material,
         embedded_tex_ids,
         AiTextureType::DiffuseRoughness,
         0,
@@ -615,7 +619,8 @@ fn handle_unlit(
     _material: &gltf::Material<'_>,
     _ai_material: &mut AiMaterial,
 ) {
-    ai_material.add_property(
+    use crate::structs::{matkey::AI_MATKEY_SHADING_MODEL, AiShadingMode};
+    _ai_material.add_property(
         matkey::AI_MATKEY_SHADING_MODEL,
         Some(AiTextureType::None),
         AiPropertyTypeInfo::Binary(vec![AiShadingMode::PBR as u8]),
@@ -776,8 +781,7 @@ fn handle_emissive_strength(
 
 #[test]
 fn test_material_import() {
-    let gltf_data = 
-        r#"{
+    let gltf_data = r#"{
             "asset": {
                 "generator": "COLLADA2GLTF",
                 "version": "2.0"
