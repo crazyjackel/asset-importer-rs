@@ -2,6 +2,10 @@
 name = "asset-importer-rs"
 version = "0.1.0"
 edition = "2021"
+description = "Assimp, but in Rust"
+license = "MIT OR Apache-2.0"
+authors = ["Jackson Levitt <jackel1020@gmail.com>"]
+repository = "https://github.com/crazyjackel/asset-importer-rs"
 
 [dependencies]
 bytemuck = { version = "1.21.0", features = ["derive"] }
