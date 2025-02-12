@@ -15,10 +15,8 @@ jobs:
     steps:
         - name: Checkout code
           uses: actions/checkout@v2
-        - name: Install Criterion
-          run: cargo install cargo-criterion
         - name: Run benchmark
-          run: cargo criterion --benches --output-format bencher | tee output.txt
+          run: cargo bench --benches -- --output-format bencher | tee output.txt
         - name: Store benchmark result
           uses: benchmark-action/github-action-benchmark@v1
           with:
