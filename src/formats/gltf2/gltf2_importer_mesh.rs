@@ -825,28 +825,3 @@ impl Gltf2Importer {
         Ok((meshes, mesh_offsets, vertex_remapping_tables))
     }
 }
-
-pub(crate) fn remap_data<B, F>(
-    vertex_remapping_table: Option<&Vec<u32>>,
-    data: Vec<u8>,
-    chunk_size: usize,
-    f: F,
-) -> Vec<B>
-where
-    F: FnMut(&[u8]) -> B,
-    B: Clone + Default,
-{
-    let vertices = if let Some(remap) = vertex_remapping_table {
-        //If we have Remap, prepare the vertices and then chunk them in
-        let mut vertices: Vec<B> = Vec::new();
-        vertices.resize(data.len() / chunk_size, B::default());
-        for (index, chunk) in data.chunks_exact(chunk_size).map(f).enumerate() {
-            vertices[remap[index] as usize] = chunk;
-        }
-        vertices
-    } else {
-        //Vertices are already sorted, no remap neccessary. Only happens when we have no Indices
-        data.chunks_exact(chunk_size).map(f).collect()
-    };
-    vertices
-}

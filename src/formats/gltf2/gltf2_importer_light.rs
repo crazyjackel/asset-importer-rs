@@ -6,11 +6,11 @@ use crate::structs::{AiLight, AiLightSourceType};
 use gltf::Document;
 
 impl Gltf2Importer {
-    #[cfg(not(feature = "KHR_lights_punctual"))]
+    #[cfg(not(feature = "gltf2_KHR_lights_punctual"))]
     pub(crate) fn import_lights(_document: &Document) -> Result<Vec<AiLight>, AiReadError> {
         Ok(Vec::new())
     }
-    #[cfg(feature = "KHR_lights_punctual")]
+    #[cfg(feature = "gltf2_KHR_lights_punctual")]
     pub(crate) fn import_lights(document: &Document) -> Result<Vec<AiLight>, AiReadError> {
         if document.lights().is_none() {
             return Ok(Vec::new());
@@ -67,9 +67,9 @@ impl Gltf2Importer {
     }
 }
 
-#[cfg(feature = "KHR_lights_punctual")]
+#[cfg(feature = "gltf2_KHR_lights_punctual")]
 #[test]
-fn test_light_import() {
+fn test_gltf2_light_import() {
     let gltf_data = r#"{
             "extensions": {
                 "KHR_lights_punctual": {

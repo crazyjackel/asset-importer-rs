@@ -38,7 +38,7 @@ impl Gltf2Importer {
 }
 
 #[test]
-fn test_metadata_import() {
+fn test_gltf2_metadata_import() {
     let gltf_data = r#"{
             "asset" : {
                 "generator": "glTF Tools for Unity",

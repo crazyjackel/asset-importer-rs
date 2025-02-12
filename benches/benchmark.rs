@@ -36,7 +36,7 @@ fn export_file() {
     let exporter = Gltf2Exporter {
         output_type: Output::Binary,
     };
-    let mut exe_path_2 = binding.join("test_output").join("model");
+    let mut exe_path_2 = binding.join("test").join("output");
     exe_path_2.push("Avocado2.glb");
     let path = exe_path_2.as_path();
     let _ = exporter.export_file(&scene, path, &HashMap::new());

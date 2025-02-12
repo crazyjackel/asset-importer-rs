@@ -330,9 +330,9 @@ fn import_node<'a>(
     Ok(ai_node_tree)
 }
 
-#[cfg(not(feature = "KHR_lights_punctual"))]
+#[cfg(not(feature = "gltf2_KHR_lights_punctual"))]
 fn handle_lights(_lights: &mut [AiLight], _ai_node: &mut AiNode, _node: &Node<'_>) {}
-#[cfg(feature = "KHR_lights_punctual")]
+#[cfg(feature = "gltf2_KHR_lights_punctual")]
 fn handle_lights(lights: &mut [AiLight], ai_node: &mut AiNode, node: &Node<'_>) {
     if let Some(light) = node.light() {
         if let Some(ai_light) = lights.get_mut(light.index()) {
@@ -346,9 +346,9 @@ fn handle_lights(lights: &mut [AiLight], ai_node: &mut AiNode, node: &Node<'_>) 
     }
 }
 
-#[cfg(not(feature = "gltf_extensions"))]
+#[cfg(not(feature = "gltf2_extensions"))]
 fn handle_extensions(ai_node: &mut AiNode, node: &gltf::Node<'_>) {}
-#[cfg(feature = "gltf_extensions")]
+#[cfg(feature = "gltf2_extensions")]
 fn handle_extensions(ai_node: &mut AiNode, node: &gltf::Node<'_>) {
     fn parse_extension(value: &Value) -> Option<AiMetadataEntry> {
         match value {

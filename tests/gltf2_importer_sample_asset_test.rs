@@ -113,7 +113,7 @@ fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
 }
 
 #[test]
-fn import_gltf_sample_assets() {
+fn external_gltf2_import_sample_assets() {
     #[cfg(feature = "minimal")]
     let is_minimal = true;
     #[cfg(not(feature = "minimal"))]

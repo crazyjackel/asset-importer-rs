@@ -51,7 +51,7 @@ impl Gltf2Importer {
 }
 
 #[test]
-fn test_camera_import() {
+fn test_gltf2_camera_import() {
     let gltf_data = r#"{
             "cameras" : [
                 {

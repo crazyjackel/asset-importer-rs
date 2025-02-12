@@ -173,6 +173,24 @@ pub struct AiMesh {
     pub texture_coordinate_names: [String; AI_MAX_NUMBER_OF_TEXTURECOORDS],
 }
 
+#[allow(unused_variables)]
+fn run(N: i32, M: i32) -> String {
+    let mut sequence = String::new();
+    for i in N..=M {
+        if i % 3 == 0 && i % 5 == 0 {
+            sequence.push_str("FizzBuzz,");
+        } else if i % 3 == 0 {
+            sequence.push_str("Fizz,");
+        } else if i % 5 == 0 {
+            sequence.push_str("Buzz,");
+        } else {
+            sequence.push_str(&i.to_string());
+            sequence.push(',');
+        }
+    }
+    sequence[0..(sequence.len() - 1)].to_string() // Trim final Characters
+}
+
 impl AiMesh {
     fn get_num_uv_channels(&self) -> u32 {
         let mut n: u32 = 0;

@@ -34,7 +34,7 @@ pub const _AI_MATKEY_GLTF_STRENGTH_BASE: &str = "$tex.strength";
 trait ImportTexture<'a> {
     fn texture(&self) -> gltf::Texture<'a>;
     fn tex_coord(&self) -> u32;
-    #[cfg(feature = "KHR_texture_transform")]
+    #[cfg(feature = "gltf2_KHR_texture_transform")]
     fn texture_transform(&self) -> Option<gltf::texture::TextureTransform<'a>>;
 }
 
@@ -47,7 +47,7 @@ impl<'a> ImportTexture<'a> for texture::Info<'a> {
         self.tex_coord()
     }
 
-    #[cfg(feature = "KHR_texture_transform")]
+    #[cfg(feature = "gltf2_KHR_texture_transform")]
     fn texture_transform(&self) -> Option<gltf::texture::TextureTransform<'a>> {
         self.texture_transform()
     }
@@ -63,7 +63,7 @@ impl<'a> ImportTexture<'a> for NormalTexture<'a> {
     }
 
     //@todo: When supported, update here: https://github.com/gltf-rs/gltf/pull/412
-    #[cfg(feature = "KHR_texture_transform")]
+    #[cfg(feature = "gltf2_KHR_texture_transform")]
     fn texture_transform(&self) -> Option<gltf::texture::TextureTransform<'a>> {
         None
     }
@@ -77,7 +77,7 @@ impl<'a> ImportTexture<'a> for OcclusionTexture<'a> {
         self.tex_coord()
     }
 
-    #[cfg(feature = "KHR_texture_transform")]
+    #[cfg(feature = "gltf2_KHR_texture_transform")]
     fn texture_transform(&self) -> Option<gltf::texture::TextureTransform<'a>> {
         None
     }
@@ -288,7 +288,7 @@ fn import_texture_property_normals(
     }
 }
 
-#[cfg(not(feature = "KHR_texture_transform"))]
+#[cfg(not(feature = "gltf2_KHR_texture_transform"))]
 fn handle_texture_transform<'a, T: ImportTexture<'a>>(
     _texture_info: &T,
     _ai_material: &mut AiMaterial,
@@ -296,7 +296,7 @@ fn handle_texture_transform<'a, T: ImportTexture<'a>>(
     _texture_index: u32,
 ) {
 }
-#[cfg(feature = "KHR_texture_transform")]
+#[cfg(feature = "gltf2_KHR_texture_transform")]
 fn handle_texture_transform<'a, T: ImportTexture<'a>>(
     texture_info: &T,
     ai_material: &mut AiMaterial,
@@ -508,8 +508,8 @@ fn handle_base(
 }
 
 #[cfg(not(any(
-    feature = "KHR_materials_specular",
-    feature = "KHR_materials_pbrSpecularGlossiness"
+    feature = "gltf2_KHR_materials_specular",
+    feature = "gltf2_KHR_materials_pbrSpecularGlossiness"
 )))]
 fn handle_specular(
     _embedded_tex_ids: &HashMap<usize, usize>,
@@ -517,7 +517,7 @@ fn handle_specular(
     _ai_material: &mut AiMaterial,
 ) {
 }
-#[cfg(feature = "KHR_materials_specular")]
+#[cfg(feature = "gltf2_KHR_materials_specular")]
 fn handle_specular(
     embedded_tex_ids: &HashMap<usize, usize>,
     material: &gltf::Material<'_>,
@@ -557,8 +557,8 @@ fn handle_specular(
     }
 }
 #[cfg(all(
-    feature = "KHR_materials_pbrSpecularGlossiness",
-    not(feature = "KHR_materials_specular")
+    feature = "gltf2_KHR_materials_pbrSpecularGlossiness",
+    not(feature = "gltf2_KHR_materials_specular")
 ))]
 fn handle_specular(
     embedded_tex_ids: &HashMap<usize, usize>,
@@ -613,7 +613,7 @@ fn handle_specular(
     }
 }
 
-#[cfg(not(feature = "KHR_materials_unlit"))]
+#[cfg(not(feature = "gltf2_KHR_materials_unlit"))]
 fn handle_unlit(
     _embedded_tex_ids: &HashMap<usize, usize>,
     _material: &gltf::Material<'_>,
@@ -627,7 +627,7 @@ fn handle_unlit(
         0,
     );
 }
-#[cfg(feature = "KHR_materials_unlit")]
+#[cfg(feature = "gltf2_KHR_materials_unlit")]
 fn handle_unlit(
     _embedded_tex_ids: &HashMap<usize, usize>,
     material: &gltf::Material<'_>,
@@ -649,14 +649,14 @@ fn handle_unlit(
     );
 }
 
-#[cfg(not(feature = "KHR_materials_transmission"))]
+#[cfg(not(feature = "gltf2_KHR_materials_transmission"))]
 fn handle_transmission(
     _embedded_tex_ids: &HashMap<usize, usize>,
     _material: &gltf::Material<'_>,
     _ai_material: &mut AiMaterial,
 ) {
 }
-#[cfg(feature = "KHR_materials_transmission")]
+#[cfg(feature = "gltf2_KHR_materials_transmission")]
 fn handle_transmission(
     embedded_tex_ids: &HashMap<usize, usize>,
     material: &gltf::Material<'_>,
@@ -681,14 +681,14 @@ fn handle_transmission(
     }
 }
 
-#[cfg(not(feature = "KHR_materials_volume"))]
+#[cfg(not(feature = "gltf2_KHR_materials_volume"))]
 fn handle_volume(
     _embedded_tex_ids: &HashMap<usize, usize>,
     _material: &gltf::Material<'_>,
     _ai_material: &mut AiMaterial,
 ) {
 }
-#[cfg(feature = "KHR_materials_volume")]
+#[cfg(feature = "gltf2_KHR_materials_volume")]
 fn handle_volume(
     embedded_tex_ids: &HashMap<usize, usize>,
     material: &gltf::Material<'_>,
@@ -730,14 +730,14 @@ fn handle_volume(
     }
 }
 
-#[cfg(not(feature = "KHR_materials_ior"))]
+#[cfg(not(feature = "gltf2_KHR_materials_ior"))]
 fn handle_ior(
     _embedded_tex_ids: &HashMap<usize, usize>,
     _material: &gltf::Material<'_>,
     _ai_material: &mut AiMaterial,
 ) {
 }
-#[cfg(feature = "KHR_materials_ior")]
+#[cfg(feature = "gltf2_KHR_materials_ior")]
 fn handle_ior(
     _embedded_tex_ids: &HashMap<usize, usize>,
     material: &gltf::Material<'_>,
@@ -755,14 +755,14 @@ fn handle_ior(
     }
 }
 
-#[cfg(not(feature = "KHR_materials_emissive_strength"))]
+#[cfg(not(feature = "gltf2_KHR_materials_emissive_strength"))]
 fn handle_emissive_strength(
     _embedded_tex_ids: &HashMap<usize, usize>,
     _material: &gltf::Material<'_>,
     _ai_material: &mut AiMaterial,
 ) {
 }
-#[cfg(feature = "KHR_materials_emissive_strength")]
+#[cfg(feature = "gltf2_KHR_materials_emissive_strength")]
 fn handle_emissive_strength(
     _embedded_tex_ids: &HashMap<usize, usize>,
     material: &gltf::Material<'_>,
@@ -780,7 +780,7 @@ fn handle_emissive_strength(
 }
 
 #[test]
-fn test_material_import() {
+fn test_gltf2_material_import() {
     let gltf_data = r#"{
             "asset": {
                 "generator": "COLLADA2GLTF",

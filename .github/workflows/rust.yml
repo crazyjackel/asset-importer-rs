@@ -1,0 +1,101 @@
+name: Tests
+
+on: 
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+
+jobs:
+  test_gltf2_sample:
+    name: Test GLTF 2.0 Sample Assets
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        features: ['default', 'minimal']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Checkout glTF Sample Assets
+        uses: actions/checkout@v2
+        with:
+          repository: KhronosGroup/glTF-Sample-Assets
+          path: glTF-Sample-Assets
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v --no-default-features --features "$FEATURES"
+        env:
+          FEATURES: ${{ matrix.features }}
+      - name: test
+        run: >
+          cargo test -v --no-default-features --features "$FEATURES" external_gltf2_import_sample_assets -- --nocapture
+        env:
+          FEATURES: ${{ matrix.features }}
+
+  test_gltf2:
+    name: Run GLTF 2.0 Tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        features: ['default', 'minimal', 'extras']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v --no-default-features --features "$FEATURES"
+        env:
+          FEATURES: ${{ matrix.features }}
+      - name: test
+        run: cargo test  -v --no-default-features --features "$FEATURES" "$FEATURES" test_gltf2 -- --nocapture
+        env:
+          FEATURES: ${{ matrix.features }}
+
+  clippy:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: Clippy
+        run: cargo clippy --all-features
+
+  rustfmt:
+    name: Check Code Formatting
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
+    - name: Formatting
+      run: cargo fmt --all -- --check
+
+  cargo-semver-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: Semantic versioning checks
+        uses: obi1kenobi/cargo-semver-checks-action@v2

@@ -1,4 +1,4 @@
-#[cfg(feature = "use_double_precision")]
+#[cfg(feature = "double_precision")]
 pub mod base_types {
     pub type AiReal = f64;
     pub type AiInt = i64;
@@ -7,7 +7,7 @@ pub mod base_types {
     pub const AI_MATH_PI: AiReal = std::f64::consts::PI;
     pub const AI_MATH_TWO_PI: AiReal = AI_MATH_PI * 2.0;
 }
-#[cfg(not(feature = "use_double_precision"))]
+#[cfg(not(feature = "double_precision"))]
 pub mod base_types {
 
     pub type AiReal = f32;
