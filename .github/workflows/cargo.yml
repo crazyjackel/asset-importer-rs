@@ -1,0 +1,60 @@
+name: Base Tests
+
+on: 
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test_doc:
+    name: Run Documentation Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v 
+      - name: test
+        run: cargo doc -v
+  
+  clippy:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: Clippy
+        run: cargo clippy --all-features
+
+  rustfmt:
+    name: Check Code Formatting
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt
+    - name: Formatting
+      run: cargo fmt --all -- --check
+
+  cargo-semver-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: Semantic versioning checks
+        uses: obi1kenobi/cargo-semver-checks-action@v2
