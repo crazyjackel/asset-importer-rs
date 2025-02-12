@@ -721,7 +721,7 @@ fn handle_base(
         .unwrap_or(material.alpha_mode);
 }
 
-#[cfg(not(feature = "KHR_materials_pbrSpecularGlossiness"))]
+#[cfg(not(feature = "gltf2_KHR_materials_pbrSpecularGlossiness"))]
 fn handle_specular_glossiness(
     _scene: &AiScene,
     _root: &mut Root,
@@ -733,7 +733,7 @@ fn handle_specular_glossiness(
     _is_binary: bool,
 ) {
 }
-#[cfg(feature = "KHR_materials_pbrSpecularGlossiness")]
+#[cfg(feature = "gltf2_KHR_materials_pbrSpecularGlossiness")]
 fn handle_specular_glossiness(
     scene: &AiScene,
     root: &mut Root,
@@ -805,7 +805,7 @@ fn handle_specular_glossiness(
     });
 }
 
-#[cfg(not(feature = "KHR_materials_specular"))]
+#[cfg(not(feature = "gltf2_KHR_materials_specular"))]
 fn handle_specular(
     _scene: &AiScene,
     _root: &mut Root,
@@ -818,7 +818,7 @@ fn handle_specular(
 ) -> bool {
     false
 }
-#[cfg(feature = "KHR_materials_specular")]
+#[cfg(feature = "gltf2_KHR_materials_specular")]
 fn handle_specular(
     scene: &AiScene,
     root: &mut Root,
@@ -890,7 +890,7 @@ fn handle_specular(
     true
 }
 
-#[cfg(not(feature = "KHR_materials_transmission"))]
+#[cfg(not(feature = "gltf2_KHR_materials_transmission"))]
 fn handle_transmission(
     _scene: &AiScene,
     _root: &mut Root,
@@ -903,7 +903,7 @@ fn handle_transmission(
 ) -> bool {
     false
 }
-#[cfg(feature = "KHR_materials_transmission")]
+#[cfg(feature = "gltf2_KHR_materials_transmission")]
 fn handle_transmission(
     scene: &AiScene,
     root: &mut Root,
@@ -946,7 +946,7 @@ fn handle_transmission(
     true
 }
 
-#[cfg(not(feature = "KHR_materials_volume"))]
+#[cfg(not(feature = "gltf2_KHR_materials_volume"))]
 fn handle_volume(
     _scene: &AiScene,
     _root: &mut Root,
@@ -959,7 +959,7 @@ fn handle_volume(
 ) -> bool {
     false
 }
-#[cfg(feature = "KHR_materials_volume")]
+#[cfg(feature = "gltf2_KHR_materials_volume")]
 fn handle_volume(
     scene: &AiScene,
     root: &mut Root,
@@ -1029,11 +1029,11 @@ fn handle_volume(
     true
 }
 
-#[cfg(not(feature = "KHR_materials_ior"))]
+#[cfg(not(feature = "gltf2_KHR_materials_ior"))]
 fn handle_ior(_ai_material: &AiMaterial, _material: &mut ExtensionMaterial) -> bool {
     false
 }
-#[cfg(feature = "KHR_materials_ior")]
+#[cfg(feature = "gltf2_KHR_materials_ior")]
 fn handle_ior(ai_material: &AiMaterial, material: &mut ExtensionMaterial) -> bool {
     use gltf::json::extensions::material::{IndexOfRefraction, Ior};
 
@@ -1048,11 +1048,11 @@ fn handle_ior(ai_material: &AiMaterial, material: &mut ExtensionMaterial) -> boo
     true
 }
 
-#[cfg(not(feature = "KHR_materials_emissive_strength"))]
+#[cfg(not(feature = "gltf2_KHR_materials_emissive_strength"))]
 fn handle_emissive_strength(_ai_material: &AiMaterial, _material: &mut ExtensionMaterial) -> bool {
     false
 }
-#[cfg(feature = "KHR_materials_emissive_strength")]
+#[cfg(feature = "gltf2_KHR_materials_emissive_strength")]
 fn handle_emissive_strength(ai_material: &AiMaterial, material: &mut ExtensionMaterial) -> bool {
     use gltf::json::extensions::material::{EmissiveStrength, EmissiveStrengthFactor};
 

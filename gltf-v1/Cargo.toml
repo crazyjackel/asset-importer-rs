@@ -2,6 +2,10 @@
 name = "gltf-v1"
 version = "0.1.0"
 edition = "2021"
+description = "GLTF Spec 1.0"
+license = "MIT OR Apache-2.0"
+authors = ["Jackson Levitt <jackel1020@gmail.com>"]
+repository = "https://github.com/crazyjackel/asset-importer-rs"
 
 [dependencies]
 gltf-v1-json = { path="../gltf-v1-json", version ="0.1.0"}

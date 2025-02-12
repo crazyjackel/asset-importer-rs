@@ -2,6 +2,10 @@
 name = "asset-importer-rs"
 version = "0.1.0"
 edition = "2021"
+description = "Assimp, but in Rust"
+license = "MIT OR Apache-2.0"
+authors = ["Jackson Levitt <jackel1020@gmail.com>"]
+repository = "https://github.com/crazyjackel/asset-importer-rs"
 
 [dependencies]
 bytemuck = { version = "1.21.0", features = ["derive"] }
@@ -11,7 +15,7 @@ gltf-v1 = { path = "gltf-v1", optional = true, version = "0.1.0" }
 image = { version = "0.25.5", features = [
     "png",
     "jpeg",
-    "webp"
+    "webp",
 ], default-features = false }
 num_enum = "0.7.3"
 serde = "1.0.217"
@@ -26,41 +30,64 @@ name = "benchmark"
 harness = false
 
 [features]
-minimal = ["asset_gltf_v2"]
+minimal = ["gltf2_minimal"]
 
-default = [
-    "asset_gltf_v2",
-    "asset_gltf_v1",
-    "gltf_extensions",
-    "KHR_texture_transform",
-    "KHR_materials_unlit",
-    "KHR_materials_transmission",
-    "KHR_materials_ior",
-    "KHR_materials_volume",
-    "KHR_materials_specular",
-    "KHR_materials_pbrSpecularGlossiness",
-    "KHR_materials_emissive_strength",
-    "KHR_materials_ior",
-    "KHR_lights_punctual",
+default = ["gltf_default", "gltf2_default"]
+
+extras = ["gltf_extras", "gltf2_extras", "double_precision"]
+
+#Assimp Core Feature Flags 
+double_precision = []
+
+# GLTF 1.0 Feature Flags
+gltf = ["dep:gltf-v1"]
+
+gltf_minimal = ["gltf"]
+gltf_default = ["gltf"]
+gltf_extras = ["gltf"]
+
+# GLTF 2.0 Feature Flags
+gltf2 = ["dep:gltf"]
+
+gltf2_minimal = ["gltf2"]
+
+gltf2_default = [
+    "gltf2",
+    "gltf2_extensions",
+    "gltf2_KHR_texture_transform",
+    "gltf2_KHR_materials_unlit",
+    "gltf2_KHR_materials_transmission",
+    "gltf2_KHR_materials_ior",
+    "gltf2_KHR_materials_volume",
+    "gltf2_KHR_materials_specular",
+    "gltf2_KHR_materials_pbrSpecularGlossiness",
+    "gltf2_KHR_materials_emissive_strength",
+    "gltf2_KHR_lights_punctual",
 ]
 
-use_double_precision = []
+gltf2_extras = [
+    "gltf2",
+    "gltf2_extensions",
+    "gltf2_KHR_texture_transform",
+    "gltf2_KHR_materials_unlit",
+    "gltf2_KHR_materials_transmission",
+    "gltf2_KHR_materials_ior",
+    "gltf2_KHR_materials_volume",
+    "gltf2_KHR_materials_specular",
+    "gltf2_KHR_materials_pbrSpecularGlossiness",
+    "gltf2_KHR_materials_emissive_strength",
+    "gltf2_KHR_lights_punctual",
+]
 
-asset_gltf_v1 = ["dep:gltf-v1"]
-
-#GLTF 2.0 Extensions
-asset_gltf_v2 = ["dep:gltf"]
-
-gltf_extensions = ["gltf/extensions"]
-KHR_texture_transform = ["gltf/KHR_texture_transform"]
-KHR_materials_unlit = ["gltf/KHR_materials_unlit"]
-KHR_materials_transmission = ["gltf/KHR_materials_transmission"]
-KHR_materials_ior = ["gltf/KHR_materials_ior"]
-KHR_materials_volume = ["gltf/KHR_materials_volume"]
-KHR_materials_specular = ["gltf/KHR_materials_specular"]
-KHR_materials_pbrSpecularGlossiness = [
+gltf2_extensions = ["gltf/extensions"]
+gltf2_KHR_texture_transform = ["gltf/KHR_texture_transform"]
+gltf2_KHR_materials_unlit = ["gltf/KHR_materials_unlit"]
+gltf2_KHR_materials_transmission = ["gltf/KHR_materials_transmission"]
+gltf2_KHR_materials_ior = ["gltf/KHR_materials_ior"]
+gltf2_KHR_materials_volume = ["gltf/KHR_materials_volume"]
+gltf2_KHR_materials_specular = ["gltf/KHR_materials_specular"]
+gltf2_KHR_materials_pbrSpecularGlossiness = [
     "gltf/KHR_materials_pbrSpecularGlossiness",
 ]
-KHR_materials_emissive_strength = ["gltf/KHR_materials_emissive_strength"]
-KHR_lights_punctual = ["gltf/KHR_lights_punctual"]
-# gltf_EXT_texture_webp = ["gltf/EXT_texture_webp", "image/webp"]
+gltf2_KHR_materials_emissive_strength = ["gltf/KHR_materials_emissive_strength"]
+gltf2_KHR_lights_punctual = ["gltf/KHR_lights_punctual"]

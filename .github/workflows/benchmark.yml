@@ -1,13 +1,12 @@
 name: Benchmarks
 
 on:
-    push:
-        branches:
-        - master
+  push:
+    branches: [ main ]
 
 permissions:
-    contents: write
-    deployments: write
+  contents: write
+  deployments: write
 
 jobs:
   benchmark:

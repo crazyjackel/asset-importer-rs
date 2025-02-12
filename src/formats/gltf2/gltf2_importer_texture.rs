@@ -141,7 +141,7 @@ impl Gltf2Importer {
 }
 
 #[test]
-fn test_texture_import() {
+fn test_gltf2_texture_import() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
     let exe_path = binding.as_path();
 
