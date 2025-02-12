@@ -51,8 +51,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Checkout code
-        uses: actions/checkout@v2
       - uses: dtolnay/rust-toolchain@stable
       - name: Cache Cargo Dependencies
         uses: Swatinem/rust-cache@v2
@@ -63,10 +61,26 @@ jobs:
         env:
           FEATURES: ${{ matrix.features }}
       - name: test
-        run: cargo test  -v --no-default-features --features "$FEATURES" "$FEATURES" test_gltf2 -- --nocapture
+        run: cargo test  -v --no-default-features --features "$FEATURES" test_gltf2_ -- --nocapture
         env:
           FEATURES: ${{ matrix.features }}
 
+  test_doc:
+    name: Run Documentation Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v 
+      - name: test
+        run: cargo doc -v
+  
   clippy:
     name: Lint Code
     runs-on: ubuntu-latest
