@@ -1,6 +1,7 @@
+use gltf_v1_derive::Validate;
 use serde_derive::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
 pub struct Image {
     pub uri: String,
     #[serde(skip_serializing_if = "Option::is_none")]

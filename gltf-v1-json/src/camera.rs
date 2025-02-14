@@ -1,35 +1,67 @@
 use std::fmt;
 
+use gltf_v1_derive::Validate;
 use serde::{de, ser};
 use serde_derive::{Deserialize, Serialize};
 
 use super::validation::Checked;
 
-/// All valid camera types.
-pub const VALID_CAMERA_TYPES: &[&str] = &["perspective", "orthographic"];
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
 pub struct Perspective {
     #[serde(rename = "aspectRatio")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    aspect_ratio: Option<f32>,
-    yfov: f32,
-    zfar: f32,
-    znear: f32,
+    pub aspect_ratio: Option<f32>,
+    pub yfov: f32,
+    pub zfar: f32,
+    pub znear: f32,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
 pub struct Ortographic {
-    xmag: f32,
-    ymag: f32,
-    zfar: f32,
-    znear: f32,
+    pub xmag: f32,
+    pub ymag: f32,
+    pub zfar: f32,
+    pub znear: f32,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CameraType {
     Perspective,
     Orthographic,
+}
+
+impl CameraType {
+    pub const VALID_CAMERA_TYPES: &[&str] = &["perspective", "orthographic"];
+}
+
+impl TryFrom<&str> for CameraType {
+    type Error = ();
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            "perspective" => Ok(CameraType::Perspective),
+            "orthographic" => Ok(CameraType::Orthographic),
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<CameraType> for &str {
+    fn from(value: CameraType) -> Self {
+        match value {
+            CameraType::Perspective => "perspective",
+            CameraType::Orthographic => "orthographic",
+        }
+    }
+}
+
+impl ser::Serialize for CameraType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer,
+    {
+        serializer.serialize_str((*self).into())
+    }
 }
 
 impl<'de> de::Deserialize<'de> for Checked<CameraType> {
@@ -42,47 +74,33 @@ impl<'de> de::Deserialize<'de> for Checked<CameraType> {
             type Value = Checked<CameraType>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                write!(f, "any of: {:?}", VALID_CAMERA_TYPES)
+                write!(f, "any of: {:?}", CameraType::VALID_CAMERA_TYPES)
             }
 
             fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
             where
                 E: de::Error,
             {
-                use self::CameraType::*;
-                use super::validation::Checked::*;
-                Ok(match value {
-                    "perspective" => Valid(Perspective),
-                    "orthographic" => Valid(Orthographic),
-                    _ => Invalid,
-                })
+                Ok(value
+                    .try_into()
+                    .map(|x| Checked::Valid(x))
+                    .unwrap_or(Checked::Invalid))
             }
         }
         deserializer.deserialize_str(Visitor)
     }
 }
 
-impl ser::Serialize for CameraType {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: ser::Serializer,
-    {
-        match *self {
-            CameraType::Perspective => serializer.serialize_str("perspective"),
-            CameraType::Orthographic => serializer.serialize_str("orthographic"),
-        }
-    }
-}
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
 pub struct Camera {
     #[serde(skip_serializing_if = "Option::is_none")]
-    orthographic: Option<Ortographic>,
+    pub orthographic: Option<Ortographic>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    perspective: Option<Perspective>,
+    pub perspective: Option<Perspective>,
     #[serde(rename = "type")]
-    camera_type: Checked<CameraType>,
+    pub type_: Checked<CameraType>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
+    pub name: Option<String>,
 }
 
 #[test]

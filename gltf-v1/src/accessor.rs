@@ -1,0 +1,55 @@
+use std::{iter, slice};
+
+use crate::document::Document;
+
+/// A typed view into a buffer view.
+#[derive(Clone, Debug)]
+pub struct Accessor<'a> {
+    /// The parent `Document` struct.
+    document: &'a Document,
+
+    /// The corresponding JSON index.
+    index: &'a String,
+
+    /// The corresponding JSON struct.
+    json: &'a json::accessor::Accessor,
+}
+
+impl<'a> Accessor<'a> {
+    pub(crate) fn new(
+        document: &'a Document,
+        index: &'a String,
+        json: &'a json::accessor::Accessor,
+    ) -> Self {
+        Self {
+            document,
+            index,
+            json,
+        }
+    }
+
+    pub fn index(&self) -> String {
+        self.index.clone()
+    }
+}
+
+/// An `Iterator` that visits every accessor in a glTF asset.
+#[derive(Clone, Debug)]
+pub struct Accessors<'a> {
+    /// Internal accessor iterator.
+    pub(crate) iter: indexmap::map::Iter<'a, String, gltf_v1_json::Accessor>,
+
+    /// The internal root glTF object.
+    pub(crate) document: &'a Document,
+}
+
+impl<'a> ExactSizeIterator for Accessors<'a> {}
+impl<'a> Iterator for Accessors<'a> {
+    type Item = Accessor<'a>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter
+            .next()
+            .map(|(index, json)| Accessor::new(self.document, index, json))
+    }
+}

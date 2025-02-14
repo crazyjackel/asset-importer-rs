@@ -8,4 +8,8 @@ authors = ["Jackson Levitt <jackel1020@gmail.com>"]
 repository = "https://github.com/crazyjackel/asset-importer-rs"
 
 [dependencies]
+base64 = { version = "0.13" }
+byteorder = "1.3"
+urlencoding = { version = "2.1" }
+indexmap = { version = "2.7.1", features = ["serde"]}
 gltf-v1-json = { path="../gltf-v1-json", version ="0.1.0"}

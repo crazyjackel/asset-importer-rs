@@ -1,6 +1,11 @@
 use std::{fmt, marker};
 
-#[derive(Clone)]
+use crate::{
+    gltf::Get,
+    validation::{self, Validate},
+    Path, Root,
+};
+
 pub struct StringIndex<T>(String, marker::PhantomData<fn() -> T>);
 
 impl<T> StringIndex<T> {
@@ -88,5 +93,26 @@ impl<T> fmt::Debug for StringIndex<T> {
 impl<T> fmt::Display for StringIndex<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl<T> Clone for StringIndex<T> {
+    fn clone(&self) -> Self {
+        Self::new(self.0.clone())
+    }
+}
+
+impl<T> Validate for StringIndex<T>
+where
+    Root: Get<T>,
+{
+    fn validate<P, R>(&self, root: &Root, path: P, report: &mut R)
+    where
+        P: Fn() -> Path,
+        R: FnMut(&dyn Fn() -> Path, validation::Error),
+    {
+        if root.get(self.clone()).is_none() {
+            report(&path, validation::Error::IndexNotFound);
+        }
     }
 }

@@ -1,24 +1,25 @@
+use gltf_v1_derive::Validate;
 use serde_derive::{Deserialize, Serialize};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-struct AssetProfile {
+#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
+pub struct AssetProfile {
     #[serde(skip_serializing_if = "Option::is_none")]
-    api: Option<String>,
+    pub api: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    version: Option<String>,
+    pub version: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
 pub struct Asset {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub copyright: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    generator: Option<String>,
+    pub generator: Option<String>,
     #[serde(rename = "premultipliedAlpha")]
-    premultiplied_alpha: Option<bool>,
+    pub premultiplied_alpha: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    profile: Option<AssetProfile>,
-    version: String,
+    pub profile: Option<AssetProfile>,
+    pub version: String,
 }
 
 #[test]

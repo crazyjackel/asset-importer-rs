@@ -1,25 +1,42 @@
 use std::fmt;
 
+use gltf_v1_derive::Validate;
 use serde::de;
 use serde::{Deserialize, Serialize};
 
-use super::root::StringIndex;
+use super::common::StringIndex;
 use super::validation::Checked;
 
 pub const FRAGMENT_SHADER: u32 = 35632;
 pub const VERTEX_SHADER: u32 = 35633;
-pub const VALID_SHADER_TYPE: &[u32] = &[FRAGMENT_SHADER, VERTEX_SHADER];
 
 #[derive(Clone, Debug, Copy)]
 pub enum ShaderType {
     FragmentShader,
     VertexShader,
 }
+
 impl ShaderType {
-    pub const fn to_repr(self) -> u32 {
-        match self {
+    pub const VALID_SHADER_TYPE: &[u32] = &[FRAGMENT_SHADER, VERTEX_SHADER];
+}
+
+impl From<ShaderType> for u32 {
+    fn from(value: ShaderType) -> Self {
+        match value {
             ShaderType::FragmentShader => FRAGMENT_SHADER,
             ShaderType::VertexShader => VERTEX_SHADER,
+        }
+    }
+}
+
+impl TryFrom<u32> for ShaderType {
+    type Error = ();
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        match value {
+            FRAGMENT_SHADER => Ok(ShaderType::FragmentShader),
+            VERTEX_SHADER => Ok(ShaderType::VertexShader),
+            _ => Err(()),
         }
     }
 }
@@ -28,7 +45,7 @@ impl Serialize for ShaderType {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_u32(self.to_repr())
+        serializer.serialize_u32((*self).into())
     }
 }
 
@@ -42,43 +59,42 @@ impl<'de> Deserialize<'de> for Checked<ShaderType> {
             type Value = Checked<ShaderType>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                write!(f, "any of: {:?}", VALID_SHADER_TYPE)
+                write!(f, "any of: {:?}", ShaderType::VALID_SHADER_TYPE)
             }
 
             fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
             where
                 E: de::Error,
             {
-                use self::ShaderType::*;
-                Ok(match value as u32 {
-                    FRAGMENT_SHADER => Checked::Valid(FragmentShader),
-                    VERTEX_SHADER => Checked::Valid(VertexShader),
-                    _ => Checked::Invalid,
-                })
+                Ok((value as u32)
+                    .try_into()
+                    .map(|x| Checked::Valid(x))
+                    .unwrap_or(Checked::Invalid))
             }
         }
         deserializer.deserialize_u32(Visitor)
     }
 }
 
-#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate)]
 pub struct Shader {
-    uri: String,
+    pub uri: String,
     #[serde(rename = "type")]
-    shader_type: Checked<ShaderType>,
+    pub type_: Checked<ShaderType>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
+    pub name: Option<String>,
 }
 
-#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate)]
 pub struct Program {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    attributes: Option<Vec<String>>,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub attributes: Vec<String>,
     #[serde(rename = "fragmentShader")]
-    fragment_shader: StringIndex<Shader>,
+    pub fragment_shader: StringIndex<Shader>,
     #[serde(rename = "vertexShader")]
-    vertex_shader: StringIndex<Shader>,
-    name: Option<String>,
+    pub vertex_shader: StringIndex<Shader>,
+    pub name: Option<String>,
 }
 
 #[test]

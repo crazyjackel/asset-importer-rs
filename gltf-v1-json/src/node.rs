@@ -1,31 +1,90 @@
+use gltf_v1_derive::Validate;
 use serde_derive::{Deserialize, Serialize};
 
-use super::{camera::Camera, mesh::Mesh, root::StringIndex, skin::Skin};
+use super::{camera::Camera, common::StringIndex, mesh::Mesh, skin::Skin};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
 pub struct Node {
     #[serde(skip_serializing_if = "Option::is_none")]
-    camera: Option<StringIndex<Camera>>,
+    pub camera: Option<StringIndex<Camera>>,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub children: Vec<StringIndex<Node>>,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub skeletons: Vec<StringIndex<Node>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    children: Option<Vec<StringIndex<Node>>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    skeletons: Option<Vec<StringIndex<Node>>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    skin: Option<StringIndex<Skin>>,
+    pub skin: Option<StringIndex<Skin>>,
     #[serde(rename = "jointName", skip_serializing_if = "Option::is_none")]
-    joint_name: Option<String>,
+    pub joint_name: Option<String>,
+    #[serde(skip_serializing_if = "matrix_is_default", default = "default_matrix")]
+    pub matrix: [f32; 16],
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub meshes: Vec<StringIndex<Mesh>>,
+    #[serde(
+        skip_serializing_if = "rotation_is_default",
+        default = "default_rotation"
+    )]
+    pub rotation: [f32; 4],
+    #[serde(skip_serializing_if = "scale_is_default", default = "default_scale")]
+    pub scale: [f32; 3],
+    #[serde(
+        skip_serializing_if = "translation_is_default",
+        default = "default_translation"
+    )]
+    pub translation: [f32; 3],
     #[serde(skip_serializing_if = "Option::is_none")]
-    matrix: Option<[f32; 16]>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    meshes: Option<Vec<StringIndex<Mesh>>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    rotation: Option<[f32; 4]>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    scale: Option<[f32; 3]>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    translation: Option<[f32; 3]>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
+    pub name: Option<String>,
+}
+
+fn translation_is_default(value: &[f32; 3]) -> bool {
+    value[0] == 0.0 && value[1] == 0.0 && value[2] == 0.0
+}
+
+fn default_translation() -> [f32; 3] {
+    [0.0, 0.0, 0.0]
+}
+
+fn scale_is_default(value: &[f32; 3]) -> bool {
+    value[0] == 1.0 && value[1] == 1.0 && value[2] == 1.0
+}
+
+fn default_scale() -> [f32; 3] {
+    [1.0, 1.0, 1.0]
+}
+
+fn rotation_is_default(value: &[f32; 4]) -> bool {
+    value[0] == 0.0 && value[1] == 0.0 && value[2] == 0.0 && value[3] == 1.0
+}
+
+fn default_rotation() -> [f32; 4] {
+    [0.0, 0.0, 0.0, 1.0]
+}
+
+fn matrix_is_default(value: &[f32; 16]) -> bool {
+    value[0] == 1.0
+        && value[1] == 0.0
+        && value[2] == 0.0
+        && value[3] == 0.0
+        && value[4] == 0.0
+        && value[5] == 1.0
+        && value[6] == 0.0
+        && value[7] == 0.0
+        && value[8] == 0.0
+        && value[9] == 0.0
+        && value[10] == 1.0
+        && value[11] == 0.0
+        && value[12] == 0.0
+        && value[13] == 0.0
+        && value[14] == 0.0
+        && value[15] == 1.0
+}
+
+fn default_matrix() -> [f32; 16] {
+    [
+        1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+    ]
 }
 
 #[test]

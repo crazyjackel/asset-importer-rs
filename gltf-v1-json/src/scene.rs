@@ -1,14 +1,16 @@
+use gltf_v1_derive::Validate;
 use serde_derive::{Deserialize, Serialize};
 
+use super::common::StringIndex;
 use super::node::Node;
-use super::root::StringIndex;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
 pub struct Scene {
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub nodes: Vec<StringIndex<Node>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    nodes: Option<Vec<StringIndex<Node>>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
+    pub name: Option<String>,
 }
 
 #[test]

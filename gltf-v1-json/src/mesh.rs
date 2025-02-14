@@ -1,9 +1,11 @@
-use std::{collections::BTreeMap, fmt};
+use std::fmt;
 
+use gltf_v1_derive::Validate;
+use indexmap::IndexMap;
 use serde::{de, ser};
 use serde_derive::{Deserialize, Serialize};
 
-use super::{accessor::Accessor, material::Material, root::StringIndex, validation::Checked};
+use super::{accessor::Accessor, common::StringIndex, material::Material, validation::Checked};
 
 pub const POINTS: u32 = 0;
 pub const LINES: u32 = 1;
@@ -13,19 +15,9 @@ pub const TRIANGLES: u32 = 4;
 pub const TRIANGLE_STRIP: u32 = 5;
 pub const TRIANGLE_FAN: u32 = 6;
 
-pub const VALID_PRIMITIVE_MODES: &[u32] = &[
-    POINTS,
-    LINES,
-    LINE_LOOP,
-    LINE_STRIP,
-    TRIANGLES,
-    TRIANGLE_STRIP,
-    TRIANGLE_FAN,
-];
-
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum PrimitiveMode {
+pub enum PrimitiveMode {
     Points,
     Lines,
     LineLoop,
@@ -36,8 +28,20 @@ enum PrimitiveMode {
 }
 
 impl PrimitiveMode {
-    pub const fn to_repr(self) -> u32 {
-        match self {
+    pub const VALID_PRIMITIVE_MODES: &[u32] = &[
+        POINTS,
+        LINES,
+        LINE_LOOP,
+        LINE_STRIP,
+        TRIANGLES,
+        TRIANGLE_STRIP,
+        TRIANGLE_FAN,
+    ];
+}
+
+impl From<PrimitiveMode> for u32 {
+    fn from(value: PrimitiveMode) -> Self {
+        match value {
             PrimitiveMode::Points => POINTS,
             PrimitiveMode::Lines => LINES,
             PrimitiveMode::LineLoop => LINE_LOOP,
@@ -48,12 +52,30 @@ impl PrimitiveMode {
         }
     }
 }
+
+impl TryFrom<u32> for PrimitiveMode {
+    type Error = ();
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        match value {
+            POINTS => Ok(PrimitiveMode::Points),
+            LINES => Ok(PrimitiveMode::Lines),
+            LINE_LOOP => Ok(PrimitiveMode::LineLoop),
+            LINE_STRIP => Ok(PrimitiveMode::LineStrip),
+            TRIANGLES => Ok(PrimitiveMode::Triangles),
+            TRIANGLE_STRIP => Ok(PrimitiveMode::TriangleStrip),
+            TRIANGLE_FAN => Ok(PrimitiveMode::TriangleFan),
+            _ => Err(()),
+        }
+    }
+}
+
 impl ser::Serialize for PrimitiveMode {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: ser::Serializer,
     {
-        serializer.serialize_u32(self.to_repr())
+        serializer.serialize_u32((*self).into())
     }
 }
 
@@ -67,47 +89,45 @@ impl<'de> de::Deserialize<'de> for Checked<PrimitiveMode> {
             type Value = Checked<PrimitiveMode>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                write!(f, "any of: {:?}", VALID_PRIMITIVE_MODES)
+                write!(f, "any of: {:?}", PrimitiveMode::VALID_PRIMITIVE_MODES)
             }
 
             fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
             where
                 E: de::Error,
             {
-                use self::PrimitiveMode::*;
-                Ok(match value as u32 {
-                    POINTS => Checked::Valid(Points),
-                    LINES => Checked::Valid(Lines),
-                    LINE_LOOP => Checked::Valid(LineLoop),
-                    LINE_STRIP => Checked::Valid(LineStrip),
-                    TRIANGLES => Checked::Valid(Triangles),
-                    TRIANGLE_STRIP => Checked::Valid(TriangleStrip),
-                    TRIANGLE_FAN => Checked::Valid(TriangleFan),
-                    _ => Checked::Invalid,
-                })
+                Ok((value as u32)
+                    .try_into()
+                    .map(|x| Checked::Valid(x))
+                    .unwrap_or(Checked::Invalid))
             }
         }
         deserializer.deserialize_u64(Visitor)
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
 pub struct Primitive {
+    #[serde(skip_serializing_if = "IndexMap::is_empty")]
+    pub attributes: IndexMap<String, StringIndex<Accessor>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    attributes: Option<BTreeMap<String, StringIndex<Accessor>>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    indices: Option<StringIndex<Accessor>>,
-    material: StringIndex<Material>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    mode: Option<Checked<PrimitiveMode>>,
+    pub indices: Option<StringIndex<Accessor>>,
+    pub material: StringIndex<Material>,
+    #[serde(default = "default_primitive_mode")]
+    pub mode: Checked<PrimitiveMode>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+fn default_primitive_mode() -> Checked<PrimitiveMode> {
+    Checked::Valid(PrimitiveMode::Triangles)
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
 pub struct Mesh {
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub primitives: Vec<Primitive>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    primitives: Option<Vec<Primitive>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
+    pub name: Option<String>,
 }
 
 #[test]
