@@ -31,6 +31,10 @@ impl<'a> Accessor<'a> {
     pub fn index(&self) -> &str {
         self.index
     }
+    pub fn name(&self) -> Option<&'a str> {
+        self.json.name.as_deref()
+    }
+
 }
 
 /// An `Iterator` that visits every accessor in a glTF asset.

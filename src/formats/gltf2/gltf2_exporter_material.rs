@@ -29,7 +29,7 @@ use crate::{
 };
 
 use super::{
-    gltf2_exporter::{generate_unique_name, Gltf2Exporter, Output},
+    gltf2_exporter::{generate_unique_name, Gltf2Exporter, Output, APPROVED_FORMATS},
     gltf2_importer_material::{
         AI_MATKEY_GLTF_ALPHACUTOFF, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE,
         _AI_MATKEY_GLTF_MAPPINGFILTER_MAG_BASE, _AI_MATKEY_GLTF_MAPPINGFILTER_MIN_BASE,
@@ -325,7 +325,8 @@ fn get_material_texture(
                             //If GLTF2 Exporter is binary, update the buffers, if not images will be exported based on Uri Later
                             let image = if is_binary {
                                 let buffer_offset = buffer.len();
-                                let mut exported_buffer = ai_texture.export().unwrap();
+                                let export = ai_texture.export(APPROVED_FORMATS).unwrap();
+                                let mut exported_buffer = export.data;
                                 let length = exported_buffer.len();
                                 buffer.append(&mut exported_buffer);
                                 let buffer_view = View {
@@ -341,10 +342,11 @@ fn get_material_texture(
                                     extensions: Default::default(),
                                     extras: Default::default(),
                                 };
+                                let format = ai_texture.get_approved_format(APPROVED_FORMATS);
                                 Image {
                                     buffer_view: Some(root.push(buffer_view)),
                                     mime_type: Some(MimeType(
-                                        ai_texture.ach_format_hint.get_mime_type(),
+                                        format.get_mime_type(),
                                     )),
                                     name: Some(ai_texture.filename.clone()),
                                     uri: None,

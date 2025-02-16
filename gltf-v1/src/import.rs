@@ -151,16 +151,12 @@ impl image::Data {
                 Scheme::Unsupported => return Err(GLTF_Error::UnsupportedScheme),
                 _ => {
                     let encoded_image = Scheme::read(base, uri)?;
-                    let encoded_format = match uri.rsplit('.').next() {
-                        Some("png") => image_crate::ImageFormat::Png,
-                        Some("jpg") | Some("jpeg") => image_crate::ImageFormat::Jpeg,
-                        Some("gif") => image_crate::ImageFormat::Gif,
-                        Some("bmp") => image_crate::ImageFormat::Bmp,
-                        _ => match guess_format(&encoded_image) {
+                    let encoded_format = image::Source::mime_type_format(uri).unwrap_or(
+                        match guess_format(&encoded_image) {
                             Some(format) => format,
                             None => return Err(GLTF_Error::UnsupportedImageEncoding),
                         },
-                    };
+                    );
                     image_crate::load_from_memory_with_format(&encoded_image, encoded_format)?
                 }
             },

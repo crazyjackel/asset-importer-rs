@@ -6,6 +6,8 @@ use crate::buffer::Views;
 use crate::error::Error;
 use crate::error::Result;
 use crate::image::Images;
+use crate::texture::Samplers;
+use crate::texture::Textures;
 
 #[derive(Clone, Debug)]
 pub struct Document(gltf_v1_json::Root);
@@ -65,6 +67,18 @@ impl Document {
     pub fn images(&self) -> Images {
         Images {
             iter: self.0.images.iter(),
+            document: self,
+        }
+    }
+    pub fn textures(&self) -> Textures {
+        Textures {
+            iter: self.0.textures.iter(),
+            document: self,
+        }
+    }
+    pub fn samplers(&self) -> Samplers {
+        Samplers {
+            iter: self.0.samplers.iter(),
             document: self,
         }
     }

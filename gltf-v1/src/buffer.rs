@@ -113,11 +113,8 @@ impl<'a> View<'a> {
         self.index
     }
 
-    pub fn buffer(&self) -> Buffer<'a> {
-        self.document
-            .buffers()
-            .find(|x| x.index == self.json.buffer.value())
-            .unwrap()
+    pub fn buffer(&self) -> &Buffer<'a> {
+        &self.parent
     }
 
     pub fn length(&self) -> usize {

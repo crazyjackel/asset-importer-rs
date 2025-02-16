@@ -4,13 +4,27 @@ use image::{write_buffer_with_format, ColorType, ImageError, ImageFormat};
 
 use super::color::AiColor4D;
 
-#[derive(Debug, PartialEq, Clone, Default)]
+#[derive(Debug, PartialEq, Clone, Default, Copy)]
 pub enum AiTextureFormat {
     #[default]
     Unknown,
     PNG,
     JPEG,
     WEBP,
+    BMP,
+    GIF,
+}
+
+impl From<AiTextureFormat> for ImageFormat {
+    fn from(value: AiTextureFormat) -> Self {
+        match value {
+            AiTextureFormat::Unknown | AiTextureFormat::PNG => ImageFormat::Png,
+            AiTextureFormat::JPEG => ImageFormat::Jpeg,
+            AiTextureFormat::WEBP => ImageFormat::WebP,
+            AiTextureFormat::BMP => ImageFormat::Bmp,
+            AiTextureFormat::GIF => ImageFormat::Gif,
+        }
+    }
 }
 
 impl AiTextureFormat {
@@ -20,6 +34,8 @@ impl AiTextureFormat {
             AiTextureFormat::PNG => "image/png".to_string(),
             AiTextureFormat::JPEG => "image/jpg".to_string(),
             AiTextureFormat::WEBP => "image/webp".to_string(),
+            AiTextureFormat::BMP => "image/bmp".to_string(),
+            AiTextureFormat::GIF => "image/gif".to_string(),
         }
     }
 
@@ -29,6 +45,8 @@ impl AiTextureFormat {
             AiTextureFormat::PNG => "png".to_string(),
             AiTextureFormat::JPEG => "jpeg".to_string(),
             AiTextureFormat::WEBP => "webp".to_string(),
+            AiTextureFormat::BMP => "bmp".to_string(),
+            AiTextureFormat::GIF => "gif".to_string(),
         }
     }
 }
@@ -68,6 +86,12 @@ pub struct AiTexture {
     pub texel: Vec<AiTexel>,
 }
 
+#[derive(Debug, PartialEq, Clone, Default)]
+pub struct TextureExport {
+    pub data: Vec<u8>,
+    pub format: AiTextureFormat,
+}
+
 impl AiTexture {
     pub fn new(
         filename: String,
@@ -85,14 +109,24 @@ impl AiTexture {
         }
     }
 
-    pub fn export(&self) -> Result<Vec<u8>, ImageError> {
-        let format = match self.ach_format_hint {
-            AiTextureFormat::Unknown | AiTextureFormat::PNG => ImageFormat::Png,
-            AiTextureFormat::JPEG => ImageFormat::Jpeg,
-            AiTextureFormat::WEBP => ImageFormat::WebP,
-        };
+    pub fn get_approved_format(&self, approved_formats: &[AiTextureFormat]) -> AiTextureFormat {
+        if approved_formats.is_empty() {
+            return self.ach_format_hint.clone();
+        }
 
-        let mut bytes: Vec<u8> = Vec::with_capacity((self.width * self.height * 4) as usize);
+        if approved_formats.contains(&self.ach_format_hint) {
+            self.ach_format_hint.clone()
+        } else {
+            approved_formats.first().unwrap().clone()
+        }
+    }
+
+    pub fn export(
+        &self,
+        approved_formats: &[AiTextureFormat],
+    ) -> Result<TextureExport, ImageError> {
+        let format = self.get_approved_format(approved_formats);
+        let mut data: Vec<u8> = Vec::with_capacity((self.width * self.height * 4) as usize);
         let byte_slice: &[u8] = unsafe {
             std::slice::from_raw_parts(
                 self.texel.as_ptr() as *const u8,
@@ -100,13 +134,13 @@ impl AiTexture {
             )
         };
         let _ = write_buffer_with_format(
-            &mut Cursor::new(&mut bytes),
+            &mut Cursor::new(&mut data),
             byte_slice,
             self.width,
             self.height,
             ColorType::Rgba8,
-            format,
+            format.into(),
         );
-        Ok(bytes)
+        Ok(TextureExport { data, format })
     }
 }

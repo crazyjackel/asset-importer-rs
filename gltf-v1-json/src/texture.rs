@@ -425,7 +425,7 @@ pub const UNSIGNED_SHORT4_4_4_4: u32 = 32819;
 pub const UNSIGNED_SHORT5_5_5_1: u32 = 32820;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum TextureType {
+pub enum TextureType {
     UnsignedByte,
     UnsignedShort5_6_5,
     UnsignedShort4_4_4_4,
@@ -505,16 +505,16 @@ impl<'de> Deserialize<'de> for Checked<TextureType> {
 #[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate)]
 pub struct Texture {
     #[serde(default = "default_texture_format")]
-    format: Checked<TextureFormat>,
+    pub format: Checked<TextureFormat>,
     #[serde(rename = "internalFormat", default = "default_texture_format")]
-    internal_format: Checked<TextureFormat>,
-    sampler: StringIndex<Sampler>,
-    source: StringIndex<Image>,
+    pub internal_format: Checked<TextureFormat>,
+    pub sampler: StringIndex<Sampler>,
+    pub source: StringIndex<Image>,
     #[serde(default = "default_texture_target")]
-    target: Checked<TextureTarget>,
+    pub target: Checked<TextureTarget>,
     #[serde(rename = "type", default = "default_texture_type")]
-    type_: Checked<TextureType>,
-    name: Option<String>,
+    pub type_: Checked<TextureType>,
+    pub name: Option<String>,
 }
 
 fn default_texture_format() -> Checked<TextureFormat> {

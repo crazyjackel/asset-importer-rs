@@ -153,6 +153,32 @@ impl<'a> Image<'a> {
         let uri = self.json.uri.deref();
         Source::Uri(uri)
     }
+
+    pub fn name(&self) -> Option<&'a str> {
+        self.json.name.as_deref()
+    }
+}
+
+impl<'a> Source<'a> {
+    pub fn mime_type_format(uri: &'a str) -> Option<image_crate::ImageFormat> {
+        match uri.rsplit('.').next() {
+            Some("png") => Some(image_crate::ImageFormat::Png),
+            Some("jpg") | Some("jpeg") => Some(image_crate::ImageFormat::Jpeg),
+            Some("gif") => Some(image_crate::ImageFormat::Gif),
+            Some("bmp") => Some(image_crate::ImageFormat::Bmp),
+            _ => None,
+        }
+    }
+
+    pub fn mime_type(&self) -> Option<&'a str> {
+        match self {
+            Source::Uri(uri) => {
+                let format = Source::mime_type_format(uri);
+                format.map(|x| x.to_mime_type())
+            }
+            Source::View { view: _, json } => Some(json.mime_type.as_str()),
+        }
+    }
 }
 
 impl Data {

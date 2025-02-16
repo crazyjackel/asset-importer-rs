@@ -2,17 +2,23 @@ use std::{borrow::Cow, collections::HashMap, fs, io::Write};
 
 use gltf::json::{Buffer, Index, Scene};
 
-use crate::core::{
-    config::{
-        AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON, AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON_DEFAULT,
-        AI_CONFIG_EXPORT_GLTF_UNLIMITED_SKINNING_BONES_PER_VERTEX,
-        AI_CONFIG_USE_GLTF_PBR_SPECULAR_GLOSSINESS, GLTF2_NODE_IN_TRS, GLTF2_TARGET_NORMAL_EXP,
+use crate::{
+    core::{
+        config::{
+            AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON,
+            AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON_DEFAULT,
+            AI_CONFIG_EXPORT_GLTF_UNLIMITED_SKINNING_BONES_PER_VERTEX,
+            AI_CONFIG_USE_GLTF_PBR_SPECULAR_GLOSSINESS, GLTF2_NODE_IN_TRS, GLTF2_TARGET_NORMAL_EXP,
+        },
+        error::AiExportError,
+        export::{AiExport, ExportProperty},
     },
-    error::AiExportError,
-    export::{AiExport, ExportProperty},
+    structs::AiTextureFormat,
 };
 
 use super::gltf2_importer_metadata::AI_METADATA_SOURCE_COPYRIGHT;
+
+pub const APPROVED_FORMATS: &[AiTextureFormat] = &[AiTextureFormat::PNG, AiTextureFormat::JPEG];
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -184,8 +190,9 @@ impl AiExport for Gltf2Exporter {
                     ));
                     let mut writer = fs::File::create(image)
                         .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
+                    let export = &texture.export(APPROVED_FORMATS).unwrap();
                     writer
-                        .write_all(&texture.export().unwrap())
+                        .write_all(&export.data)
                         .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
                 }
             }
