@@ -28,8 +28,8 @@ impl<'a> Accessor<'a> {
         }
     }
 
-    pub fn index(&self) -> String {
-        self.index.clone()
+    pub fn index(&self) -> &str {
+        self.index
     }
 }
 
@@ -50,6 +50,23 @@ impl<'a> Iterator for Accessors<'a> {
     fn next(&mut self) -> Option<Self::Item> {
         self.iter
             .next()
+            .map(|(index, json)| Accessor::new(self.document, index, json))
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+    fn count(self) -> usize {
+        self.iter.count()
+    }
+    fn last(self) -> Option<Self::Item> {
+        let document = self.document;
+        self.iter
+            .last()
+            .map(|(index, json)| Accessor::new(document, index, json))
+    }
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.iter
+            .nth(n)
             .map(|(index, json)| Accessor::new(self.document, index, json))
     }
 }

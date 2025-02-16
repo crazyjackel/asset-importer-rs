@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 use crate::validation::USize64;
+use crate::StringIndex;
 
 use super::validation::Checked;
 
@@ -166,15 +167,27 @@ pub struct Buffer {
 
 #[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate)]
 pub struct BufferView {
-    pub buffer: String,
+    pub buffer: StringIndex<Buffer>,
     #[serde(rename = "byteOffset")]
     pub byte_offset: USize64,
-    #[serde(rename = "byteLength", skip_serializing_if = "Option::is_none")]
-    pub byte_length: Option<USize64>,
+    #[serde(
+        rename = "byteLength",
+        skip_serializing_if = "is_default_byte_length",
+        default = "default_byte_length"
+    )]
+    pub byte_length: USize64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub target: Option<Checked<BufferViewType>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+
+fn is_default_byte_length(value: &USize64) -> bool {
+    value.0 == 0u64
+}
+
+fn default_byte_length() -> USize64 {
+    0u64.into()
 }
 
 #[test]

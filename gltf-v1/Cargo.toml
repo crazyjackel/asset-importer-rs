@@ -13,3 +13,12 @@ byteorder = "1.3"
 urlencoding = { version = "2.1" }
 indexmap = { version = "2.7.1", features = ["serde"]}
 gltf-v1-json = { path="../gltf-v1-json", version ="0.1.0"}
+
+[dependencies.image]
+default-features = false
+features = ["jpeg", "png", "bmp", "gif"]
+version ="0.25.5"
+
+[features]
+default = ["KHR_binary_glTF"]
+KHR_binary_glTF = ["gltf-v1-json/KHR_binary_glTF"]

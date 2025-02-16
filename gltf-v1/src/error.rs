@@ -9,12 +9,21 @@ pub type Result<T> = result::Result<T, Error>;
 #[derive(Debug)]
 pub enum Error {
     Base64(base64::DecodeError),
+    BufferLength {
+        buffer: String,
+        expected: usize,
+        actual: usize,
+    },
     Deserialize(json::Error),
     Io(std::io::Error),
+    Image(image_crate::ImageError),
     Validation(Vec<(json::Path, json::validation::Error)>),
     Binary(binary::Error),
     ExternalReferenceInSliceImport,
     UnsupportedScheme,
+    MissingBlob,
+    UnsupportedImageEncoding,
+    UnsupportedImageFormat(image_crate::DynamicImage),
 }
 
 impl std::fmt::Display for Error {
@@ -35,6 +44,21 @@ impl std::fmt::Display for Error {
                 write!(f, "external reference in slice only import")
             }
             Error::UnsupportedScheme => write!(f, "unsupported URI scheme"),
+            Error::MissingBlob => write!(f, "missing binary portion of binary glTF"),
+            Error::BufferLength {
+                buffer,
+                expected,
+                actual,
+            } => write!(
+                f,
+                "buffer {}: expected {} bytes but received {} bytes",
+                buffer, expected, actual
+            ),
+            Error::UnsupportedImageEncoding => write!(f, "unsupported image encoding"),
+            Error::UnsupportedImageFormat(image) => {
+                write!(f, "unsupported image format: {:?}", image.color())
+            }
+            Error::Image(ref e) => e.fmt(f),
         }
     }
 }
@@ -52,5 +76,10 @@ impl From<json::Error> for Error {
 impl From<binary::Error> for Error {
     fn from(err: binary::Error) -> Self {
         Error::Binary(err)
+    }
+}
+impl From<image_crate::ImageError> for Error {
+    fn from(value: image_crate::ImageError) -> Self {
+        Error::Image(value)
     }
 }

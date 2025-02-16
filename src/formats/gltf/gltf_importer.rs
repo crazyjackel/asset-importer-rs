@@ -10,11 +10,11 @@ use crate::{
         importer::AiImporter,
         importer_desc::{AiImporterDesc, AiImporterFlags},
     },
-    structs::scene::AiSceneFlag,
+    structs::scene::{AiScene, AiSceneFlag},
 };
 
 #[derive(Debug)]
-struct GltfImporter;
+pub struct GltfImporter;
 
 impl AiImport for GltfImporter {
     fn info(&self) -> AiImporterDesc {
@@ -80,16 +80,11 @@ impl AiImport for GltfImporter {
         let Gltf { document, blob } =
             Gltf::from_reader(reader).map_err(|x| AiReadError::FileFormatError(Box::new(x)))?;
 
+        //@todo: Buffer Data loads all Buffer Data, it would be better to load on an "as-needed case".
+        let buffer_data = gltf_v1::import_buffers(&document, Some(base), blob)
+            .map_err(|x| AiReadError::FileFormatError(Box::new(x)))?;
+
         let mut scene = AiScene {
-            name: scene_name,
-            animations,
-            cameras,
-            meshes,
-            lights,
-            materials: embedded_materials,
-            textures: embedded_textures,
-            nodes,
-            metadata,
             ..AiScene::default()
         };
 

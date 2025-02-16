@@ -4,6 +4,7 @@ pub mod asset;
 pub mod buffer;
 pub mod camera;
 pub mod common;
+pub mod extensions;
 pub mod gltf;
 pub mod image;
 pub mod material;

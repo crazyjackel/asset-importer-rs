@@ -1,11 +1,15 @@
 use gltf_v1_derive::Validate;
 use serde_derive::{Deserialize, Serialize};
 
+use crate::extensions;
+
 #[derive(Clone, Debug, Deserialize, Serialize, Validate)]
 pub struct Image {
     pub uri: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extensions: Option<extensions::image::Image>,
 }
 
 #[test]

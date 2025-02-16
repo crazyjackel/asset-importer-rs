@@ -1,8 +1,11 @@
 use std::iter;
 
 use crate::accessor::Accessors;
+use crate::buffer::Buffers;
+use crate::buffer::Views;
 use crate::error::Error;
 use crate::error::Result;
+use crate::image::Images;
 
 #[derive(Clone, Debug)]
 pub struct Document(gltf_v1_json::Root);
@@ -44,6 +47,24 @@ impl Document {
     pub fn accessors(&self) -> Accessors {
         Accessors {
             iter: self.0.accessors.iter(),
+            document: self,
+        }
+    }
+    pub fn buffers(&self) -> Buffers {
+        Buffers {
+            iter: self.0.buffers.iter(),
+            document: self,
+        }
+    }
+    pub fn views(&self) -> Views {
+        Views {
+            iter: self.0.buffer_views.iter(),
+            document: self,
+        }
+    }
+    pub fn images(&self) -> Images {
+        Images {
+            iter: self.0.images.iter(),
             document: self,
         }
     }
