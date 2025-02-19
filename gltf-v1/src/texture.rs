@@ -1,3 +1,7 @@
+use json::texture::{
+    SamplerMagFilter, SamplerMinFilter, SamplerWrap, TextureFormat, TextureTarget, TextureType,
+};
+
 use crate::{document::Document, image::Image};
 
 #[derive(Clone, Debug)]
@@ -16,6 +20,10 @@ pub struct Texture<'a> {
     index: &'a String,
 
     json: &'a json::texture::Texture,
+
+    sampler: Sampler<'a>,
+
+    source: Image<'a>,
 }
 
 impl<'a> Sampler<'a> {
@@ -34,6 +42,21 @@ impl<'a> Sampler<'a> {
     pub fn index(&self) -> &str {
         self.index
     }
+    pub fn name(&self) -> Option<&'a str> {
+        self.json.name.as_deref()
+    }
+    pub fn wrap_s(&self) -> SamplerWrap {
+        self.json.wrap_s.unwrap()
+    }
+    pub fn wrap_t(&self) -> SamplerWrap {
+        self.json.wrap_t.unwrap()
+    }
+    pub fn mag_filter(&self) -> SamplerMagFilter {
+        self.json.mag_filter.unwrap()
+    }
+    pub fn min_filter(&self) -> SamplerMinFilter {
+        self.json.min_filter.unwrap()
+    }
 }
 
 impl<'a> Texture<'a> {
@@ -43,10 +66,20 @@ impl<'a> Texture<'a> {
         index: &'a String,
         json: &'a json::texture::Texture,
     ) -> Self {
+        let source = document
+            .images()
+            .find(|x| x.index() == json.source.value())
+            .unwrap();
+        let sampler = document
+            .samplers()
+            .find(|x| x.index() == json.sampler.value())
+            .unwrap();
         Self {
             document,
             index,
             json,
+            sampler,
+            source,
         }
     }
     pub fn index(&self) -> &str {
@@ -55,11 +88,23 @@ impl<'a> Texture<'a> {
     pub fn name(&self) -> Option<&'a str> {
         self.json.name.as_deref()
     }
-    pub fn source(&self) -> Image<'a> {
-        self.document
-            .images()
-            .find(|x| x.index() == self.json.source.value())
-            .unwrap()
+    pub fn source(&self) -> &Image<'a> {
+        &self.source
+    }
+    pub fn sampler(&self) -> &Sampler<'a> {
+        &self.sampler
+    }
+    pub fn format(&self) -> TextureFormat {
+        self.json.format.unwrap()
+    }
+    pub fn internal_format(&self) -> TextureFormat {
+        self.json.internal_format.unwrap()
+    }
+    pub fn target(&self) -> TextureTarget {
+        self.json.target.unwrap()
+    }
+    pub fn texture_type(&self) -> TextureType {
+        self.json.type_.unwrap()
     }
 }
 

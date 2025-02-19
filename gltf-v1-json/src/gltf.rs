@@ -22,6 +22,30 @@ pub trait Get<T> {
     fn get(&self, id: StringIndex<T>) -> Option<&T>;
 }
 
+pub struct UniqueKeyGenerator {
+    prefix: String,
+    counter: usize,
+}
+
+impl UniqueKeyGenerator {
+    fn new(prefix: &str) -> Self {
+        Self {
+            prefix: prefix.to_string(),
+            counter: 0,
+        }
+    }
+
+    fn next_key<T>(&mut self, map: &IndexMap<String, T>) -> String {
+        loop {
+            let key = format!("{}{}", self.prefix, self.counter);
+            self.counter += 1;
+            if !map.contains_key(&key) {
+                return key;
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate)]
 pub struct Root {
     #[serde(default)]
@@ -81,6 +105,47 @@ pub struct Root {
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub extensions_used: Vec<String>,
+}
+
+impl Root {
+    pub fn add_default_material(&mut self) {
+        // Give all Materials with no Technique a Default Technique as the Default Material
+        let materials_with_no_technique: Vec<(&String, &mut Material)> = self
+            .materials
+            .iter_mut()
+            .filter(|x| x.1.technique == None)
+            .collect();
+        if materials_with_no_technique.is_empty() {
+            return;
+        }
+
+        let mut generator = UniqueKeyGenerator::new("vertexShader");
+        let vertex_shader_key = generator.next_key(&self.shaders);
+        self.shaders
+            .insert(vertex_shader_key.clone(), Shader::default_vertex_shader());
+        let mut generator = UniqueKeyGenerator::new("fragmentShader");
+        let fragment_shader_key = generator.next_key(&self.shaders);
+        self.shaders.insert(
+            fragment_shader_key.clone(),
+            Shader::default_fragment_shader(),
+        );
+        let mut generator = UniqueKeyGenerator::new("program");
+        let program_key = generator.next_key(&self.programs);
+        self.programs.insert(
+            program_key.clone(),
+            Program::default_program(fragment_shader_key, vertex_shader_key),
+        );
+        let mut generator = UniqueKeyGenerator::new("technique");
+        let technique_key = generator.next_key(&self.techniques);
+        self.techniques.insert(
+            technique_key.clone(),
+            Technique::default_technique(program_key),
+        );
+
+        for (_, material) in materials_with_no_technique {
+            material.technique = Some(StringIndex::new(technique_key.clone()))
+        }
+    }
 }
 
 macro_rules! impl_get {

@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::fmt::Display;
 
 use indexmap::IndexMap;
 use serde::ser;
@@ -45,6 +46,18 @@ pub enum Checked<T> {
 
     /// The item is invalid.
     Invalid,
+}
+
+impl<T> Display for Checked<T>
+where
+    T: Display,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Checked::Valid(valid) => f.write_fmt(format_args!("Valid: {}", valid)),
+            Checked::Invalid => f.write_str("Invalid"),
+        }
+    }
 }
 
 impl<T> Checked<T> {

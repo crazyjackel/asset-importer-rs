@@ -1,6 +1,8 @@
 use std::{iter, slice};
 
-use crate::document::Document;
+use json::accessor::{ComponentType, Type};
+
+use crate::{buffer::View, document::Document};
 
 /// A typed view into a buffer view.
 #[derive(Clone, Debug)]
@@ -13,6 +15,8 @@ pub struct Accessor<'a> {
 
     /// The corresponding JSON struct.
     json: &'a json::accessor::Accessor,
+
+    view: View<'a>,
 }
 
 impl<'a> Accessor<'a> {
@@ -21,20 +25,41 @@ impl<'a> Accessor<'a> {
         index: &'a String,
         json: &'a json::accessor::Accessor,
     ) -> Self {
+        let view = document
+            .views()
+            .find(|x| x.index() == json.buffer_view.value())
+            .unwrap();
         Self {
             document,
             index,
             json,
+            view,
         }
     }
-
     pub fn index(&self) -> &str {
         self.index
     }
     pub fn name(&self) -> Option<&'a str> {
         self.json.name.as_deref()
     }
-
+    pub fn view(&self) -> &View<'a> {
+        &self.view
+    }
+    pub fn count(&self) -> usize {
+        self.json.count as usize
+    }
+    pub fn offset(&self) -> usize {
+        self.json.byte_offset as usize
+    }
+    pub fn stride(&self) -> Option<usize> {
+        self.json.byte_stride.map(|x| x as usize)
+    }
+    pub fn component_type(&self) -> ComponentType {
+        self.json.component_type.unwrap()
+    }
+    pub fn accessor_type(&self) -> Type {
+        self.json.type_.unwrap()
+    }
 }
 
 /// An `Iterator` that visits every accessor in a glTF asset.

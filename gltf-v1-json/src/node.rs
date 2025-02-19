@@ -17,74 +17,19 @@ pub struct Node {
     pub skin: Option<StringIndex<Skin>>,
     #[serde(rename = "jointName", skip_serializing_if = "Option::is_none")]
     pub joint_name: Option<String>,
-    #[serde(skip_serializing_if = "matrix_is_default", default = "default_matrix")]
-    pub matrix: [f32; 16],
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub matrix: Option<[f32; 16]>,
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub meshes: Vec<StringIndex<Mesh>>,
-    #[serde(
-        skip_serializing_if = "rotation_is_default",
-        default = "default_rotation"
-    )]
-    pub rotation: [f32; 4],
-    #[serde(skip_serializing_if = "scale_is_default", default = "default_scale")]
-    pub scale: [f32; 3],
-    #[serde(
-        skip_serializing_if = "translation_is_default",
-        default = "default_translation"
-    )]
-    pub translation: [f32; 3],
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rotation: Option<[f32; 4]>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scale: Option<[f32; 3]>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub translation: Option<[f32; 3]>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-}
-
-fn translation_is_default(value: &[f32; 3]) -> bool {
-    value[0] == 0.0 && value[1] == 0.0 && value[2] == 0.0
-}
-
-fn default_translation() -> [f32; 3] {
-    [0.0, 0.0, 0.0]
-}
-
-fn scale_is_default(value: &[f32; 3]) -> bool {
-    value[0] == 1.0 && value[1] == 1.0 && value[2] == 1.0
-}
-
-fn default_scale() -> [f32; 3] {
-    [1.0, 1.0, 1.0]
-}
-
-fn rotation_is_default(value: &[f32; 4]) -> bool {
-    value[0] == 0.0 && value[1] == 0.0 && value[2] == 0.0 && value[3] == 1.0
-}
-
-fn default_rotation() -> [f32; 4] {
-    [0.0, 0.0, 0.0, 1.0]
-}
-
-fn matrix_is_default(value: &[f32; 16]) -> bool {
-    value[0] == 1.0
-        && value[1] == 0.0
-        && value[2] == 0.0
-        && value[3] == 0.0
-        && value[4] == 0.0
-        && value[5] == 1.0
-        && value[6] == 0.0
-        && value[7] == 0.0
-        && value[8] == 0.0
-        && value[9] == 0.0
-        && value[10] == 1.0
-        && value[11] == 0.0
-        && value[12] == 0.0
-        && value[13] == 0.0
-        && value[14] == 0.0
-        && value[15] == 1.0
-}
-
-fn default_matrix() -> [f32; 16] {
-    [
-        1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-    ]
 }
 
 #[test]

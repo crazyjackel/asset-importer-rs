@@ -1,11 +1,21 @@
 use std::iter;
 
+use indexmap::IndexMap;
+use json::material::TechniqueParameter;
+use json::Technique;
+
 use crate::accessor::Accessors;
 use crate::buffer::Buffers;
 use crate::buffer::Views;
+use crate::camera::Cameras;
 use crate::error::Error;
 use crate::error::Result;
 use crate::image::Images;
+use crate::material::Materials;
+use crate::material::Techniques;
+use crate::mesh::Meshes;
+use crate::node::Nodes;
+use crate::skin::Skins;
 use crate::texture::Samplers;
 use crate::texture::Textures;
 
@@ -13,7 +23,8 @@ use crate::texture::Textures;
 pub struct Document(gltf_v1_json::Root);
 
 impl Document {
-    pub fn from_json(json: json::Root) -> Result<Self> {
+    pub fn from_json(mut json: json::Root) -> Result<Self> {
+        json.add_default_material();
         let document = Self::from_json_without_validation(json);
         document.validate()?;
         Ok(document)
@@ -79,6 +90,42 @@ impl Document {
     pub fn samplers(&self) -> Samplers {
         Samplers {
             iter: self.0.samplers.iter(),
+            document: self,
+        }
+    }
+    pub fn materials(&self) -> Materials {
+        Materials {
+            iter: self.0.materials.iter(),
+            document: self,
+        }
+    }
+    pub fn techniques(&self) -> Techniques {
+        Techniques {
+            iter: self.0.techniques.iter(),
+            document: self,
+        }
+    }
+    pub fn meshes(&self) -> Meshes {
+        Meshes {
+            iter: self.0.meshes.iter(),
+            document: self,
+        }
+    }
+    pub fn cameras(&self) -> Cameras {
+        Cameras {
+            iter: self.0.cameras.iter(),
+            document: self,
+        }
+    }
+    pub fn nodes(&self) -> Nodes {
+        Nodes {
+            iter: self.0.nodes.iter(),
+            document: self,
+        }
+    }
+    pub fn skins(&self) -> Skins {
+        Skins {
+            iter: self.0.skins.iter(),
             document: self,
         }
     }

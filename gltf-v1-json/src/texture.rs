@@ -13,7 +13,7 @@ pub const NEAREST_MIPMAP_LINEAR: u32 = 9986;
 pub const LINEAR_MIPMAP_LINEAR: u32 = 9987;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum SamplerMagFilter {
+pub enum SamplerMagFilter {
     Nearest,
     Linear,
 }
@@ -83,7 +83,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerMagFilter> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum SamplerMinFilter {
+pub enum SamplerMinFilter {
     Nearest,
     Linear,
     NearestMipmapNearest,
@@ -177,7 +177,7 @@ pub const MIRRORED_REPEAT: u32 = 33648;
 pub const REPEAT: u32 = 10497;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum SamplerWrap {
+pub enum SamplerWrap {
     ClampToEdge,
     MirroredRepeat,
     Repeat,
@@ -249,14 +249,14 @@ impl<'de> Deserialize<'de> for Checked<SamplerWrap> {
 #[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate)]
 pub struct Sampler {
     #[serde(rename = "magFilter", default = "default_mag_filter")]
-    mag_filter: Checked<SamplerMagFilter>,
+    pub mag_filter: Checked<SamplerMagFilter>,
     #[serde(rename = "minFilter", default = "default_min_filter")]
-    min_filter: Checked<SamplerMinFilter>,
+    pub min_filter: Checked<SamplerMinFilter>,
     #[serde(rename = "wrapS", default = "default_wrap")]
-    wrap_s: Checked<SamplerWrap>,
+    pub wrap_s: Checked<SamplerWrap>,
     #[serde(rename = "wrapT", default = "default_wrap")]
-    wrap_t: Checked<SamplerWrap>,
-    name: Option<String>,
+    pub wrap_t: Checked<SamplerWrap>,
+    pub name: Option<String>,
 }
 
 fn default_mag_filter() -> Checked<SamplerMagFilter> {

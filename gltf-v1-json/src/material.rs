@@ -6,7 +6,7 @@ use serde::{de, Deserialize, Serialize};
 
 use crate::{
     validation::{Error, USize64},
-    Path, Root,
+    Path, Program, Root,
 };
 
 use super::{common::StringIndex, node::Node, validation::Checked};
@@ -33,7 +33,7 @@ pub const FLOAT_MAT3: u32 = 35675;
 pub const FLOAT_MAT4: u32 = 35676;
 pub const SAMPLER_2D: u32 = 35678;
 
-#[derive(Clone, Debug, Copy)]
+#[derive(Clone, Debug, Copy, Default)]
 pub enum ParameterType {
     Byte,
     UnsignedByte,
@@ -41,6 +41,7 @@ pub enum ParameterType {
     UnsignedShort,
     Int,
     UnsignedInt,
+    #[default]
     Float,
     FloatVec2,
     FloatVec3,
@@ -203,6 +204,20 @@ impl<'de> Deserialize<'de> for Checked<ParameterValue> {
                 formatter.write_str("a number, boolean, string, or array of these types")
             }
 
+            fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(Checked::Valid(ParameterValue::Number(value as f32)))
+            }
+
+            fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(Checked::Valid(ParameterValue::Number(value as f32)))
+            }
+
             fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
             where
                 E: de::Error,
@@ -356,7 +371,7 @@ impl<'de> Deserialize<'de> for Checked<WebGLState> {
     }
 }
 
-#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate, Default)]
 pub struct TechniqueParameter {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub count: Option<USize64>,
@@ -1028,7 +1043,7 @@ pub struct Technique {
     pub parameters: IndexMap<String, TechniqueParameter>,
     #[serde(skip_serializing_if = "IndexMap::is_empty")]
     pub attributes: IndexMap<String, String>,
-    pub program: String,
+    pub program: StringIndex<Program>,
     #[serde(skip_serializing_if = "IndexMap::is_empty")]
     pub uniforms: IndexMap<String, String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -1037,6 +1052,74 @@ pub struct Technique {
     pub name: Option<String>,
 }
 
+impl Technique {
+    pub(crate) fn default_technique(program: String) -> Self {
+        let mut attributes = IndexMap::new();
+        attributes.insert("a_position".to_string(), "position".to_string());
+
+        let mut parameters = IndexMap::new();
+        parameters.insert(
+            "modelViewMatrix".to_string(),
+            TechniqueParameter {
+                semantic: Some("MODELVIEW".to_string()),
+                type_: Checked::Valid(ParameterType::FloatMat4),
+                ..TechniqueParameter::default()
+            },
+        );
+        parameters.insert(
+            "projectionMatrix".to_string(),
+            TechniqueParameter {
+                semantic: Some("PROJECTION".to_string()),
+                type_: Checked::Valid(ParameterType::FloatMat4),
+                ..TechniqueParameter::default()
+            },
+        );
+        parameters.insert(
+            "emission".to_string(),
+            TechniqueParameter {
+                value: Some(Checked::Valid(ParameterValue::NumberArray(vec![
+                    0.5, 0.5, 0.5, 1.0,
+                ]))),
+                type_: Checked::Valid(ParameterType::FloatVec4),
+                ..TechniqueParameter::default()
+            },
+        );
+        parameters.insert(
+            "position".to_string(),
+            TechniqueParameter {
+                semantic: Some("POSITION".to_string()),
+                type_: Checked::Valid(ParameterType::FloatVec3),
+                ..TechniqueParameter::default()
+            },
+        );
+
+        let mut uniforms = IndexMap::new();
+        uniforms.insert(
+            "u_modelViewMatrix".to_string(),
+            "modelViewMatrix".to_string(),
+        );
+        uniforms.insert(
+            "u_projectionMatrix".to_string(),
+            "projectionMatrix".to_string(),
+        );
+        uniforms.insert("u_emission".to_string(), "emission".to_string());
+
+        Technique {
+            attributes,
+            parameters,
+            program: StringIndex::new(program),
+            uniforms,
+            states: Some(TechniqueState {
+                enable: vec![
+                    Checked::Valid(WebGLState::CullFace),
+                    Checked::Valid(WebGLState::DepthTest),
+                ],
+                functions: None,
+            }),
+            name: None,
+        }
+    }
+}
 fn technique_validate_technique<P, R>(technique: &Technique, _root: &Root, path: P, report: &mut R)
 where
     P: Fn() -> Path,

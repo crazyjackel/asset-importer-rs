@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{self, Display};
 
 use gltf_v1_derive::Validate;
 use indexmap::IndexMap;
@@ -7,6 +7,110 @@ use serde_derive::{Deserialize, Serialize};
 
 use super::{accessor::Accessor, common::StringIndex, material::Material, validation::Checked};
 
+pub const POSITION: &str = "POSITION";
+pub const NORMAL: &str = "NORMAL";
+pub const COLOR: &str = "COLOR_";
+pub const TEXCOORD: &str = "TEXCOORD_";
+pub const JOINT: &str = "JOINT_";
+pub const WEIGHT: &str = "WEIGHT_";
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
+pub enum Semantic {
+    Positions,
+    Normals,
+    Colors(u32),
+    TexCoords(u32),
+    Joints(u32),
+    Weights(u32),
+}
+
+impl Semantic {
+    pub const VALID_SEMANTICS: &[&str] = &[POSITION, NORMAL, COLOR, TEXCOORD, JOINT, WEIGHT];
+}
+
+impl Display for Semantic {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let str: String = (*self).into();
+        f.write_str(&str)
+    }
+}
+
+impl From<Semantic> for String {
+    fn from(value: Semantic) -> Self {
+        match value {
+            Semantic::Positions => POSITION.into(),
+            Semantic::Normals => NORMAL.into(),
+            Semantic::Colors(c) => format!("{}{}", COLOR, c),
+            Semantic::TexCoords(c) => format!("{}{}", TEXCOORD, c),
+            Semantic::Joints(c) => format!("{}{}", JOINT, c),
+            Semantic::Weights(c) => format!("{}{}", WEIGHT, c),
+        }
+    }
+}
+
+impl TryFrom<&str> for Semantic {
+    type Error = ();
+
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        match s {
+            NORMAL => Ok(Semantic::Normals),
+            POSITION => Ok(Semantic::Positions),
+            _ if s.starts_with(COLOR) => match s[COLOR.len()..].parse() {
+                Ok(set) => Ok(Semantic::Colors(set)),
+                Err(_) => Err(()),
+            },
+            _ if s.starts_with(TEXCOORD) => match s[TEXCOORD.len()..].parse() {
+                Ok(set) => Ok(Semantic::TexCoords(set)),
+                Err(_) => Err(()),
+            },
+            _ if s.starts_with(JOINT) => match s[JOINT.len()..].parse() {
+                Ok(set) => Ok(Semantic::Joints(set)),
+                Err(_) => Err(()),
+            },
+            _ if s.starts_with(WEIGHT) => match s[WEIGHT.len()..].parse() {
+                Ok(set) => Ok(Semantic::Weights(set)),
+                Err(_) => Err(()),
+            },
+            _ => Err(()),
+        }
+    }
+}
+
+impl ser::Serialize for Semantic {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: ser::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> de::Deserialize<'de> for Checked<Semantic> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: de::Deserializer<'de>,
+    {
+        struct Visitor;
+        impl<'de> de::Visitor<'de> for Visitor {
+            type Value = Checked<Semantic>;
+
+            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                write!(f, "any of: {:?}", Semantic::VALID_SEMANTICS)
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                Ok(value
+                    .try_into()
+                    .map(|x| Checked::Valid(x))
+                    .unwrap_or(Checked::Invalid))
+            }
+        }
+        deserializer.deserialize_str(Visitor)
+    }
+}
 pub const POINTS: u32 = 0;
 pub const LINES: u32 = 1;
 pub const LINE_LOOP: u32 = 2;
@@ -109,7 +213,7 @@ impl<'de> de::Deserialize<'de> for Checked<PrimitiveMode> {
 #[derive(Clone, Debug, Deserialize, Serialize, Validate)]
 pub struct Primitive {
     #[serde(skip_serializing_if = "IndexMap::is_empty")]
-    pub attributes: IndexMap<String, StringIndex<Accessor>>,
+    pub attributes: IndexMap<Checked<Semantic>, StringIndex<Accessor>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub indices: Option<StringIndex<Accessor>>,
     pub material: StringIndex<Material>,

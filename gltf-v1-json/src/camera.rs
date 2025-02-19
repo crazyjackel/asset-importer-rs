@@ -17,7 +17,7 @@ pub struct Perspective {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, Validate)]
-pub struct Ortographic {
+pub struct Orthographic {
     pub xmag: f32,
     pub ymag: f32,
     pub zfar: f32,
@@ -94,7 +94,7 @@ impl<'de> de::Deserialize<'de> for Checked<CameraType> {
 #[derive(Clone, Debug, Deserialize, Serialize, Validate)]
 pub struct Camera {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub orthographic: Option<Ortographic>,
+    pub orthographic: Option<Orthographic>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub perspective: Option<Perspective>,
     #[serde(rename = "type")]

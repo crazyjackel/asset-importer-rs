@@ -84,6 +84,23 @@ impl AiImport for GltfImporter {
         let buffer_data = gltf_v1::import_buffers(&document, Some(base), blob)
             .map_err(|x| AiReadError::FileFormatError(Box::new(x)))?;
 
+        //import textures
+        let (embedded_textures, embedded_tex_ids) =
+            GltfImporter::import_embedded_textures(&document, Some(base), &buffer_data)?;
+
+        //import materials
+        let (embedded_materials, material_index_map) =
+            GltfImporter::import_embedded_materials(&document, &embedded_tex_ids)?;
+
+        //import meshes
+        let (mut meshes, mesh_offsets) =
+            GltfImporter::import_meshes(&document, &buffer_data, &material_index_map)?;
+
+        //import cameras
+        let mut cameras = GltfImporter::import_cameras(&document)?;
+        //import lights
+        let mut lights = GltfImporter::import_lights(&document)?;
+
         let mut scene = AiScene {
             ..AiScene::default()
         };
