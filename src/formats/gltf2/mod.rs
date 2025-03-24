@@ -15,3 +15,5 @@ mod gltf2_importer_texture;
 pub mod gltf2_error;
 pub mod gltf2_exporter;
 pub mod gltf2_importer;
+
+pub use self::gltf2_importer::default_file_loader;

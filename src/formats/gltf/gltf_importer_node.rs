@@ -9,5 +9,13 @@ impl GltfImporter {
         document: &Document,
         buffer_data: &IndexMap<String, Data>,
     ) -> Result<(AiNodeTree, String), AiReadError> {
+        let scene = document
+            .default_scene()
+            .or_else(|| document.scenes().nth(0));
+        if scene.is_none() {
+            return Ok((AiNodeTree::default(), "".to_string()));
+        }
+
+        Ok((AiNodeTree::default(), "".to_string()))
     }
 }

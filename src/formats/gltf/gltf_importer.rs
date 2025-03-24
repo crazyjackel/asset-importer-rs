@@ -1,4 +1,8 @@
-use std::{fs, io::BufReader, path::Path};
+use std::{
+    fs,
+    io::{self, BufReader, Read, Seek},
+    path::Path,
+};
 
 use enumflags2::BitFlags;
 use gltf_v1::Gltf;
@@ -32,10 +36,11 @@ impl AiImport for GltfImporter {
         }
     }
 
-    fn can_read<P>(&self, path: P) -> bool
-    where
-        P: AsRef<std::path::Path>,
-    {
+    fn can_read<P: AsRef<Path>, R: Read + Seek, F: Fn(&Path) -> io::Result<R>>(
+        &self,
+        path: P,
+        loader: F,
+    ) -> bool {
         //Match Extension Guard Clause
         match path.as_ref().extension() {
             None => {
@@ -48,27 +53,24 @@ impl AiImport for GltfImporter {
             },
         };
         //Check if File can be Opened
-        let file_result = fs::File::open(path);
-        if file_result.is_err() {
+        let reader_result = loader(path.as_ref());
+        if reader_result.is_err() {
             return false;
         }
 
-        let file = file_result.unwrap();
-        let reader = BufReader::new(file);
+        let reader = reader_result.unwrap();
         let gltf = Gltf::from_reader(reader);
 
         //If Result is Good, we can Read
         gltf.is_ok()
     }
 
-    fn read_file<P>(
+    fn read_file<P: AsRef<Path>, R: Read + Seek, F: Fn(&Path) -> io::Result<R>>(
         &self,
         importer: &mut AiImporter,
         path: P,
-    ) -> Result<crate::structs::scene::AiScene, crate::core::error::AiReadError>
-    where
-        P: AsRef<std::path::Path>,
-    {
+        loader: F,
+    ) -> Result<AiScene, AiReadError> {
         //Collect File Info
         let path_ref = path.as_ref();
         let base = path_ref.parent().unwrap_or_else(|| Path::new("./"));
@@ -102,6 +104,11 @@ impl AiImport for GltfImporter {
         let mut lights = GltfImporter::import_lights(&document)?;
 
         let mut scene = AiScene {
+            textures: embedded_textures,
+            materials: embedded_materials,
+            meshes,
+            cameras,
+            lights,
             ..AiScene::default()
         };
 

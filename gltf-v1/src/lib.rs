@@ -15,6 +15,7 @@ pub mod material;
 mod math;
 pub mod mesh;
 pub mod node;
+pub mod scene;
 pub mod skin;
 pub mod texture;
 

@@ -4,6 +4,7 @@ use std::{fs, path};
 use asset_importer_rs::core::error::AiReadError;
 use asset_importer_rs::core::import::AiImport;
 use asset_importer_rs::core::importer::AiImporter;
+use asset_importer_rs::formats::gltf2::default_file_loader;
 use asset_importer_rs::formats::gltf2::gltf2_importer::Gltf2Importer;
 
 const SAMPLE_MODELS_DIRECTORY_PATH: &str = "glTF-Sample-Assets/Models";
@@ -69,7 +70,8 @@ fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
                         println!("Importing {}", display);
                         let importer = Gltf2Importer;
                         let mut ai_importer = AiImporter::default();
-                        let _ = importer.read_file(&mut ai_importer, gltf_path)?;
+                        let _ =
+                            importer.read_file(&mut ai_importer, gltf_path, default_file_loader)?;
                     }
                 }
 
@@ -86,7 +88,8 @@ fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
                         println!("Importing {}", display);
                         let importer = Gltf2Importer;
                         let mut ai_importer = AiImporter::default();
-                        let _ = importer.read_file(&mut ai_importer, gle_path)?;
+                        let _ =
+                            importer.read_file(&mut ai_importer, gle_path, default_file_loader)?;
                     }
                 }
 
@@ -103,7 +106,8 @@ fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
                         println!("Importing {}", display);
                         let importer = Gltf2Importer;
                         let mut ai_importer = AiImporter::default();
-                        let _ = importer.read_file(&mut ai_importer, glb_path)?;
+                        let _ =
+                            importer.read_file(&mut ai_importer, glb_path, default_file_loader)?;
                     }
                 }
             }

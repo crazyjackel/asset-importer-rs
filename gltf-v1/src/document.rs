@@ -15,6 +15,8 @@ use crate::material::Materials;
 use crate::material::Techniques;
 use crate::mesh::Meshes;
 use crate::node::Nodes;
+use crate::scene::Scene;
+use crate::scene::Scenes;
 use crate::skin::Skins;
 use crate::texture::Samplers;
 use crate::texture::Textures;
@@ -55,6 +57,13 @@ impl Document {
         } else {
             Err(Error::Validation(errors))
         }
+    }
+
+    pub fn default_scene(&self) -> Option<Scene<'_>> {
+        self.0
+            .scene
+            .as_ref()
+            .and_then(|index| self.scenes().find(|x| x.index() == index.value()))
     }
 
     pub fn accessors(&self) -> Accessors {
@@ -126,6 +135,12 @@ impl Document {
     pub fn skins(&self) -> Skins {
         Skins {
             iter: self.0.skins.iter(),
+            document: self,
+        }
+    }
+    pub fn scenes(&self) -> Scenes {
+        Scenes {
+            iter: self.0.scenes.iter(),
             document: self,
         }
     }

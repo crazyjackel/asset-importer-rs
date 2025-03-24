@@ -3,6 +3,7 @@ use std::{collections::HashMap, time::Duration};
 use asset_importer_rs::{
     core::{export::AiExport, import::AiImport, importer::AiImporter},
     formats::gltf2::{
+        default_file_loader,
         gltf2_exporter::{Gltf2Exporter, Output},
         gltf2_importer::Gltf2Importer,
     },
@@ -18,7 +19,9 @@ fn read_file() {
 
     let importer = Gltf2Importer;
     let mut ai_importer = AiImporter::default();
-    let _ = importer.read_file(&mut ai_importer, path).unwrap();
+    let _ = importer
+        .read_file(&mut ai_importer, path, default_file_loader)
+        .unwrap();
 }
 
 /// Reads and Re-Exports Avocado File as a Benchmark
@@ -30,7 +33,9 @@ fn export_file() {
 
     let importer = Gltf2Importer;
     let mut ai_importer = AiImporter::default();
-    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    let scene = importer
+        .read_file(&mut ai_importer, path, default_file_loader)
+        .unwrap();
     assert_eq!(scene.name, "");
 
     let exporter = Gltf2Exporter {

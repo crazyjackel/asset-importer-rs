@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use asset_importer_rs::{
     core::{export::AiExport, import::AiImport, importer::AiImporter},
     formats::gltf2::{
+        default_file_loader,
         gltf2_exporter::{Gltf2Exporter, Output},
         gltf2_importer::Gltf2Importer,
     },
@@ -17,7 +18,9 @@ fn test_gltf2_export_file_binary() {
 
     let importer = Gltf2Importer;
     let mut ai_importer = AiImporter::default();
-    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    let scene = importer
+        .read_file(&mut ai_importer, path, default_file_loader)
+        .unwrap();
     assert_eq!(scene.name, "");
 
     let exporter = Gltf2Exporter {
