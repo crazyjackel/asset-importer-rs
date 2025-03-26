@@ -82,7 +82,7 @@ fn import_node(
     let mut node_queue: VecDeque<(gltf_v1::Node<'_>, Option<usize>)> = VecDeque::new();
     node_queue.push_back((root_node, None));
     while let Some((node, parent_index)) = node_queue.pop_front() {
-        let index = ai_node_tree.arena.len() - 1;
+        let index = ai_node_tree.arena.len();
         let mut ai_node = AiNode {
             children: Vec::with_capacity(node.children().len()),
             parent: parent_index,

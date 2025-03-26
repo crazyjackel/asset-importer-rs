@@ -82,7 +82,7 @@ impl<'de> Deserialize<'de> for Checked<BufferType> {
                     .unwrap_or(Checked::Invalid))
             }
         }
-        deserializer.deserialize_u64(Visitor)
+        deserializer.deserialize_str(Visitor)
     }
 }
 
@@ -210,6 +210,19 @@ fn test_buffer_deserialize() {
     let buffer_unwrap = buffer.unwrap();
     println!("{}", serde_json::to_string(&buffer_unwrap).unwrap());
     assert_eq!("vertices.bin".to_string(), buffer_unwrap.uri);
+}
+
+#[test]
+fn test_binary_buffer_deserialize() {
+    let data = r#"{
+            "type":"arraybuffer",
+            "byteLength":1975367,
+            "uri":"data:,"
+        }"#;
+    let buffer: Result<Buffer, _> = serde_json::from_str(data);
+    let buffer_unwrap = buffer.unwrap();
+    println!("{}", serde_json::to_string(&buffer_unwrap).unwrap());
+    assert_eq!(Some(Checked::Valid(BufferType::ArrayBuffer)), buffer_unwrap.type_);
 }
 
 #[test]
