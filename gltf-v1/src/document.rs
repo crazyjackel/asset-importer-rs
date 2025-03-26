@@ -1,9 +1,3 @@
-use std::iter;
-
-use indexmap::IndexMap;
-use json::material::TechniqueParameter;
-use json::Technique;
-
 use crate::accessor::Accessors;
 use crate::buffer::Buffers;
 use crate::buffer::Views;

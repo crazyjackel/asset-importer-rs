@@ -111,13 +111,13 @@ impl AiTexture {
 
     pub fn get_approved_format(&self, approved_formats: &[AiTextureFormat]) -> AiTextureFormat {
         if approved_formats.is_empty() {
-            return self.ach_format_hint.clone();
+            return self.ach_format_hint;
         }
 
         if approved_formats.contains(&self.ach_format_hint) {
-            self.ach_format_hint.clone()
+            self.ach_format_hint
         } else {
-            approved_formats.first().unwrap().clone()
+            *approved_formats.first().unwrap()
         }
     }
 

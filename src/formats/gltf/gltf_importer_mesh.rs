@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bytemuck::Pod;
 use gltf_v1::{
-    buffer::{self, Data},
+    buffer::Data,
     json::{
         accessor::{ComponentType, Type},
         map::IndexMap,
@@ -81,19 +81,24 @@ impl ExtractData for gltf_v1::Accessor<'_> {
     }
 }
 
+pub struct IndexSpan(pub u32, pub u32);
+
+pub struct ImportMeshes(pub Vec<AiMesh>, pub HashMap<String, IndexSpan>);
+
 impl GltfImporter {
-    pub(crate) fn import_meshes<'a>(
-        document: &'a Document,
+    pub(crate) fn import_meshes(
+        document: &Document,
         buffer_data: &IndexMap<String, Data>,
         material_index_map: &HashMap<String, usize>,
-    ) -> Result<(Vec<AiMesh>, Vec<u32>), AiReadError> {
+    ) -> Result<ImportMeshes, AiReadError> {
         let mut meshes: Vec<AiMesh> = Vec::new();
-        let mut mesh_offsets = Vec::new();
+        let mut mesh_offsets: HashMap<String, IndexSpan> = HashMap::new();
 
         let mut k: u32 = 0;
         for mesh in document.meshes() {
-            mesh_offsets.push(k);
-            k += mesh.primitives().len() as u32;
+            let span = mesh.primitives().len() as u32;
+            mesh_offsets.insert(mesh.index().to_string(), IndexSpan(k, span));
+            k += span;
             for (index, primitive) in mesh.primitives().enumerate() {
                 let mut ai_mesh = AiMesh {
                     name: mesh
@@ -122,7 +127,7 @@ impl GltfImporter {
                 if let Some(positions) = primitive.get(&gltf_v1::json::mesh::Semantic::Positions) {
                     num_all_vertices = positions.count();
                     let data: Vec<[f32; 3]> = positions
-                        .extract_data(&buffer_data)
+                        .extract_data(buffer_data)
                         .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
                     ai_mesh.vertices = data
                         .iter()
@@ -136,7 +141,7 @@ impl GltfImporter {
                         println!("Normal count in mesh \"{}\" does not match the vertex count, normals ignored.", ai_mesh.name);
                     } else {
                         let data: Vec<[f32; 3]> = normals
-                            .extract_data(&buffer_data)
+                            .extract_data(buffer_data)
                             .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
                         ai_mesh.normals = data
                             .iter()
@@ -164,7 +169,7 @@ impl GltfImporter {
                         Type::VEC3 => match attr_color.component_type() {
                             ComponentType::UnsignedByte => {
                                 let data: Vec<[u8; 3]> = attr_color
-                                    .extract_data(&buffer_data)
+                                    .extract_data(buffer_data)
                                     .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
                                 Some(
                                     data.iter()
@@ -181,7 +186,7 @@ impl GltfImporter {
                             }
                             ComponentType::UnsignedShort => {
                                 let data: Vec<[u16; 3]> = attr_color
-                                    .extract_data(&buffer_data)
+                                    .extract_data(buffer_data)
                                     .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
                                 Some(
                                     data.iter()
@@ -198,7 +203,7 @@ impl GltfImporter {
                             }
                             ComponentType::Float => {
                                 let data: Vec<[f32; 3]> = attr_color
-                                    .extract_data(&buffer_data)
+                                    .extract_data(buffer_data)
                                     .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
                                 Some(
                                     data.iter()
@@ -213,7 +218,7 @@ impl GltfImporter {
                         Type::VEC4 => match attr_color.component_type() {
                             ComponentType::UnsignedByte => {
                                 let data: Vec<[u8; 4]> = attr_color
-                                    .extract_data(&buffer_data)
+                                    .extract_data(buffer_data)
                                     .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
                                 Some(
                                     data.iter()
@@ -230,7 +235,7 @@ impl GltfImporter {
                             }
                             ComponentType::UnsignedShort => {
                                 let data: Vec<[u16; 4]> = attr_color
-                                    .extract_data(&buffer_data)
+                                    .extract_data(buffer_data)
                                     .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
                                 Some(
                                     data.iter()
@@ -247,7 +252,7 @@ impl GltfImporter {
                             }
                             ComponentType::Float => {
                                 let data: Vec<[f32; 4]> = attr_color
-                                    .extract_data(&buffer_data)
+                                    .extract_data(buffer_data)
                                     .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
                                 Some(
                                     data.iter()
@@ -279,7 +284,7 @@ impl GltfImporter {
                     ai_mesh.texture_coords[index as usize] = match attr_texcoords.component_type() {
                         ComponentType::Byte | ComponentType::UnsignedByte => {
                             let data: Vec<[u8; 2]> = attr_texcoords
-                                .extract_data(&buffer_data)
+                                .extract_data(buffer_data)
                                 .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
                             Some(
                                 data.iter()
@@ -293,7 +298,7 @@ impl GltfImporter {
                         }
                         ComponentType::Short | ComponentType::UnsignedShort => {
                             let data: Vec<[u16; 2]> = attr_texcoords
-                                .extract_data(&buffer_data)
+                                .extract_data(buffer_data)
                                 .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
                             Some(
                                 data.iter()
@@ -307,7 +312,7 @@ impl GltfImporter {
                         }
                         ComponentType::Float => {
                             let data: Vec<[f32; 2]> = attr_texcoords
-                                .extract_data(&buffer_data)
+                                .extract_data(buffer_data)
                                 .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
                             Some(
                                 data.iter()
@@ -471,6 +476,6 @@ impl GltfImporter {
                 meshes.push(ai_mesh);
             }
         }
-        Ok((meshes, mesh_offsets))
+        Ok(ImportMeshes(meshes, mesh_offsets))
     }
 }

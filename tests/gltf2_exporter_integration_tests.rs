@@ -12,7 +12,7 @@ use asset_importer_rs::{
 #[test]
 fn test_gltf2_export_file_binary() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
-    let mut exe_path = binding.join("tests").join("model");
+    let mut exe_path = binding.join("tests").join("model").join("gltf2");
     exe_path.push("Avocado.glb");
     let path = exe_path.as_path();
 
@@ -26,7 +26,7 @@ fn test_gltf2_export_file_binary() {
     let exporter = Gltf2Exporter {
         output_type: Output::Binary,
     };
-    let mut exe_path_2 = binding.join("test").join("output");
+    let mut exe_path_2 = binding.join("test").join("output").join("gltf2");
     exe_path_2.push("Avocado2.glb");
     let path = exe_path_2.as_path();
     let _ = exporter.export_file(&scene, path, &HashMap::new());

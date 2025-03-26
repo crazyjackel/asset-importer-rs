@@ -31,6 +31,8 @@ pub use self::binary::Glb;
 #[doc(inline)]
 pub use self::buffer::Buffer;
 #[doc(inline)]
+pub use self::node::Node;
+#[doc(inline)]
 pub use error::Error as GLTF_Error;
 
 #[doc(inline)]

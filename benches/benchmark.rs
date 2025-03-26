@@ -11,7 +11,7 @@ use asset_importer_rs::{
 use criterion::{criterion_group, criterion_main, Criterion};
 
 /// Reads Avocado File as a Benchmark
-fn read_file() {
+fn read_file_gltf2() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
     let mut exe_path = binding.join("tests").join("model");
     exe_path.push("Avocado.glb");
@@ -25,7 +25,7 @@ fn read_file() {
 }
 
 /// Reads and Re-Exports Avocado File as a Benchmark
-fn export_file() {
+fn export_file_gltf2() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
     let mut exe_path = binding.join("tests").join("model");
     exe_path.push("Avocado.glb");
@@ -52,13 +52,13 @@ fn criterion_benchmark(c: &mut Criterion) {
         let mut group = c.benchmark_group("Import Group");
         group.sample_size(10);
         group.measurement_time(Duration::from_millis(1500));
-        group.bench_function("import avocado", |b| b.iter(read_file));
+        group.bench_function("import avocado", |b| b.iter(read_file_gltf2));
     }
     {
         let mut group_2 = c.benchmark_group("Export Group");
         group_2.sample_size(10);
         group_2.measurement_time(Duration::from_millis(3000));
-        group_2.bench_function("export avocado", |b| b.iter(export_file));
+        group_2.bench_function("export avocado", |b| b.iter(export_file_gltf2));
     }
 }
 

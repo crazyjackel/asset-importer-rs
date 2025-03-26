@@ -1,4 +1,11 @@
-use crate::Document;
+use std::{iter, slice};
+
+use json::StringIndex;
+
+use crate::{
+    node::{Node, Nodes},
+    Document,
+};
 
 #[derive(Clone, Debug)]
 pub struct Scene<'a> {
@@ -30,7 +37,15 @@ impl<'a> Scene<'a> {
     pub fn name(&self) -> Option<&'a str> {
         self.json.name.as_deref()
     }
+
+    pub fn nodes(&self) -> SceneNodes<'a> {
+        SceneNodes {
+            document: self.document,
+            iter: self.json.nodes.iter(),
+        }
+    }
 }
+
 /// An `Iterator` that visits every buffer in a glTF asset.
 #[derive(Clone, Debug)]
 pub struct Scenes<'a> {
@@ -39,6 +54,41 @@ pub struct Scenes<'a> {
 
     /// The internal root glTF object.
     pub(crate) document: &'a Document,
+}
+
+#[derive(Clone, Debug)]
+pub struct SceneNodes<'a> {
+    /// Internal accessor iterator.
+    pub(crate) iter: slice::Iter<'a, StringIndex<json::node::Node>>,
+
+    /// The internal root glTF object.
+    pub(crate) document: &'a Document,
+}
+
+impl<'a> ExactSizeIterator for SceneNodes<'a> {}
+impl<'a> Iterator for SceneNodes<'a> {
+    type Item = Node<'a>;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.iter
+            .next()
+            .and_then(|index| self.document.nodes().find(|x| x.index() == index.value()))
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.iter.size_hint()
+    }
+    fn count(self) -> usize {
+        self.iter.count()
+    }
+    fn last(self) -> Option<Self::Item> {
+        self.iter
+            .last()
+            .and_then(|index| self.document.nodes().find(|x| x.index() == index.value()))
+    }
+    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+        self.iter
+            .nth(n)
+            .and_then(|index| self.document.nodes().find(|x| x.index() == index.value()))
+    }
 }
 
 impl<'a> ExactSizeIterator for Scenes<'a> {}

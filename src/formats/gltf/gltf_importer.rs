@@ -17,6 +17,8 @@ use crate::{
     structs::scene::{AiScene, AiSceneFlag},
 };
 
+use super::gltf_importer_mesh::ImportMeshes;
+
 #[derive(Debug)]
 pub struct GltfImporter;
 
@@ -95,7 +97,7 @@ impl AiImport for GltfImporter {
             GltfImporter::import_embedded_materials(&document, &embedded_tex_ids)?;
 
         //import meshes
-        let (mut meshes, mesh_offsets) =
+        let ImportMeshes(meshes, mesh_offsets) =
             GltfImporter::import_meshes(&document, &buffer_data, &material_index_map)?;
 
         //import cameras
@@ -103,12 +105,16 @@ impl AiImport for GltfImporter {
         //import lights
         let mut lights = GltfImporter::import_lights(&document)?;
 
+        let (nodes, name) = GltfImporter::import_nodes(&document, &buffer_data, &mesh_offsets)?;
+
         let mut scene = AiScene {
             textures: embedded_textures,
             materials: embedded_materials,
             meshes,
             cameras,
             lights,
+            nodes,
+            name,
             ..AiScene::default()
         };
 

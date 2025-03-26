@@ -4,9 +4,7 @@ use gltf_v1::document::Document;
 
 use crate::{
     core::error::AiReadError,
-    structs::{
-        base_types::AiReal, matkey, AiColor4D, AiMaterial, AiPropertyTypeInfo, AiTextureType,
-    },
+    structs::{matkey, AiColor4D, AiMaterial, AiPropertyTypeInfo, AiTextureType},
 };
 
 use super::gltf_importer::GltfImporter;
