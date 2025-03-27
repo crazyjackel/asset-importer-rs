@@ -45,7 +45,10 @@ impl ExtractData for gltf_v1::Accessor<'_> {
         let count = self.count();
 
         let elem_size: usize = (num_components * bytes_per_component) as usize;
-        let stride = self.stride().unwrap_or(elem_size);
+        let stride = match self.stride() {
+            Some(0) | None => elem_size,
+            Some(s) => s,
+        };
 
         let target_elem_size = size_of::<T>();
 

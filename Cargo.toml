@@ -1,6 +1,6 @@
 [package]
 name = "asset-importer-rs"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 description = "Assimp, but in Rust"
 license = "MIT OR Apache-2.0"
@@ -35,7 +35,7 @@ name = "benchmark"
 harness = false
 
 [features]
-minimal = ["gltf2_minimal"]
+minimal = ["gltf_minimal","gltf2_minimal"]
 
 default = ["gltf_default", "gltf2_default"]
 

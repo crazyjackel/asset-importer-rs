@@ -24,6 +24,6 @@ Cargo.lock
 
 /target
 
-/test_output/model/*.glb
+/tests/output/**/*.glb
 
 glTF-Sample-Assets/
