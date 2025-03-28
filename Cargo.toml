@@ -48,8 +48,10 @@ double_precision = []
 gltf = ["dep:gltf-v1"]
 
 gltf_minimal = ["gltf"]
-gltf_default = ["gltf"]
-gltf_extras = ["gltf"]
+gltf_default = ["gltf", "gltf_KHR_materials_common"]
+gltf_extras = ["gltf", "gltf_KHR_materials_common"]
+
+gltf_KHR_materials_common = ["gltf-v1/KHR_materials_common"]
 
 # GLTF 2.0 Feature Flags
 gltf2 = ["dep:gltf"]

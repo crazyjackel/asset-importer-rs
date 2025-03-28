@@ -5,6 +5,7 @@ use indexmap::IndexMap;
 use serde::{de, Deserialize, Serialize};
 
 use crate::{
+    extensions,
     validation::{Error, USize64},
     Path, Program, Root,
 };
@@ -1145,6 +1146,8 @@ pub struct Material {
     pub values: IndexMap<String, Checked<ParameterValue>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extensions: Option<extensions::material::Material>,
 }
 
 #[test]

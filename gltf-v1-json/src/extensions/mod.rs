@@ -1,6 +1,8 @@
+pub mod gltf;
 pub mod image;
 pub mod light;
 pub mod material;
+pub mod node;
 
 pub const ENABLED_EXTENSIONS: &[&str] = &[
     #[cfg(feature = "KHR_binary_glTF")]

@@ -1,10 +1,11 @@
 use std::fmt;
 
 use gltf_v1_derive::Validate;
+use map::IndexMap;
 use serde::{de, ser};
 use serde_derive::{Deserialize, Serialize};
 
-use crate::validation::Checked;
+use crate::{gltf::Get, validation::Checked, Root, StringIndex};
 
 #[derive(Clone, Debug, PartialEq, Eq, Copy, Default)]
 pub enum Type {
@@ -160,4 +161,24 @@ pub struct Light {
     pub spot: SpotLight,
     #[serde(rename = "type")]
     pub type_: Checked<Type>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
+pub struct Lights {
+    #[serde(default)]
+    #[serde(rename = "lights")]
+    #[serde(skip_serializing_if = "IndexMap::is_empty")]
+    pub lights: IndexMap<String, Light>,
+}
+
+#[cfg(feature = "KHR_materials_common")]
+impl Get<Light> for Root {
+    fn get(&self, index: StringIndex<Light>) -> Option<&Light> {
+        self.extensions
+            .as_ref()?
+            .ktr_materials_common
+            .as_ref()?
+            .lights
+            .get(index.value())
+    }
 }

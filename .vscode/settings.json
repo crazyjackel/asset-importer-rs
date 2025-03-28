@@ -1,0 +1,5 @@
+{
+    "rust-analyzer.cargo.features": [
+        "gltf2_KHR_materials_volume"
+    ]
+}

@@ -125,7 +125,17 @@ pub struct MaterialValues {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
-pub struct Material {
+pub struct MaterialCommon {
     pub technique: Checked<Technique>,
     pub values: MaterialValues,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
+pub struct Material {
+    #[cfg(feature = "KHR_materials_common")]
+    #[serde(rename = "KHR_materials_common")]
+    pub khr_material_common: Option<MaterialCommon>,
+    #[cfg(feature = "extensions")]
+    #[serde(default, flatten)]
+    pub others: Map<String, Value>,
 }
