@@ -20,7 +20,7 @@ use crate::{
     },
 };
 
-use super::{error::Error, gltf_importer::GltfImporter};
+use super::{gltf_error::Error, gltf_importer::GltfImporter};
 
 use crate::structs::AiPrimitiveType;
 

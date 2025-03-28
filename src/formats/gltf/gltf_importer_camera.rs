@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use gltf_v1::{
     camera::{Camera, Projection},
     Document,
@@ -10,13 +12,28 @@ use crate::{
 
 use super::gltf_importer::GltfImporter;
 
+pub struct ImportCameras(pub Vec<AiCamera>, pub HashMap<String, usize>);
+
 impl GltfImporter {
-    pub(crate) fn import_cameras(document: &Document) -> Result<Vec<AiCamera>, AiReadError> {
+    pub(crate) fn import_cameras(document: &Document) -> Result<ImportCameras, AiReadError> {
         let asset_cameras: Vec<Camera<'_>> = document.cameras().collect();
         let mut cameras: Vec<AiCamera> = Vec::with_capacity(asset_cameras.len());
+        let mut camera_map: HashMap<String, usize> = HashMap::new();
         for camera in asset_cameras {
+            let index = cameras.len();
+            let name = camera
+                .name()
+                .map(|x| x.to_string())
+                .unwrap_or(format!("{}", index));
+            camera_map.insert(name.clone(), index);
+            if camera_map.contains_key(&name) {
+                return Err(AiReadError::FileFormatError(Box::new(
+                    super::gltf_error::Error::DuplicateName,
+                )));
+            }
+            camera_map.insert(name.clone(), index);
             let mut ai_camera = AiCamera {
-                name: camera.name().unwrap_or("").to_string(),
+                name,
                 look_vec: AiVector3D::new(0.0, 0.0, -1.0),
                 ..AiCamera::default()
             };
@@ -49,7 +66,7 @@ impl GltfImporter {
             }
             cameras.push(ai_camera);
         }
-        Ok(cameras)
+        Ok(ImportCameras(cameras, camera_map))
     }
 }
 
@@ -81,5 +98,5 @@ fn test_gltf_camera_import() {
     let scene = serde_json::from_str(gltf_data).unwrap();
     let document = Document::from_json_without_validation(scene);
     let cameras = GltfImporter::import_cameras(&document).unwrap();
-    assert_eq!(2, cameras.len());
+    assert_eq!(2, cameras.0.len());
 }
