@@ -1,3 +1,8 @@
+use std::default;
+
+use json::extensions::Light;
+use json::gltf::Get;
+
 use crate::accessor::Accessors;
 use crate::buffer::Buffers;
 use crate::buffer::Views;
@@ -5,6 +10,7 @@ use crate::camera::Cameras;
 use crate::error::Error;
 use crate::error::Result;
 use crate::image::Images;
+use crate::light::Lights;
 use crate::material::Materials;
 use crate::material::Techniques;
 use crate::mesh::Meshes;
@@ -136,6 +142,24 @@ impl Document {
         Scenes {
             iter: self.0.scenes.iter(),
             document: self,
+        }
+    }
+    pub fn lights(&self) -> Option<Lights> {
+        //Model only has lights if KHR_materials common is enabled, as it is an extension
+        #[cfg(feature = "KHR_materials_common")]
+        {
+            self.0
+                .extensions
+                .as_ref()
+                .and_then(|x| x.ktr_materials_common.as_ref())
+                .map(|x| Lights {
+                    iter: x.lights.iter(),
+                    document: self,
+                })
+        }
+        #[cfg(not(feature = "KHR_materials_common"))]
+        {
+            None
         }
     }
 }

@@ -5,7 +5,7 @@ use map::IndexMap;
 use serde::{de, ser};
 use serde_derive::{Deserialize, Serialize};
 
-use crate::{gltf::Get, validation::Checked, Root, StringIndex};
+use crate::{gltf::Get, validation::Checked, Path, Root, StringIndex};
 
 #[derive(Clone, Debug, PartialEq, Eq, Copy, Default)]
 pub enum Type {
@@ -153,12 +153,18 @@ pub struct SpotLight {
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
+#[gltf(validate_hook = "light_validate_light")]
 pub struct Light {
-    pub name: String,
-    pub ambient: AmbientLight,
-    pub directional: DirectionalLight,
-    pub point: PointLight,
-    pub spot: SpotLight,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ambient: Option<AmbientLight>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub directional: Option<DirectionalLight>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub point: Option<PointLight>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub spot: Option<SpotLight>,
     #[serde(rename = "type")]
     pub type_: Checked<Type>,
 }
@@ -180,5 +186,19 @@ impl Get<Light> for Root {
             .as_ref()?
             .lights
             .get(index.value())
+    }
+}
+
+fn light_validate_light<P, R>(light: &Light, _root: &Root, path: P, report: &mut R)
+where
+    P: Fn() -> Path,
+    R: FnMut(&dyn Fn() -> Path, crate::validation::Error),
+{
+    match light.type_{
+        Checked::Valid(Type::Spot) if light.spot.is_none() => report(&path, crate::validation::Error::Missing),
+        Checked::Valid(Type::Ambient) if light.ambient.is_none() => report(&path, crate::validation::Error::Missing),
+        Checked::Valid(Type::Point) if light.point.is_none() => report(&path, crate::validation::Error::Missing),
+        Checked::Valid(Type::Directional) if light.directional.is_none() => report(&path, crate::validation::Error::Missing),
+        _ => {}
     }
 }

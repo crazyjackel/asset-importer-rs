@@ -12,3 +12,6 @@ pub const ENABLED_EXTENSIONS: &[&str] = &[
 ];
 
 pub const SUPPORTED_EXTENSIONS: &[&str] = &["KHR_binary_glTF", "KHR_materials_common"];
+
+#[doc(inline)]
+pub use light::Light;

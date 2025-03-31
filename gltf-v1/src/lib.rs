@@ -10,6 +10,7 @@ pub mod document;
 pub mod error;
 pub mod gltf;
 pub mod image;
+pub mod light;
 mod import;
 pub mod material;
 mod math;
