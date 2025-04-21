@@ -194,11 +194,19 @@ where
     P: Fn() -> Path,
     R: FnMut(&dyn Fn() -> Path, crate::validation::Error),
 {
-    match light.type_{
-        Checked::Valid(Type::Spot) if light.spot.is_none() => report(&path, crate::validation::Error::Missing),
-        Checked::Valid(Type::Ambient) if light.ambient.is_none() => report(&path, crate::validation::Error::Missing),
-        Checked::Valid(Type::Point) if light.point.is_none() => report(&path, crate::validation::Error::Missing),
-        Checked::Valid(Type::Directional) if light.directional.is_none() => report(&path, crate::validation::Error::Missing),
+    match light.type_ {
+        Checked::Valid(Type::Spot) if light.spot.is_none() => {
+            report(&path, crate::validation::Error::Missing)
+        }
+        Checked::Valid(Type::Ambient) if light.ambient.is_none() => {
+            report(&path, crate::validation::Error::Missing)
+        }
+        Checked::Valid(Type::Point) if light.point.is_none() => {
+            report(&path, crate::validation::Error::Missing)
+        }
+        Checked::Valid(Type::Directional) if light.directional.is_none() => {
+            report(&path, crate::validation::Error::Missing)
+        }
         _ => {}
     }
 }

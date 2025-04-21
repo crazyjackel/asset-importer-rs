@@ -98,7 +98,7 @@ impl From<[f32; 3]> for AiColor4D {
             r: value[0],
             g: value[1],
             b: value[2],
-            a: 1.0
+            a: 1.0,
         }
     }
 }
@@ -108,7 +108,6 @@ impl From<AiColor4D> for [f32; 3] {
         [val.r, val.g, val.b]
     }
 }
-
 
 impl AiColor4D {
     pub fn is_black(&self) -> bool {

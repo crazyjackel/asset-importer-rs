@@ -50,7 +50,7 @@ const SKIP_MINIMAL: [&str; 16] = [
     "glTF-Sample-Assets/Models/UnlitTest/glTF-Binary/UnlitTest.glb",
     "glTF-Sample-Assets/Models/DiffuseTransmissionTest/glTF/DiffuseTransmissionTest.gltf",
     "glTF-Sample-Assets/Models/DiffuseTransmissionTest/glTF-Binary/DiffuseTransmissionTest.glb",
-    "glTF-Sample-Assets/Models/CommercialRefrigerator/glTF/CommercialRefrigerator.gltf"
+    "glTF-Sample-Assets/Models/CommercialRefrigerator/glTF/CommercialRefrigerator.gltf",
 ];
 
 fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
