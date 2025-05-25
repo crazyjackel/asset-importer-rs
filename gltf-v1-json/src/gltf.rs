@@ -1,6 +1,7 @@
 use gltf_v1_derive::Validate;
 use indexmap::IndexMap;
 
+use crate::extensions;
 use crate::validation::Validate;
 
 use super::accessor::Accessor;
@@ -105,6 +106,9 @@ pub struct Root {
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub extensions_used: Vec<String>,
+    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extensions: Option<extensions::gltf::Root>,
 }
 
 impl Root {

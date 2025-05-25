@@ -222,7 +222,10 @@ fn test_binary_buffer_deserialize() {
     let buffer: Result<Buffer, _> = serde_json::from_str(data);
     let buffer_unwrap = buffer.unwrap();
     println!("{}", serde_json::to_string(&buffer_unwrap).unwrap());
-    assert_eq!(Some(Checked::Valid(BufferType::ArrayBuffer)), buffer_unwrap.type_);
+    assert_eq!(
+        Some(Checked::Valid(BufferType::ArrayBuffer)),
+        buffer_unwrap.type_
+    );
 }
 
 #[test]

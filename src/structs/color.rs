@@ -27,6 +27,22 @@ impl From<AiColor3D> for [f32; 3] {
     }
 }
 
+impl From<[f32; 4]> for AiColor3D {
+    fn from(value: [f32; 4]) -> Self {
+        AiColor3D {
+            r: value[0],
+            g: value[1],
+            b: value[2],
+        }
+    }
+}
+
+impl From<AiColor3D> for [f32; 4] {
+    fn from(val: AiColor3D) -> Self {
+        [val.r, val.g, val.b, 1.0]
+    }
+}
+
 impl From<AiColor3D> for AiVector3D {
     fn from(value: AiColor3D) -> Self {
         AiVector3D {
@@ -74,6 +90,22 @@ impl From<[f32; 4]> for AiColor4D {
 impl From<AiColor4D> for [f32; 4] {
     fn from(val: AiColor4D) -> Self {
         [val.r, val.g, val.b, val.a]
+    }
+}
+impl From<[f32; 3]> for AiColor4D {
+    fn from(value: [f32; 3]) -> Self {
+        AiColor4D {
+            r: value[0],
+            g: value[1],
+            b: value[2],
+            a: 1.0,
+        }
+    }
+}
+
+impl From<AiColor4D> for [f32; 3] {
+    fn from(val: AiColor4D) -> Self {
+        [val.r, val.g, val.b]
     }
 }
 

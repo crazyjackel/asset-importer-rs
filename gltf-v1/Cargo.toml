@@ -22,3 +22,4 @@ version ="0.25.5"
 [features]
 default = ["KHR_binary_glTF"]
 KHR_binary_glTF = ["gltf-v1-json/KHR_binary_glTF"]
+KHR_materials_common = ["gltf-v1-json/KHR_materials_common"]

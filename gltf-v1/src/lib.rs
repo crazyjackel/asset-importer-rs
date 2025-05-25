@@ -11,6 +11,7 @@ pub mod error;
 pub mod gltf;
 pub mod image;
 mod import;
+pub mod light;
 pub mod material;
 mod math;
 pub mod mesh;

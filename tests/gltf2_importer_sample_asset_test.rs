@@ -34,7 +34,7 @@ const SKIP_FILES: [&str; 19] = [
 ];
 
 //These files should be skipped when running in minimal mode
-const SKIP_MINIMAL: [&str; 13] = [
+const SKIP_MINIMAL: [&str; 17] = [
     "glTF-Sample-Assets/Models/DirectionalLight/glTF/DirectionalLight.gltf", //Requires Lights to Import
     "glTF-Sample-Assets/Models/DirectionalLight/glTF-Binary/DirectionalLight.glb",
     "glTF-Sample-Assets/Models/PlaysetLightTest/glTF-Binary/PlaysetLightTest.glb",
@@ -48,6 +48,10 @@ const SKIP_MINIMAL: [&str; 13] = [
     "glTF-Sample-Assets/Models/GlamVelvetSofa/glTF-Binary/GlamVelvetSofa.glb",
     "glTF-Sample-Assets/Models/UnlitTest/glTF/UnlitTest.gltf", //Requires KHR_materials_unlit
     "glTF-Sample-Assets/Models/UnlitTest/glTF-Binary/UnlitTest.glb",
+    "glTF-Sample-Assets/Models/DiffuseTransmissionTest/glTF/DiffuseTransmissionTest.gltf",
+    "glTF-Sample-Assets/Models/DiffuseTransmissionTest/glTF-Binary/DiffuseTransmissionTest.glb",
+    "glTF-Sample-Assets/Models/CommercialRefrigerator/glTF/CommercialRefrigerator.gltf", //Requires KHR_materials_transmission
+    "glTF-Sample-Assets/Models/CommercialRefrigerator/glTF-Binary/CommercialRefrigerator.glb",
 ];
 
 fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {

@@ -40,7 +40,11 @@ impl ExtractData for gltf::Accessor<'_> {
 
             let elem_size = self.size(); //how large each element is
             let count = self.count(); //how many elements there is
-            let stride = view.stride().unwrap_or(elem_size); //how many bytes to move to get the next element
+            let stride = match view.stride() {
+                //how many bytes to move to get the next element
+                Some(0) | None => elem_size,
+                Some(s) => s,
+            };
 
             if stride < elem_size {
                 return Err(Gtlf2Error::InvalidStride);

@@ -11,7 +11,7 @@ use gltf_v1::{
 
 use crate::{
     core::error::AiReadError,
-    structs::{base_types::AiReal, AiNode, AiNodeTree},
+    structs::{base_types::AiReal, AiCamera, AiLight, AiNode, AiNodeTree},
 };
 
 use super::{gltf_importer::GltfImporter, gltf_importer_mesh::IndexSpan};
@@ -21,6 +21,10 @@ impl GltfImporter {
         document: &Document,
         buffer_data: &IndexMap<String, Data>,
         mesh_offsets: &HashMap<String, IndexSpan>,
+        lights: &mut [AiLight],
+        light_map: &HashMap<String, usize>,
+        cameras: &mut [AiCamera],
+        camera_map: &HashMap<String, usize>,
     ) -> Result<(AiNodeTree, String), AiReadError> {
         let scene = document
             .default_scene()
@@ -48,7 +52,15 @@ impl GltfImporter {
                 ))
             }
             Ordering::Equal => Ok((
-                import_node(asset_root_nodes[0].clone(), buffer_data, mesh_offsets)?,
+                import_node(
+                    asset_root_nodes[0].clone(),
+                    buffer_data,
+                    mesh_offsets,
+                    lights,
+                    light_map,
+                    cameras,
+                    camera_map,
+                )?,
                 scene.unwrap().name().unwrap_or("").to_string(),
             )),
             Ordering::Greater => {
@@ -62,7 +74,15 @@ impl GltfImporter {
                 };
                 default_node.arena.push(ai_node);
                 for asset_root_node in asset_root_nodes {
-                    default_node.merge(import_node(asset_root_node, buffer_data, mesh_offsets)?);
+                    default_node.merge(import_node(
+                        asset_root_node,
+                        buffer_data,
+                        mesh_offsets,
+                        lights,
+                        light_map,
+                        cameras,
+                        camera_map,
+                    )?);
                 }
                 Ok((
                     default_node,
@@ -77,6 +97,10 @@ fn import_node(
     root_node: gltf_v1::Node<'_>,
     buffer_data: &IndexMap<String, Data>,
     mesh_offsets: &HashMap<String, IndexSpan>,
+    lights: &mut [AiLight],
+    light_map: &HashMap<String, usize>,
+    cameras: &mut [AiCamera],
+    camera_map: &HashMap<String, usize>,
 ) -> Result<AiNodeTree, AiReadError> {
     let mut ai_node_tree = AiNodeTree::default();
     let mut node_queue: VecDeque<(gltf_v1::Node<'_>, Option<usize>)> = VecDeque::new();
@@ -109,6 +133,16 @@ fn import_node(
             if let Some(IndexSpan(start, span)) = mesh_offsets.get(mesh.index()) {
                 for i in *start..(*start + *span) {
                     ai_node.mesh_indexes.push(i as usize);
+                }
+            }
+        }
+
+        if let Some(camera) = node.camera() {
+            if let Some(name) = camera.name() {
+                if let Some(index) = camera_map.get(name) {
+                    if let Some(ai_camera) = cameras.get_mut(*index) {
+                        ai_camera.name = ai_node.name.clone();
+                    }
                 }
             }
         }

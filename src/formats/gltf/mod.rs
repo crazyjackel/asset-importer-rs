@@ -1,4 +1,4 @@
-pub mod error;
+pub mod gltf_error;
 pub mod gltf_importer;
 mod gltf_importer_camera;
 mod gltf_importer_light;
