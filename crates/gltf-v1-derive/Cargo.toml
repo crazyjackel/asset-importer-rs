@@ -2,6 +2,11 @@
 name = "gltf-v1-derive"
 version = {workspace = true}
 edition = {workspace = true}
+description = "Derive macros for gltf-v1"
+license = {workspace = true}
+authors = {workspace = true}
+repository = {workspace = true}
+documentation = "https://docs.rs/gltf-v1-derive"
 
 [dependencies]
 inflections = { workspace = true }

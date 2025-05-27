@@ -3,6 +3,10 @@ name = "asset-importer-rs-gltf-v1"
 version = {workspace = true}
 authors = {workspace = true}
 edition = {workspace = true}
+description = "GLTF V1 module for asset-importer-rs"
+license = {workspace = true}
+repository = {workspace = true}
+documentation = "https://docs.rs/asset-importer-rs-gltf-v1"
 
 [dependencies]
 asset-importer-rs-core = {workspace = true}
