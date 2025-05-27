@@ -1,7 +1,9 @@
 use std::{fs::File, io::BufReader};
 
 use asset_importer_rs_core::{AiReadError, Importer};
+#[cfg(feature = "gltf2")]
 use asset_importer_rs_gltf::Gltf2Importer;
+#[cfg(feature = "gltf")]
 use asset_importer_rs_gltf_v1::GltfImporter;
 use asset_importer_rs_scene::AiScene;
 

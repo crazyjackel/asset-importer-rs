@@ -71,7 +71,7 @@ asset-importer-rs-gltf-v1 = { path = "crates/asset-importer-rs-gltf-v1" }
 [features]
 default = ["gltf", "gltf2", "gltf-default", "gltf2-default"]
 minimal = ["gltf", "gltf2"]
-extras = []
+extras = ["default"]
 gltf = ["dep:asset-importer-rs-gltf-v1"]
 gltf-default = ["asset-importer-rs-gltf-v1/default"]
 gltf2 = ["dep:asset-importer-rs-gltf"]
