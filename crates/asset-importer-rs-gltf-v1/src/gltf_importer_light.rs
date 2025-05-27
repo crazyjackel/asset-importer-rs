@@ -1,20 +1,23 @@
 use std::collections::HashMap;
 
-use gltf_v1::{light::Light, Document};
+use gltf_v1::{
+    Document,
+    light::{Kind, Light},
+};
 
 use asset_importer_rs_core::AiReadError;
-use asset_importer_rs_scene::AiLight;
+use asset_importer_rs_scene::{AiLight, AiLightSourceType};
 
 use super::gltf_importer::GltfImporter;
 
 pub struct ImportLights(pub Vec<AiLight>, pub HashMap<String, usize>);
 impl GltfImporter {
-    #[cfg(not(feature = "gltf_KHR_materials_common"))]
+    #[cfg(not(feature = "KHR_materials_common"))]
     pub(crate) fn import_lights(document: &Document) -> Result<ImportLights, AiReadError> {
         //@todo: Handle KHR_materials_common ext for lights
         Ok(ImportLights(Vec::new(), HashMap::new()))
     }
-    #[cfg(feature = "gltf_KHR_materials_common")]
+    #[cfg(feature = "KHR_materials_common")]
     pub(crate) fn import_lights(document: &Document) -> Result<ImportLights, AiReadError> {
         let asset_lights: Vec<Light<'_>> =
             document.lights().map(|x| x.collect()).unwrap_or_default();
@@ -47,10 +50,10 @@ impl GltfImporter {
                 ..AiLight::default()
             };
             ai_light.source_type = match light.kind() {
-                gltf_v1::light::Kind::Ambient => crate::structs::AiLightSourceType::Ambient,
-                gltf_v1::light::Kind::Directional => crate::structs::AiLightSourceType::Directional,
-                gltf_v1::light::Kind::Point => crate::structs::AiLightSourceType::Point,
-                gltf_v1::light::Kind::Spot => crate::structs::AiLightSourceType::Spot,
+                Kind::Ambient => AiLightSourceType::Ambient,
+                Kind::Directional => AiLightSourceType::Directional,
+                Kind::Point => AiLightSourceType::Point,
+                Kind::Spot => AiLightSourceType::Spot,
             };
             lights.push(ai_light);
         }

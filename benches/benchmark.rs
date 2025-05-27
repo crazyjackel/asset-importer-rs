@@ -1,8 +1,22 @@
 use std::{collections::HashMap, time::Duration};
 
-use asset_importer_rs_core::{default_file_loader, AiExport, AiImport, AiImporter};
+use asset_importer_rs_core::{AiExport, AiImport, AiImporter, default_file_loader};
 use asset_importer_rs_gltf::{Gltf2Exporter, Gltf2Importer, Output};
-use criterion::{criterion_group, criterion_main, Criterion};
+use asset_importer_rs_gltf_v1::GltfImporter;
+use criterion::{Criterion, criterion_group, criterion_main};
+
+fn read_file_gltf() {
+    let binding = std::env::current_dir().expect("Failed to get the current executable path");
+    let mut exe_path = binding.join("tests").join("model").join("gltf");
+    exe_path.push("Avocado_v1.glb");
+    let path = exe_path.as_path();
+
+    let importer: GltfImporter = GltfImporter;
+    let mut ai_importer = AiImporter::default();
+    let _ = importer
+        .read_file(&mut ai_importer, path, default_file_loader)
+        .unwrap();
+}
 
 /// Reads Avocado File as a Benchmark
 fn read_file_gltf2() {
