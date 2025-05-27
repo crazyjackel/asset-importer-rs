@@ -5,13 +5,19 @@ use std::path::Path;
 
 use gltf::{Document, Gltf, buffer};
 
-use asset_importer_rs_core::{AiImport, AiImporter, AiImporterDesc, AiImporterFlags, AiReadError};
+use asset_importer_rs_core::{
+    AiImporter, AiImporterDesc, AiImporterFlags, AiImporterInfo, AiReadError,
+};
 use asset_importer_rs_scene::{AiMaterial, AiScene, AiSceneFlag};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Gltf2Importer;
 
 impl Gltf2Importer {
+    pub fn new() -> Self {
+        Self
+    }
+
     pub fn import_buffers<R: Read + Seek, F: Fn(&Path) -> io::Result<R>>(
         document: &Document,
         base: Option<&Path>,
@@ -81,7 +87,7 @@ impl Gltf2Importer {
     }
 }
 
-impl AiImport for Gltf2Importer {
+impl AiImporterInfo for Gltf2Importer {
     fn info(&self) -> AiImporterDesc {
         AiImporterDesc {
             name: "glTF2 Importer".to_string(),
@@ -99,13 +105,16 @@ impl AiImport for Gltf2Importer {
             extensions: vec!["gltf".to_string(), "glb".to_string(), "vrm".to_string()],
         }
     }
-    fn can_read<P: AsRef<Path>, R: Read + Seek, F: Fn(&Path) -> io::Result<R>>(
+}
+
+impl AiImporter for Gltf2Importer {
+    fn can_read_dyn<'data>(
         &self,
-        path: P,
-        loader: F,
+        path: &Path,
+        loader: &dyn Fn(&Path) -> io::Result<Box<dyn asset_importer_rs_core::ReadSeek + 'data>>,
     ) -> bool {
         //Match Extension Guard Clause
-        match path.as_ref().extension() {
+        match path.extension() {
             None => {
                 return false;
             }
@@ -131,16 +140,14 @@ impl AiImport for Gltf2Importer {
         gltf.is_ok()
     }
 
-    fn read_file<P: AsRef<Path>, R: Read + Seek, F: Fn(&Path) -> io::Result<R>>(
+    fn read_file_dyn<'data>(
         &self,
-        importer: &mut AiImporter,
-        path: P,
-        loader: F,
+        path: &Path,
+        loader: &dyn Fn(&Path) -> io::Result<Box<dyn asset_importer_rs_core::ReadSeek + 'data>>,
     ) -> Result<AiScene, AiReadError> {
         //Collect File Info
-        let path_ref = path.as_ref();
-        let base = path_ref.parent().unwrap_or_else(|| Path::new("./"));
-        let reader = loader(path_ref).map_err(|x| AiReadError::FileOpenError(Box::new(x)))?;
+        let base = path.parent().unwrap_or_else(|| Path::new("./"));
+        let reader = loader(path).map_err(|x| AiReadError::FileOpenError(Box::new(x)))?;
 
         //Load Gltf Info
         let Gltf { document, blob } =

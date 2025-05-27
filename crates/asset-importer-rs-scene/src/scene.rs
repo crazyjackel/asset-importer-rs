@@ -8,7 +8,7 @@ use super::{
     metadata::AiMetadata,
     texture::AiTexture,
 };
-use enumflags2::{bitflags, BitFlags};
+use enumflags2::{BitFlags, bitflags};
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct AiNode {

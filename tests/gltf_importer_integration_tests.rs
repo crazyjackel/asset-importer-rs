@@ -1,4 +1,4 @@
-use asset_importer_rs_core::{AiImport, AiImporter, default_file_loader};
+use asset_importer_rs_core::{AiImporterExt, default_file_loader};
 use asset_importer_rs_gltf_v1::GltfImporter;
 
 #[test]
@@ -9,9 +9,6 @@ fn test_gltf_read_file() {
     let path = exe_path.as_path();
 
     let importer = GltfImporter;
-    let mut ai_importer = AiImporter::default();
-    let scene = importer
-        .read_file(&mut ai_importer, path, default_file_loader)
-        .unwrap();
+    let scene = importer.read_file(path, default_file_loader).unwrap();
     assert_eq!(scene.name, "");
 }

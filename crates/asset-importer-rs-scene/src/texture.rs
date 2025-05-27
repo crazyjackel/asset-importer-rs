@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use image::{write_buffer_with_format, ColorType, ImageError, ImageFormat};
+use image::{ColorType, ImageError, ImageFormat, write_buffer_with_format};
 
 use super::color::AiColor4D;
 

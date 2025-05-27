@@ -1,6 +1,6 @@
 use std::{collections::HashMap, time::Duration};
 
-use asset_importer_rs_core::{AiExport, AiImport, AiImporter, default_file_loader};
+use asset_importer_rs_core::{AiExport, AiImporterExt, default_file_loader};
 use asset_importer_rs_gltf::{Gltf2Exporter, Gltf2Importer, Output};
 use asset_importer_rs_gltf_v1::GltfImporter;
 use criterion::{Criterion, criterion_group, criterion_main};
@@ -12,10 +12,7 @@ fn read_file_gltf() {
     let path = exe_path.as_path();
 
     let importer: GltfImporter = GltfImporter;
-    let mut ai_importer = AiImporter::default();
-    let _ = importer
-        .read_file(&mut ai_importer, path, default_file_loader)
-        .unwrap();
+    let _ = importer.read_file(path, default_file_loader).unwrap();
 }
 
 /// Reads Avocado File as a Benchmark
@@ -26,10 +23,7 @@ fn read_file_gltf2() {
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;
-    let mut ai_importer = AiImporter::default();
-    let _ = importer
-        .read_file(&mut ai_importer, path, default_file_loader)
-        .unwrap();
+    let _ = importer.read_file(path, default_file_loader).unwrap();
 }
 
 /// Reads and Re-Exports Avocado File as a Benchmark
@@ -40,10 +34,7 @@ fn export_file_gltf2() {
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;
-    let mut ai_importer = AiImporter::default();
-    let scene = importer
-        .read_file(&mut ai_importer, path, default_file_loader)
-        .unwrap();
+    let scene = importer.read_file(path, default_file_loader).unwrap();
     assert_eq!(scene.name, "");
 
     let exporter = Gltf2Exporter {

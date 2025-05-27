@@ -2,7 +2,7 @@ use std::ops;
 
 use bytemuck::{Pod, Zeroable};
 
-use super::{type_def::base_types::AiReal, AiQuaternion};
+use super::{AiQuaternion, type_def::base_types::AiReal};
 
 /// A C-based Representation of a two-dimensional vector with either 32 bit or 64 bit precision
 #[repr(C)]

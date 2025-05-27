@@ -1,6 +1,6 @@
 use bytemuck::{Pod, Zeroable};
 
-use super::{base_types::AiReal, type_def::EPSILON_F, AiVector3D};
+use super::{AiVector3D, base_types::AiReal, type_def::EPSILON_F};
 
 /// A C-Based Color representation for RGB
 #[repr(C)]

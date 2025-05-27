@@ -1,6 +1,6 @@
 use std::ops;
 
-use super::{type_def::base_types::AiReal, AiQuaternion, AiVector3D};
+use super::{AiQuaternion, AiVector3D, type_def::base_types::AiReal};
 
 #[derive(Debug, PartialEq, Clone, Default)]
 pub struct AiMatrix4x4 {

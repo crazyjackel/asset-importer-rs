@@ -1,4 +1,4 @@
-use asset_importer_rs_core::{AiImport, AiImporter, default_file_loader};
+use asset_importer_rs_core::{AiImporterExt, default_file_loader};
 use asset_importer_rs_gltf::Gltf2Importer;
 
 /// This test is to make sure that basic files can be read.
@@ -10,10 +10,7 @@ fn test_gltf2_read_file() {
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;
-    let mut ai_importer = AiImporter::default();
-    let scene = importer
-        .read_file(&mut ai_importer, path, default_file_loader)
-        .unwrap();
+    let scene = importer.read_file(path, default_file_loader).unwrap();
     assert_eq!(scene.name, "");
 }
 
@@ -30,10 +27,7 @@ fn test_gltf2_read_file_roughness() {
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;
-    let mut ai_importer = AiImporter::default();
-    let scene = importer
-        .read_file(&mut ai_importer, path, default_file_loader)
-        .unwrap();
+    let scene = importer.read_file(path, default_file_loader).unwrap();
     assert_eq!(scene.name, "");
 }
 
@@ -46,10 +40,7 @@ fn test_gltf2_read_file_rigged() {
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;
-    let mut ai_importer = AiImporter::default();
-    let scene = importer
-        .read_file(&mut ai_importer, path, default_file_loader)
-        .unwrap();
+    let scene = importer.read_file(path, default_file_loader).unwrap();
     assert_eq!(scene.name, "");
 }
 
@@ -66,10 +57,7 @@ fn test_gltf2_read_file_primitive() {
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;
-    let mut ai_importer = AiImporter::default();
-    let scene = importer
-        .read_file(&mut ai_importer, path, default_file_loader)
-        .unwrap();
+    let scene = importer.read_file(path, default_file_loader).unwrap();
     assert_eq!(scene.name, "");
 }
 
@@ -82,10 +70,7 @@ fn test_gltf2_read_file_sparse() {
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;
-    let mut ai_importer = AiImporter::default();
-    let scene = importer
-        .read_file(&mut ai_importer, path, default_file_loader)
-        .unwrap();
+    let scene = importer.read_file(path, default_file_loader).unwrap();
     assert_eq!(scene.name, "");
 }
 
@@ -101,9 +86,6 @@ fn test_gltf2_read_file_clearcoat() {
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;
-    let mut ai_importer = AiImporter::default();
-    let scene = importer
-        .read_file(&mut ai_importer, path, default_file_loader)
-        .unwrap();
+    let scene = importer.read_file(path, default_file_loader).unwrap();
     assert_eq!(scene.name, "Scene");
 }

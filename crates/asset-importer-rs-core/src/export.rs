@@ -12,12 +12,14 @@ pub enum ExportProperty {
     Matrix(AiMatrix4x4),
 }
 
+pub type ExportProperties = HashMap<String, ExportProperty>;
+
 pub trait AiExport {
     fn export_file<P>(
         &self,
         scene: &AiScene,
         path: P,
-        properties: &HashMap<String, ExportProperty>,
+        properties: &ExportProperties,
     ) -> Result<(), AiExportError>
     where
         P: AsRef<Path>;

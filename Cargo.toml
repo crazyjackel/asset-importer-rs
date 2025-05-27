@@ -1,6 +1,6 @@
 [package]
 name = "asset-importer-rs"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 description = "Assimp, but in Rust"
 license = "MIT OR Apache-2.0"
@@ -21,7 +21,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Jackson Levitt <jackel1020@gmail.com>"]
 edition = "2024"
 
@@ -71,6 +71,7 @@ asset-importer-rs-gltf-v1 = { path = "crates/asset-importer-rs-gltf-v1" }
 [features]
 default = ["gltf", "gltf2", "gltf-default", "gltf2-default"]
 minimal = ["gltf", "gltf2"]
+extras = []
 gltf = ["dep:asset-importer-rs-gltf-v1"]
 gltf-default = ["asset-importer-rs-gltf-v1/default"]
 gltf2 = ["dep:asset-importer-rs-gltf"]
