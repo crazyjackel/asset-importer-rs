@@ -1,0 +1,44 @@
+[package]
+name = "asset-importer-rs-gltf"
+version = {workspace = true}
+authors = {workspace = true}
+edition = {workspace = true}
+
+[dependencies]
+base64 = {workspace = true}
+asset-importer-rs-scene = {workspace = true}
+asset-importer-rs-core = {workspace = true}
+gltf = {workspace = true}
+bytemuck = {workspace = true}
+serde_json = {workspace = true}
+urlencoding = {workspace = true}
+image = {workspace = true}
+
+[features]
+default = [
+    "guess_mime_type",
+    "extensions",
+    "KHR_texture_transform",
+    "KHR_materials_unlit",
+    "KHR_materials_transmission",
+    "KHR_materials_ior",
+    "KHR_materials_volume",
+    "KHR_materials_specular",
+    "KHR_materials_pbrSpecularGlossiness",
+    "KHR_materials_emissive_strength",
+    "KHR_lights_punctual",
+]
+
+guess_mime_type = ["gltf/guess_mime_type"]
+extensions = ["gltf/extensions"]
+KHR_texture_transform = ["gltf/KHR_texture_transform"]
+KHR_materials_unlit = ["gltf/KHR_materials_unlit"]
+KHR_materials_ior = ["gltf/KHR_materials_ior"]
+KHR_materials_volume = ["gltf/KHR_materials_volume"]
+KHR_materials_transmission = ["gltf/KHR_materials_transmission"]
+KHR_materials_specular = ["gltf/KHR_materials_specular"]
+KHR_materials_pbrSpecularGlossiness = [
+    "gltf/KHR_materials_pbrSpecularGlossiness",
+]
+KHR_materials_emissive_strength = ["gltf/KHR_materials_emissive_strength"]
+KHR_lights_punctual = ["gltf/KHR_lights_punctual"]

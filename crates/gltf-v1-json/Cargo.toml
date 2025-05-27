@@ -1,0 +1,23 @@
+[package]
+name = "gltf-v1-json"
+version = "0.1.0"
+edition = "2021"
+description = "JSON Package for GLTF Spec 1.0"
+license = "MIT OR Apache-2.0"
+authors = ["Jackson Levitt <jackel1020@gmail.com>"]
+repository = "https://github.com/crazyjackel/asset-importer-rs"
+
+
+[dependencies]
+indexmap = { workspace = true, features = ["serde"]}
+serde = { workspace = true }
+serde_derive = { workspace = true }
+serde_json = { workspace = true }
+gltf-v1-derive = { workspace = true }
+
+[features]
+default = []
+extensions = []
+extras = []
+KHR_binary_glTF = []
+KHR_materials_common = []

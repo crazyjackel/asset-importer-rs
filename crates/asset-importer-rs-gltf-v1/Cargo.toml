@@ -1,0 +1,17 @@
+[package]
+name = "asset-importer-rs-gltf-v1"
+version = {workspace = true}
+authors = {workspace = true}
+edition = {workspace = true}
+
+[dependencies]
+asset-importer-rs-core = {workspace = true}
+asset-importer-rs-scene = {workspace = true}
+gltf-v1 = {workspace = true}
+serde_json = {workspace = true}
+bytemuck = {workspace = true}
+enumflags2 = {workspace = true}
+
+[features]
+default = ["KHR_materials_common"]
+KHR_materials_common = ["gltf-v1/KHR_materials_common"]

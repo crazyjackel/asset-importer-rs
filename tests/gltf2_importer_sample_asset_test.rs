@@ -1,10 +1,8 @@
 use std::error::Error as StdError;
 use std::{fs, path};
 
-use asset_importer_rs::core::error::AiReadError;
-use asset_importer_rs::core::import::AiImport;
-use asset_importer_rs::core::importer::AiImporter;
-use asset_importer_rs::formats::gltf2::gltf2_importer::Gltf2Importer;
+use asset_importer_rs_core::{AiImporterExt, AiReadError, default_file_loader};
+use asset_importer_rs_gltf::Gltf2Importer;
 
 const SAMPLE_MODELS_DIRECTORY_PATH: &str = "glTF-Sample-Assets/Models";
 
@@ -29,11 +27,11 @@ const SKIP_FILES: [&str; 19] = [
     "glTF-Sample-Assets/Models/SheenTestGrid/glTF/SheenTestGrid.gltf",
     "glTF-Sample-Assets/Models/SheenTestGrid/glTF-Binary/SheenTestGrid.glb",
     "glTF-Sample-Assets/Models/SpecularSilkPouf/glTF/SpecularSilkPouf.gltf",
-    "glTF-Sample-Assets/Models/SpecularSilkPouf/glTF-Binary/SpecularSilkPouf.glb"
+    "glTF-Sample-Assets/Models/SpecularSilkPouf/glTF-Binary/SpecularSilkPouf.glb",
 ];
 
 //These files should be skipped when running in minimal mode
-const SKIP_MINIMAL: [&str; 13] = [
+const SKIP_MINIMAL: [&str; 17] = [
     "glTF-Sample-Assets/Models/DirectionalLight/glTF/DirectionalLight.gltf", //Requires Lights to Import
     "glTF-Sample-Assets/Models/DirectionalLight/glTF-Binary/DirectionalLight.glb",
     "glTF-Sample-Assets/Models/PlaysetLightTest/glTF-Binary/PlaysetLightTest.glb",
@@ -47,6 +45,10 @@ const SKIP_MINIMAL: [&str; 13] = [
     "glTF-Sample-Assets/Models/GlamVelvetSofa/glTF-Binary/GlamVelvetSofa.glb",
     "glTF-Sample-Assets/Models/UnlitTest/glTF/UnlitTest.gltf", //Requires KHR_materials_unlit
     "glTF-Sample-Assets/Models/UnlitTest/glTF-Binary/UnlitTest.glb",
+    "glTF-Sample-Assets/Models/DiffuseTransmissionTest/glTF/DiffuseTransmissionTest.gltf",
+    "glTF-Sample-Assets/Models/DiffuseTransmissionTest/glTF-Binary/DiffuseTransmissionTest.glb",
+    "glTF-Sample-Assets/Models/CommercialRefrigerator/glTF/CommercialRefrigerator.gltf", //Requires KHR_materials_transmission
+    "glTF-Sample-Assets/Models/CommercialRefrigerator/glTF-Binary/CommercialRefrigerator.glb",
 ];
 
 fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
@@ -68,8 +70,7 @@ fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
                     } else {
                         println!("Importing {}", display);
                         let importer = Gltf2Importer;
-                        let mut ai_importer = AiImporter::default();
-                        let _ = importer.read_file(&mut ai_importer, gltf_path)?;
+                        let _ = importer.read_file(gltf_path, default_file_loader)?;
                     }
                 }
 
@@ -85,8 +86,7 @@ fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
                     } else {
                         println!("Importing {}", display);
                         let importer = Gltf2Importer;
-                        let mut ai_importer = AiImporter::default();
-                        let _ = importer.read_file(&mut ai_importer, gle_path)?;
+                        let _ = importer.read_file(gle_path, default_file_loader)?;
                     }
                 }
 
@@ -102,8 +102,7 @@ fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
                     } else {
                         println!("Importing {}", display);
                         let importer = Gltf2Importer;
-                        let mut ai_importer = AiImporter::default();
-                        let _ = importer.read_file(&mut ai_importer, glb_path)?;
+                        let _ = importer.read_file(glb_path, default_file_loader)?;
                     }
                 }
             }

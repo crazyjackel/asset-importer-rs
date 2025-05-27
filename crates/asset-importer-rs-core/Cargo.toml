@@ -1,0 +1,9 @@
+[package]
+name = "asset-importer-rs-core"
+version = {workspace = true}
+authors = {workspace = true}
+edition = {workspace = true}
+
+[dependencies]
+asset-importer-rs-scene = {workspace = true}
+enumflags2 = {workspace = true}

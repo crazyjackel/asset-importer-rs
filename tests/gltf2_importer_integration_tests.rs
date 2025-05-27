@@ -1,19 +1,16 @@
-use asset_importer_rs::{
-    core::{import::AiImport, importer::AiImporter},
-    formats::gltf2::gltf2_importer::Gltf2Importer,
-};
+use asset_importer_rs_core::{AiImporterExt, default_file_loader};
+use asset_importer_rs_gltf::Gltf2Importer;
 
 /// This test is to make sure that basic files can be read.
 #[test]
 fn test_gltf2_read_file() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
-    let mut exe_path = binding.join("tests").join("model");
+    let mut exe_path = binding.join("tests").join("model").join("gltf2");
     exe_path.push("Avocado.glb");
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;
-    let mut ai_importer = AiImporter::default();
-    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    let scene = importer.read_file(path, default_file_loader).unwrap();
     assert_eq!(scene.name, "");
 }
 
@@ -24,13 +21,13 @@ fn test_gltf2_read_file_roughness() {
     let mut exe_path = binding
         .join("tests")
         .join("model")
+        .join("gltf2")
         .join("compare_roughness");
     exe_path.push("CompareRoughness.gltf");
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;
-    let mut ai_importer = AiImporter::default();
-    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    let scene = importer.read_file(path, default_file_loader).unwrap();
     assert_eq!(scene.name, "");
 }
 
@@ -38,13 +35,12 @@ fn test_gltf2_read_file_roughness() {
 #[test]
 fn test_gltf2_read_file_rigged() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
-    let mut exe_path = binding.join("tests").join("model");
+    let mut exe_path = binding.join("tests").join("model").join("gltf2");
     exe_path.push("RiggedFigure.glb");
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;
-    let mut ai_importer = AiImporter::default();
-    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    let scene = importer.read_file(path, default_file_loader).unwrap();
     assert_eq!(scene.name, "");
 }
 
@@ -52,13 +48,16 @@ fn test_gltf2_read_file_rigged() {
 #[test]
 fn test_gltf2_read_file_primitive() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
-    let mut exe_path = binding.join("tests").join("model").join("primitive_modes");
+    let mut exe_path = binding
+        .join("tests")
+        .join("model")
+        .join("gltf2")
+        .join("primitive_modes");
     exe_path.push("MeshPrimitiveModes.gltf");
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;
-    let mut ai_importer = AiImporter::default();
-    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    let scene = importer.read_file(path, default_file_loader).unwrap();
     assert_eq!(scene.name, "");
 }
 
@@ -66,25 +65,27 @@ fn test_gltf2_read_file_primitive() {
 #[test]
 fn test_gltf2_read_file_sparse() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
-    let mut exe_path = binding.join("tests").join("model");
+    let mut exe_path = binding.join("tests").join("model").join("gltf2");
     exe_path.push("SimpleSparseAccessor.gltf");
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;
-    let mut ai_importer = AiImporter::default();
-    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    let scene = importer.read_file(path, default_file_loader).unwrap();
     assert_eq!(scene.name, "");
 }
 
 #[test]
 fn test_gltf2_read_file_clearcoat() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
-    let mut exe_path = binding.join("tests").join("model").join("clearcoat");
+    let mut exe_path = binding
+        .join("tests")
+        .join("model")
+        .join("gltf2")
+        .join("clearcoat");
     exe_path.push("ClearCoatTest.gltf");
     let path = exe_path.as_path();
 
     let importer = Gltf2Importer;
-    let mut ai_importer = AiImporter::default();
-    let scene = importer.read_file(&mut ai_importer, path).unwrap();
+    let scene = importer.read_file(path, default_file_loader).unwrap();
     assert_eq!(scene.name, "Scene");
 }
