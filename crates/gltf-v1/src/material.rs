@@ -1,4 +1,4 @@
-use json::{material::ParameterValue, StringIndex};
+use json::{StringIndex, material::ParameterValue};
 
 use crate::{document::Document, texture::Texture};
 

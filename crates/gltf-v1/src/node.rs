@@ -3,11 +3,11 @@ use std::slice;
 use json::StringIndex;
 
 use crate::{
+    Document,
     camera::Camera,
     math::{Matrix3, Matrix4, Quaternion, Vector3},
     mesh::Mesh,
     skin::Skin,
-    Document,
 };
 
 /// The transform for a `Node`.

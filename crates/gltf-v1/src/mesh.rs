@@ -5,7 +5,7 @@ use json::{
     validation::Checked,
 };
 
-use crate::{material::Material, Accessor, Document};
+use crate::{Accessor, Document, material::Material};
 
 pub type Attribute<'a> = (Checked<Semantic>, Accessor<'a>);
 

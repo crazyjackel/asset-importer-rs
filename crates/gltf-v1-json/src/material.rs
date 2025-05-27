@@ -2,12 +2,11 @@ use std::fmt;
 
 use gltf_v1_derive::Validate;
 use indexmap::IndexMap;
-use serde::{de, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de};
 
 use crate::{
-    extensions,
+    Path, Program, Root, extensions,
     validation::{Error, USize64},
-    Path, Program, Root,
 };
 
 use super::{common::StringIndex, node::Node, validation::Checked};

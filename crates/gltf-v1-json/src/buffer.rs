@@ -3,8 +3,8 @@ use serde::de;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-use crate::validation::USize64;
 use crate::StringIndex;
+use crate::validation::USize64;
 
 use super::validation::Checked;
 

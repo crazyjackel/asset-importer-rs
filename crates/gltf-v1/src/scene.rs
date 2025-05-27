@@ -3,8 +3,8 @@ use std::{iter, slice};
 use json::StringIndex;
 
 use crate::{
-    node::{Node, Nodes},
     Document,
+    node::{Node, Nodes},
 };
 
 #[derive(Clone, Debug)]

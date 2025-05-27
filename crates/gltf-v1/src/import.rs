@@ -1,6 +1,6 @@
 use indexmap::IndexMap;
 
-use crate::{buffer, document::Document, error::Result, image, GLTF_Error};
+use crate::{GLTF_Error, buffer, document::Document, error::Result, image};
 use std::{borrow::Cow, fs, io, path::Path};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]

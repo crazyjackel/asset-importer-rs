@@ -2,8 +2,8 @@ use std::ops::Deref;
 
 use image_crate::DynamicImage;
 
-use crate::error::Result;
 use crate::GLTF_Error;
+use crate::error::Result;
 use crate::{buffer, document::Document};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]

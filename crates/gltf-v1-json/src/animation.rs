@@ -1,11 +1,11 @@
 use std::{collections::BTreeMap, fmt};
 
-use crate::{texture::Sampler, Node};
+use crate::{Node, texture::Sampler};
 
 use super::{accessor::Accessor, common::StringIndex, validation::Checked};
 use gltf_v1_derive::Validate;
 use indexmap::IndexMap;
-use serde::{de, ser, Serialize};
+use serde::{Serialize, de, ser};
 use serde_json::value::Index;
 
 #[derive(Clone, Debug, PartialEq, Eq, Copy)]

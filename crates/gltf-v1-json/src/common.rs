@@ -1,9 +1,9 @@
 use std::{fmt, marker};
 
 use crate::{
+    Path, Root,
     gltf::Get,
     validation::{self, Validate},
-    Path, Root,
 };
 
 pub struct StringIndex<T>(String, marker::PhantomData<fn() -> T>);
