@@ -3,6 +3,10 @@ name = "asset-importer-rs-core"
 version = {workspace = true}
 authors = {workspace = true}
 edition = {workspace = true}
+description = "Core module for asset-importer-rs"
+license = {workspace = true}
+repository = {workspace = true}
+documentation = "https://docs.rs/asset-importer-rs-core"
 
 [dependencies]
 asset-importer-rs-scene = {workspace = true}

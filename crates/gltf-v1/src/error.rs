@@ -32,14 +32,14 @@ impl std::fmt::Display for Error {
             Error::Io(e) => e.fmt(f),
             Error::Deserialize(e) => e.fmt(f),
             Error::Binary(e) => e.fmt(f),
-            Error::Validation(ref xs) => {
+            Error::Validation(xs) => {
                 write!(f, "invalid glTF 1.0:")?;
-                for (ref path, ref error) in xs {
+                for (path, error) in xs {
                     write!(f, " {}: {};", path, error)?;
                 }
                 Ok(())
             }
-            Error::Base64(ref e) => e.fmt(f),
+            Error::Base64(e) => e.fmt(f),
             Error::ExternalReferenceInSliceImport => {
                 write!(f, "external reference in slice only import")
             }
@@ -58,7 +58,7 @@ impl std::fmt::Display for Error {
             Error::UnsupportedImageFormat(image) => {
                 write!(f, "unsupported image format: {:?}", image.color())
             }
-            Error::Image(ref e) => e.fmt(f),
+            Error::Image(e) => e.fmt(f),
         }
     }
 }

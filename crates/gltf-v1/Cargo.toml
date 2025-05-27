@@ -1,11 +1,12 @@
 [package]
 name = "gltf-v1"
-version = "0.1.0"
-edition = "2021"
+version = {workspace = true}
+edition = {workspace = true}
 description = "GLTF Spec 1.0"
-license = "MIT OR Apache-2.0"
-authors = ["Jackson Levitt <jackel1020@gmail.com>"]
+license = {workspace = true}
+authors = {workspace = true}
 repository = "https://github.com/crazyjackel/asset-importer-rs"
+documentation = "https://docs.rs/gltf-v1"
 
 [dependencies]
 base64 = { workspace = true }

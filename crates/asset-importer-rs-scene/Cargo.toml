@@ -3,6 +3,11 @@ name = "asset-importer-rs-scene"
 version = {workspace = true}
 authors = {workspace = true}
 edition = {workspace = true}
+description = "Scene module for asset-importer-rs"
+license = {workspace = true}
+repository = {workspace = true}
+documentation = "https://docs.rs/asset-importer-rs-scene"
+readme = "README.md"
 
 [dependencies]
 bytemuck = { workspace = true, features = ["derive"] }
