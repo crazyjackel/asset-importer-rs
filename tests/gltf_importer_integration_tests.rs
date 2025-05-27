@@ -1,7 +1,5 @@
-use asset_importer_rs::{
-    core::{import::AiImport, importer::AiImporter},
-    formats::{gltf::gltf_importer::GltfImporter, gltf2::default_file_loader},
-};
+use asset_importer_rs_core::{AiImport, AiImporter, default_file_loader};
+use asset_importer_rs_gltf_v1::GltfImporter;
 
 #[test]
 fn test_gltf_read_file() {

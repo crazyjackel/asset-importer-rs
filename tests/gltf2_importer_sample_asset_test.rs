@@ -1,11 +1,8 @@
 use std::error::Error as StdError;
 use std::{fs, path};
 
-use asset_importer_rs::core::error::AiReadError;
-use asset_importer_rs::core::import::AiImport;
-use asset_importer_rs::core::importer::AiImporter;
-use asset_importer_rs::formats::gltf2::default_file_loader;
-use asset_importer_rs::formats::gltf2::gltf2_importer::Gltf2Importer;
+use asset_importer_rs_core::{AiImport, AiImporter, AiReadError, default_file_loader};
+use asset_importer_rs_gltf::Gltf2Importer;
 
 const SAMPLE_MODELS_DIRECTORY_PATH: &str = "glTF-Sample-Assets/Models";
 
@@ -30,7 +27,7 @@ const SKIP_FILES: [&str; 19] = [
     "glTF-Sample-Assets/Models/SheenTestGrid/glTF/SheenTestGrid.gltf",
     "glTF-Sample-Assets/Models/SheenTestGrid/glTF-Binary/SheenTestGrid.glb",
     "glTF-Sample-Assets/Models/SpecularSilkPouf/glTF/SpecularSilkPouf.gltf",
-    "glTF-Sample-Assets/Models/SpecularSilkPouf/glTF-Binary/SpecularSilkPouf.glb"
+    "glTF-Sample-Assets/Models/SpecularSilkPouf/glTF-Binary/SpecularSilkPouf.glb",
 ];
 
 //These files should be skipped when running in minimal mode

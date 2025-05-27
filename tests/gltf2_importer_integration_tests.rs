@@ -1,7 +1,5 @@
-use asset_importer_rs::{
-    core::{import::AiImport, importer::AiImporter},
-    formats::gltf2::{default_file_loader, gltf2_importer::Gltf2Importer},
-};
+use asset_importer_rs_core::{AiImport, AiImporter, default_file_loader};
+use asset_importer_rs_gltf::Gltf2Importer;
 
 /// This test is to make sure that basic files can be read.
 #[test]

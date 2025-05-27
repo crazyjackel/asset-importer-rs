@@ -1,13 +1,8 @@
 use std::collections::HashMap;
 
-use asset_importer_rs::{
-    core::{export::AiExport, import::AiImport, importer::AiImporter},
-    formats::gltf2::{
-        default_file_loader,
-        gltf2_exporter::{Gltf2Exporter, Output},
-        gltf2_importer::Gltf2Importer,
-    },
-};
+use asset_importer_rs_core::default_file_loader;
+use asset_importer_rs_core::{AiExport, AiImport, AiImporter};
+use asset_importer_rs_gltf::{Gltf2Exporter, Gltf2Importer, Output};
 
 #[test]
 fn test_gltf2_export_file_binary() {

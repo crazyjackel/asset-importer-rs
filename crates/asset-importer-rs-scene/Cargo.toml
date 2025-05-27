@@ -1,0 +1,14 @@
+[package]
+name = "asset-importer-rs-scene"
+version = {workspace = true}
+authors = {workspace = true}
+edition = {workspace = true}
+
+[dependencies]
+bytemuck = { workspace = true, features = ["derive"] }
+enumflags2 = { workspace = true }
+num_enum = { workspace = true }
+image = { workspace = true }
+
+[features]
+double_precision = []
