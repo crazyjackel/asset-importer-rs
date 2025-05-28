@@ -79,6 +79,9 @@ gltf-default = ["asset-importer-rs-gltf-v1/default"]
 gltf2 = ["dep:asset-importer-rs-gltf"]
 gltf2-default = ["asset-importer-rs-gltf/default"]
 
+[lib]
+bench = false
+
 [[bench]]
 name = "benchmark"
 harness = false
