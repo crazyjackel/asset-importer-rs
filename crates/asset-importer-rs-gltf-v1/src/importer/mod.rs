@@ -12,10 +12,19 @@ use asset_importer_rs_core::{
 };
 use asset_importer_rs_scene::{AiScene, AiSceneFlag};
 
-use super::{
-    gltf_importer_camera::ImportCameras, gltf_importer_light::ImportLights,
-    gltf_importer_mesh::ImportMeshes,
-};
+use camera::ImportCameras;
+use light::ImportLights;
+use mesh::ImportMeshes;
+
+mod camera;
+mod error;
+mod light;
+mod material;
+mod mesh;
+mod node;
+mod texture;
+
+pub use error::Error;
 
 #[derive(Debug, Default)]
 pub struct GltfImporter;
@@ -61,7 +70,7 @@ impl AiImporter for GltfImporter {
             },
         };
         //Check if File can be Opened
-        let reader_result = loader(path.as_ref());
+        let reader_result = loader(path);
         if reader_result.is_err() {
             return false;
         }

@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, string::FromUtf8Error};
 
 use bytemuck::{Pod, Zeroable};
 use enumflags2::bitflags;
@@ -153,12 +153,27 @@ pub enum AiTextureOp {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub enum AiTextureMapMode {
     Wrap = 3,
+    #[default]
     Clamp = 1,
     Mirror = 2,
     Decal = 4,
+}
+
+impl TryFrom<u8> for AiTextureMapMode {
+    type Error = ();
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            1 => Ok(Self::Clamp),
+            2 => Ok(Self::Mirror),
+            3 => Ok(Self::Wrap),
+            4 => Ok(Self::Decal),
+            _ => Err(()),
+        }
+    }
 }
 
 #[repr(u8)]
@@ -450,6 +465,35 @@ impl AiMaterial {
                         binary[0], binary[1], binary[2], binary[3],
                     ]))
                 }
+                _ => None,
+            })
+    }
+
+    pub fn get_property_ai_str(
+        &self,
+        key: &str,
+        semantic_type: Option<AiTextureType>,
+        index: u32,
+    ) -> Option<Result<String, FromUtf8Error>> {
+        self.get_property_type_info(key, semantic_type, index)
+            .and_then(|x| match x {
+                AiPropertyTypeInfo::Binary(binary) => {
+                    let str = String::from_utf8(binary.to_vec());
+                    Some(str)
+                }
+                _ => None,
+            })
+    }
+
+    pub fn get_property_ai_bool(
+        &self,
+        key: &str,
+        semantic_type: Option<AiTextureType>,
+        index: u32,
+    ) -> Option<bool> {
+        self.get_property_type_info(key, semantic_type, index)
+            .and_then(|info| match info {
+                AiPropertyTypeInfo::Binary(binary) if binary.len() == 1 => Some(binary[0] != 0),
                 _ => None,
             })
     }

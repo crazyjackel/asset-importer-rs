@@ -1137,7 +1137,7 @@ where
     }
 }
 
-#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate, Default)]
 pub struct Material {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub technique: Option<StringIndex<Technique>>,

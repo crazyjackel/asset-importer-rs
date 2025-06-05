@@ -150,16 +150,14 @@ impl<'a> Material<'a> {
                 {
                     Some(TexProperty::Color([b[0], b[1], b[2], b[3]]))
                 }
-                json::validation::Checked::Valid(ParameterValue::String(str)) => {
-                    if let Some(texture) = self.document.textures().find(|x| x.index() == str) {
-                        Some(TexProperty::Texture(texture))
-                    } else {
-                        None
-                    }
-                }
+                json::validation::Checked::Valid(ParameterValue::String(str)) => self
+                    .document
+                    .textures()
+                    .find(|x| x.index() == str)
+                    .map(TexProperty::Texture),
                 _ => None,
             })
-            .unwrap_or(TexProperty::default())
+            .unwrap_or_default()
     }
     pub fn diffuse(&self) -> TexProperty<'a> {
         self.json
@@ -171,16 +169,14 @@ impl<'a> Material<'a> {
                 {
                     Some(TexProperty::Color([b[0], b[1], b[2], b[3]]))
                 }
-                json::validation::Checked::Valid(ParameterValue::String(str)) => {
-                    if let Some(texture) = self.document.textures().find(|x| x.index() == str) {
-                        Some(TexProperty::Texture(texture))
-                    } else {
-                        None
-                    }
-                }
+                json::validation::Checked::Valid(ParameterValue::String(str)) => self
+                    .document
+                    .textures()
+                    .find(|x| x.index() == str)
+                    .map(TexProperty::Texture),
                 _ => None,
             })
-            .unwrap_or(TexProperty::default())
+            .unwrap_or_default()
     }
     pub fn specular(&self) -> TexProperty<'a> {
         self.json
@@ -192,16 +188,14 @@ impl<'a> Material<'a> {
                 {
                     Some(TexProperty::Color([b[0], b[1], b[2], b[3]]))
                 }
-                json::validation::Checked::Valid(ParameterValue::String(str)) => {
-                    if let Some(texture) = self.document.textures().find(|x| x.index() == str) {
-                        Some(TexProperty::Texture(texture))
-                    } else {
-                        None
-                    }
-                }
+                json::validation::Checked::Valid(ParameterValue::String(str)) => self
+                    .document
+                    .textures()
+                    .find(|x| x.index() == str)
+                    .map(TexProperty::Texture),
                 _ => None,
             })
-            .unwrap_or(TexProperty::default())
+            .unwrap_or_default()
     }
     pub fn emission(&self) -> TexProperty<'a> {
         self.json
@@ -213,16 +207,14 @@ impl<'a> Material<'a> {
                 {
                     Some(TexProperty::Color([b[0], b[1], b[2], b[3]]))
                 }
-                json::validation::Checked::Valid(ParameterValue::String(str)) => {
-                    if let Some(texture) = self.document.textures().find(|x| x.index() == str) {
-                        Some(TexProperty::Texture(texture))
-                    } else {
-                        None
-                    }
-                }
+                json::validation::Checked::Valid(ParameterValue::String(str)) => self
+                    .document
+                    .textures()
+                    .find(|x| x.index() == str)
+                    .map(TexProperty::Texture),
                 _ => None,
             })
-            .unwrap_or(TexProperty::default())
+            .unwrap_or_default()
     }
 }
 

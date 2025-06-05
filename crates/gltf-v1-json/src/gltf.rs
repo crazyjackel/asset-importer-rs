@@ -47,7 +47,7 @@ impl UniqueKeyGenerator {
     }
 }
 
-#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate, Default)]
 pub struct Root {
     #[serde(default)]
     #[serde(skip_serializing_if = "IndexMap::is_empty")]

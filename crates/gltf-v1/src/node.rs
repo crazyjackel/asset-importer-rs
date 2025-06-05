@@ -5,6 +5,7 @@ use json::StringIndex;
 use crate::{
     Document,
     camera::Camera,
+    light::Light,
     math::{Matrix3, Matrix4, Quaternion, Vector3},
     mesh::Mesh,
     skin::Skin,
@@ -110,6 +111,21 @@ impl<'a> Node<'a> {
             .camera
             .as_ref()
             .and_then(|index| self.document.cameras().find(|x| x.index() == index.value()))
+    }
+    pub fn light(&self) -> Option<Light<'a>> {
+        #[cfg(feature = "KHR_materials_common")]
+        return self
+            .json
+            .extensions
+            .as_ref()
+            .and_then(|x| x.ktr_materials_common.as_ref())
+            .and_then(|node_light| {
+                self.document
+                    .lights()
+                    .and_then(|mut l| l.find(|x| x.index() == node_light.light.value()))
+            });
+        #[cfg(not(feature = "KHR_materials_common"))]
+        None
     }
     pub fn children(&self) -> Children<'a> {
         Children {

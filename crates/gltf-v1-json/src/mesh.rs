@@ -221,11 +221,22 @@ pub struct Primitive {
     pub mode: Checked<PrimitiveMode>,
 }
 
+impl Primitive {
+    pub fn new(material: StringIndex<Material>) -> Self {
+        Self {
+            attributes: IndexMap::new(),
+            indices: None,
+            material,
+            mode: Checked::Valid(PrimitiveMode::Triangles),
+        }
+    }
+}
+
 fn default_primitive_mode() -> Checked<PrimitiveMode> {
     Checked::Valid(PrimitiveMode::Triangles)
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, Serialize, Validate, Default)]
 pub struct Mesh {
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]

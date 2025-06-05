@@ -1,6 +1,6 @@
 use std::{collections::HashMap, time::Duration};
 
-use asset_importer_rs_core::{AiExport, AiImporterExt, default_file_loader};
+use asset_importer_rs_core::{AiExport, AiExportExt, AiImporterExt, default_file_loader};
 use asset_importer_rs_gltf::{Gltf2Exporter, Gltf2Importer, Output};
 use asset_importer_rs_gltf_v1::GltfImporter;
 use criterion::{Criterion, criterion_group, criterion_main};
@@ -43,7 +43,7 @@ fn export_file_gltf2() {
     let mut exe_path_2 = binding.join("test").join("output");
     exe_path_2.push("Avocado2.glb");
     let path = exe_path_2.as_path();
-    let _ = exporter.export_file(&scene, path, &HashMap::new());
+    let _ = exporter.export_file_default(&scene, path, &HashMap::new());
 }
 
 fn criterion_benchmark(c: &mut Criterion) {

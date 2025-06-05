@@ -302,7 +302,7 @@ mod material {
 }
 
 mod mesh {
-    use super::{material::Material, Accessor, PrimitiveMode};
+    use super::{Accessor, PrimitiveMode, material::Material};
 
     type AccessorList<'a> = Vec<&'a Accessor<'a>>;
 

@@ -3,16 +3,12 @@ use std::{
     collections::{HashMap, VecDeque},
 };
 
-use gltf_v1::{
-    Document,
-    buffer::Data,
-    json::{map::IndexMap, node},
-};
+use gltf_v1::{Document, buffer::Data, json::map::IndexMap};
 
 use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{AiCamera, AiLight, AiNode, AiNodeTree, AiReal};
 
-use super::{gltf_importer::GltfImporter, gltf_importer_mesh::IndexSpan};
+use super::{GltfImporter, mesh::IndexSpan};
 
 impl GltfImporter {
     pub(crate) fn import_nodes(
@@ -140,6 +136,16 @@ fn import_node(
                 if let Some(index) = camera_map.get(name) {
                     if let Some(ai_camera) = cameras.get_mut(*index) {
                         ai_camera.name = ai_node.name.clone();
+                    }
+                }
+            }
+        }
+
+        if let Some(light) = node.light() {
+            if let Some(name) = light.name() {
+                if let Some(index) = light_map.get(name) {
+                    if let Some(ai_light) = lights.get_mut(*index) {
+                        ai_light.name = ai_node.name.clone();
                     }
                 }
             }

@@ -12,8 +12,9 @@ pub const LINEAR_MIPMAP_NEAREST: u32 = 9985;
 pub const NEAREST_MIPMAP_LINEAR: u32 = 9986;
 pub const LINEAR_MIPMAP_LINEAR: u32 = 9987;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub enum SamplerMagFilter {
+    #[default]
     Nearest,
     Linear,
 }
@@ -82,8 +83,9 @@ impl<'de> Deserialize<'de> for Checked<SamplerMagFilter> {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub enum SamplerMinFilter {
+    #[default]
     Nearest,
     Linear,
     NearestMipmapNearest,
@@ -176,8 +178,9 @@ pub const CLAMP_TO_EDGE: u32 = 33071;
 pub const MIRRORED_REPEAT: u32 = 33648;
 pub const REPEAT: u32 = 10497;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub enum SamplerWrap {
+    #[default]
     ClampToEdge,
     MirroredRepeat,
     Repeat,
@@ -246,7 +249,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerWrap> {
     }
 }
 
-#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate, Default)]
 pub struct Sampler {
     #[serde(rename = "magFilter", default = "default_mag_filter")]
     pub mag_filter: Checked<SamplerMagFilter>,
@@ -277,10 +280,11 @@ pub const RGBA: u32 = 6408;
 pub const LUMINANCE: u32 = 6409;
 pub const LUMINANCE_ALPHA: u32 = 6410;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub enum TextureFormat {
     Alpha,
     Rgb,
+    #[default]
     Rgba,
     Luminance,
     LuminanceAlpha,
@@ -355,8 +359,9 @@ impl<'de> Deserialize<'de> for Checked<TextureFormat> {
 
 pub const TEXTURE_2D: u32 = 3553;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub enum TextureTarget {
+    #[default]
     Texture2d,
 }
 
@@ -424,8 +429,9 @@ pub const UNSIGNED_SHORT5_6_5: u32 = 33635;
 pub const UNSIGNED_SHORT4_4_4_4: u32 = 32819;
 pub const UNSIGNED_SHORT5_5_5_1: u32 = 32820;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub enum TextureType {
+    #[default]
     UnsignedByte,
     UnsignedShort5_6_5,
     UnsignedShort4_4_4_4,
@@ -515,6 +521,20 @@ pub struct Texture {
     #[serde(rename = "type", default = "default_texture_type")]
     pub type_: Checked<TextureType>,
     pub name: Option<String>,
+}
+
+impl Texture {
+    pub fn new(source: StringIndex<Image>, sampler: StringIndex<Sampler>) -> Self {
+        Self {
+            source,
+            format: Default::default(),
+            internal_format: Default::default(),
+            sampler,
+            target: Default::default(),
+            type_: Default::default(),
+            name: None,
+        }
+    }
 }
 
 fn default_texture_format() -> Checked<TextureFormat> {

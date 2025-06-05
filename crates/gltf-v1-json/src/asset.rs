@@ -9,7 +9,7 @@ pub struct AssetProfile {
     pub version: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, Serialize, Validate, Default)]
 pub struct Asset {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub copyright: Option<String>,

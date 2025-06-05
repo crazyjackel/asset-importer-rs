@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use asset_importer_rs_core::default_file_loader;
-use asset_importer_rs_core::{AiExport, AiImporterExt};
+use asset_importer_rs_core::AiImporterExt;
+use asset_importer_rs_core::{AiExportExt, default_file_loader};
 use asset_importer_rs_gltf::{Gltf2Exporter, Gltf2Importer, Output};
 
 #[test]
@@ -18,8 +18,10 @@ fn test_gltf2_export_file_binary() {
     let exporter = Gltf2Exporter {
         output_type: Output::Binary,
     };
-    let mut exe_path_2 = binding.join("test").join("output").join("gltf2");
+    let mut exe_path_2 = binding.join("tests").join("output").join("gltf2");
     exe_path_2.push("Avocado2.glb");
     let path = exe_path_2.as_path();
-    let _ = exporter.export_file(&scene, path, &HashMap::new());
+    exporter
+        .export_file_default(&scene, path, &HashMap::new())
+        .unwrap();
 }

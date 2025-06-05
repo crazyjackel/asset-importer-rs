@@ -35,12 +35,21 @@ pub trait AiImporterExt {
         path: P,
         loader: F,
     ) -> bool;
+
     /// Reads data from a reader instead of a file path
     fn read_file<P: AsRef<Path>, R: Read + Seek, F: Fn(&Path) -> io::Result<R>>(
         &self,
         path: P,
         loader: F,
     ) -> Result<AiScene, AiReadError>;
+
+    fn can_read_default<P: AsRef<Path>>(&self, path: P) -> bool {
+        self.can_read(path, default_file_loader)
+    }
+
+    fn read_file_default<P: AsRef<Path>>(&self, path: P) -> Result<AiScene, AiReadError> {
+        self.read_file(path, default_file_loader)
+    }
 }
 
 impl<T: AiImporter + ?Sized> AiImporterExt for T {
