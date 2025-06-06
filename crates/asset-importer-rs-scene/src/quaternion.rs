@@ -1,3 +1,5 @@
+use std::ops;
+
 use super::type_def::base_types::AiReal;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -43,6 +45,34 @@ impl AiQuaternion {
             y: py,
             z: pz,
             w: pw,
+        }
+    }
+}
+
+impl ops::Index<u32> for AiQuaternion {
+    type Output = AiReal;
+
+    fn index(&self, index: u32) -> &Self::Output {
+        match index {
+            0 => &self.w,
+            1 => &self.x,
+            2 => &self.y,
+            3 => &self.z,
+            _ => &self.w,
+        }
+    }
+}
+
+impl ops::Index<usize> for AiQuaternion {
+    type Output = AiReal;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.w,
+            1 => &self.x,
+            2 => &self.y,
+            3 => &self.z,
+            _ => &self.w,
         }
     }
 }

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use asset_importer_rs_core::AiExportError;
 use asset_importer_rs_scene::{
-    AI_MAX_NUMBER_OF_TEXTURECOORDS, AiPrimitiveType, AiScene, AiVector2D, AiVector3D,
+    AI_MAX_NUMBER_OF_TEXTURECOORDS, AiPrimitiveType, AiQuaternion, AiScene, AiVector2D, AiVector3D,
 };
 use gltf_v1::json::{
     Accessor, BufferView, Mesh, Root, Skin, StringIndex,
@@ -22,7 +22,6 @@ impl GltfExporter {
         &self,
         scene: &AiScene,
         root: &mut Root,
-        unique_names_map: &mut HashMap<String, u32>,
         body_buffer_data: &mut Vec<u8>,
         mesh_index_map: &HashMap<usize, String>,
         material_index_map: &HashMap<usize, String>,
@@ -35,6 +34,7 @@ impl GltfExporter {
                 create_skin = true;
             }
         }
+        let mut unique_names_map: HashMap<String, u32> = HashMap::new();
 
         for mesh_index in 0..scene.meshes.len() {
             let ai_mesh = &scene.meshes[mesh_index];
@@ -50,15 +50,23 @@ impl GltfExporter {
             let mut primitive = Primitive::new(StringIndex::new(material_name.clone()));
 
             // Positions
-            let positions =
-                export_vector_3d(root, body_buffer_data, &ai_mesh.vertices, unique_names_map);
+            let positions = export_vector_3d(
+                root,
+                body_buffer_data,
+                &ai_mesh.vertices,
+                &mut unique_names_map,
+            );
             primitive
                 .attributes
                 .insert(Checked::Valid(Semantic::Positions), positions);
 
             // Normals
-            let normals =
-                export_vector_3d(root, body_buffer_data, &ai_mesh.normals, unique_names_map);
+            let normals = export_vector_3d(
+                root,
+                body_buffer_data,
+                &ai_mesh.normals,
+                &mut unique_names_map,
+            );
             primitive
                 .attributes
                 .insert(Checked::Valid(Semantic::Normals), normals);
@@ -79,7 +87,7 @@ impl GltfExporter {
                             .iter()
                             .map(|x| AiVector2D::new(x.x, 1.0 - x.y))
                             .collect(),
-                        unique_names_map,
+                        &mut unique_names_map,
                     )
                 } else {
                     export_vector_3d(
@@ -89,7 +97,7 @@ impl GltfExporter {
                             .iter()
                             .map(|x| AiVector3D::new(x.x, 1.0 - x.y, x.z))
                             .collect(),
-                        unique_names_map,
+                        &mut unique_names_map,
                     )
                 };
                 primitive
@@ -106,7 +114,7 @@ impl GltfExporter {
                         indices[i * indices_per_face + j] = ai_mesh.faces[i][j] as u16;
                     }
                 }
-                let indices = export_short(root, body_buffer_data, &indices, unique_names_map);
+                let indices = export_short(root, body_buffer_data, &indices, &mut unique_names_map);
                 primitive.indices = Some(indices);
             }
 
@@ -167,6 +175,41 @@ pub(crate) fn export_short(
             type_in: Type::SCALAR,
             type_out: Type::SCALAR,
             component_type: ComponentType::UnsignedShort,
+            count: data.len() as u32,
+            min: vec![min],
+            max: vec![max],
+        },
+    )
+}
+
+pub(crate) fn export_float(
+    root: &mut Root,
+    buffer_data: &mut Vec<u8>,
+    float_data: &[f32],
+    unique_names_map: &mut HashMap<String, u32>,
+) -> StringIndex<Accessor> {
+    let mut data: Vec<u8> = Vec::with_capacity(float_data.len() * 4);
+    let mut min: f32 = f32::MAX;
+    let mut max: f32 = f32::MIN;
+    for value in float_data {
+        if *value < min {
+            min = *value;
+        }
+        if *value > max {
+            max = *value;
+        }
+        data.extend_from_slice(&value.to_le_bytes());
+    }
+    export_data(
+        root,
+        buffer_data,
+        &data,
+        unique_names_map,
+        AccessorExporter {
+            target: BufferViewType::ElementArrayBuffer,
+            type_in: Type::SCALAR,
+            type_out: Type::SCALAR,
+            component_type: ComponentType::Float,
             count: data.len() as u32,
             min: vec![min],
             max: vec![max],
@@ -256,6 +299,51 @@ pub(crate) fn export_vector_3d(
             target: BufferViewType::ArrayBuffer,
             type_in: Type::VEC3,
             type_out: Type::VEC3,
+            component_type: ComponentType::Float,
+            count: vector_data.len() as u32,
+            min: min.to_vec(),
+            max: max.to_vec(),
+        },
+    )
+}
+
+pub(crate) fn export_vector_4d(
+    root: &mut Root,
+    buffer_data: &mut Vec<u8>,
+    vector_data: &Vec<AiQuaternion>,
+    unique_names_map: &mut HashMap<String, u32>,
+) -> StringIndex<Accessor> {
+    let mut min: [f32; 4] = if vector_data.is_empty() {
+        [0.0; 4]
+    } else {
+        [f32::MAX; 4]
+    };
+    let mut max: [f32; 4] = if vector_data.is_empty() {
+        [0.0; 4]
+    } else {
+        [f32::MIN; 4]
+    };
+    let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4 * 4);
+    for vector in vector_data {
+        for i in 0..4_usize {
+            if vector[i] < min[i] {
+                min[i] = vector[i];
+            }
+            if vector[i] > max[i] {
+                max[i] = vector[i];
+            }
+            data.extend_from_slice(&vector[i].to_le_bytes());
+        }
+    }
+    export_data(
+        root,
+        buffer_data,
+        &data,
+        unique_names_map,
+        AccessorExporter {
+            target: BufferViewType::ArrayBuffer,
+            type_in: Type::VEC4,
+            type_out: Type::VEC4,
             component_type: ComponentType::Float,
             count: vector_data.len() as u32,
             min: min.to_vec(),

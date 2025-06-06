@@ -17,12 +17,12 @@ impl GltfExporter {
         &self,
         scene: &AiScene,
         root: &mut Root,
-        unique_names_map: &mut HashMap<String, u32>,
         config_epsilon: f32,
     ) -> Result<HashMap<usize, String>, Error> {
         if scene.nodes.arena.is_empty() {
             return Ok(HashMap::new());
         }
+        let mut unique_names_map: HashMap<String, u32> = HashMap::new();
         let mut mesh_index_map = HashMap::new();
         let mut queue: VecDeque<(usize, Option<String>)> = VecDeque::new();
         queue.push_back((scene.nodes.root.unwrap_or(0), None));
@@ -34,7 +34,7 @@ impl GltfExporter {
             } else {
                 &ai_node.name
             };
-            node.name = Some(generate_unique_name(base_name, unique_names_map));
+            node.name = Some(generate_unique_name(base_name, &mut unique_names_map));
             if let Some(parent_name) = parent_name {
                 if let Some(parent) = root.nodes.get_mut(&parent_name) {
                     parent
@@ -52,7 +52,7 @@ impl GltfExporter {
                 } else {
                     &ai_mesh.name
                 };
-                let unique_name = generate_unique_name(base_name, unique_names_map);
+                let unique_name = generate_unique_name(base_name, &mut unique_names_map);
                 mesh_index_map.insert(*mesh_index, unique_name.clone());
                 node.meshes.push(StringIndex::new(unique_name));
             }

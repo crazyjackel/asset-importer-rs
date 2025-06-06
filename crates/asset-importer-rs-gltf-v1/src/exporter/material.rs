@@ -26,8 +26,8 @@ impl GltfExporter {
         &self,
         scene: &AiScene,
         root: &mut Root,
-        unique_names_map: &mut HashMap<String, u32>,
     ) -> Result<HashMap<usize, String>, Error> {
+        let unique_names_map: &mut HashMap<String, u32> = &mut HashMap::new();
         let mut textures_by_path: HashMap<String, String> = HashMap::new();
         let mut material_index_map = HashMap::new();
         for material_index in 0..scene.materials.len() {
@@ -318,10 +318,9 @@ mod tests {
         scene.materials.push(create_test_material());
 
         let mut root = Root::default();
-        let mut unique_names_map = HashMap::new();
         let exporter = GltfExporter::new(Output::Standard);
 
-        let result = exporter.export_materials(&scene, &mut root, &mut unique_names_map);
+        let result = exporter.export_materials(&scene, &mut root);
         assert!(result.is_ok());
 
         // Check if material was exported
@@ -384,10 +383,9 @@ mod tests {
         scene.materials.push(material);
 
         let mut root = Root::default();
-        let mut unique_names_map = HashMap::new();
         let exporter = GltfExporter::new(Output::Standard);
 
-        let result = exporter.export_materials(&scene, &mut root, &mut unique_names_map);
+        let result = exporter.export_materials(&scene, &mut root);
         assert!(result.is_ok());
 
         // Check if texture was created
@@ -438,10 +436,9 @@ mod tests {
         scene.materials.push(material);
 
         let mut root = Root::default();
-        let mut unique_names_map = HashMap::new();
         let exporter = GltfExporter::new(Output::Standard);
 
-        let result = exporter.export_materials(&scene, &mut root, &mut unique_names_map);
+        let result = exporter.export_materials(&scene, &mut root);
         assert!(result.is_ok());
 
         // Check if embedded texture was exported

@@ -4,7 +4,7 @@ use serde_derive::{Deserialize, Serialize};
 use super::common::StringIndex;
 use super::node::Node;
 
-#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, Serialize, Validate, Default)]
 pub struct Scene {
     #[serde(default)]
     #[serde(skip_serializing_if = "Vec::is_empty")]
