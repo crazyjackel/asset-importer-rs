@@ -398,7 +398,7 @@ pub(crate) fn export_data(
         byte_length: USize64(length as u64),
         target: Some(Checked::Valid(exporter.target)),
         name: Some(view_name.clone()),
-        buffer: StringIndex::new("0.bin".to_string()),
+        buffer: StringIndex::new("body".to_string()),
     };
     root.buffer_views.insert(view_name.clone(), view);
 
