@@ -6,6 +6,7 @@ use crate::{document::Document, image::Image};
 
 #[derive(Clone, Debug)]
 pub struct Sampler<'a> {
+    #[allow(dead_code)]
     document: &'a Document,
 
     index: &'a String,
@@ -15,6 +16,7 @@ pub struct Sampler<'a> {
 
 #[derive(Clone, Debug)]
 pub struct Texture<'a> {
+    #[allow(dead_code)]
     document: &'a Document,
 
     index: &'a String,
@@ -118,7 +120,7 @@ pub struct Textures<'a> {
     pub(crate) document: &'a Document,
 }
 
-impl<'a> ExactSizeIterator for Textures<'a> {}
+impl ExactSizeIterator for Textures<'_> {}
 impl<'a> Iterator for Textures<'a> {
     type Item = Texture<'a>;
 
@@ -155,7 +157,7 @@ pub struct Samplers<'a> {
     pub(crate) document: &'a Document,
 }
 
-impl<'a> ExactSizeIterator for Samplers<'a> {}
+impl ExactSizeIterator for Samplers<'_> {}
 impl<'a> Iterator for Samplers<'a> {
     type Item = Sampler<'a>;
 

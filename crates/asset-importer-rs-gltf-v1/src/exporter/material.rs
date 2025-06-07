@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-use asset_importer_rs_core::AiExportError;
 use asset_importer_rs_scene::{
     AiMaterial, AiPropertyTypeInfo, AiScene, AiTextureMapMode, AiTextureType,
     matkey::{
@@ -38,8 +37,7 @@ impl GltfExporter {
                 .get_property_type_info(matkey::AI_MATKEY_NAME, Some(AiTextureType::None), 0)
                 .and_then(|x| match x {
                     AiPropertyTypeInfo::Binary(binary) => {
-                        let str =
-                            String::from_utf8(binary.to_vec()).map_err(|err| Error::UTFError(err));
+                        let str = String::from_utf8(binary.to_vec()).map_err(Error::UTFError);
                         Some(str)
                     }
                     _ => None,
@@ -57,44 +55,52 @@ impl GltfExporter {
                 root,
                 unique_names_map,
                 &mut textures_by_path,
-                ai_material,
                 &mut material,
-                AI_MATKEY_COLOR_AMBIENT,
-                "ambient",
-                AiTextureType::Ambient,
+                &MaterialExport {
+                    material: ai_material,
+                    material_name: AI_MATKEY_COLOR_AMBIENT,
+                    property_name: "ambient",
+                    texture_type: AiTextureType::Ambient,
+                },
             );
             export_material_texture(
                 scene,
                 root,
                 unique_names_map,
                 &mut textures_by_path,
-                ai_material,
                 &mut material,
-                AI_MATKEY_COLOR_DIFFUSE,
-                "diffuse",
-                AiTextureType::Diffuse,
+                &MaterialExport {
+                    material: ai_material,
+                    material_name: AI_MATKEY_COLOR_DIFFUSE,
+                    property_name: "diffuse",
+                    texture_type: AiTextureType::Diffuse,
+                },
             );
             export_material_texture(
                 scene,
                 root,
                 unique_names_map,
                 &mut textures_by_path,
-                ai_material,
                 &mut material,
-                AI_MATKEY_COLOR_SPECULAR,
-                "specular",
-                AiTextureType::Specular,
+                &MaterialExport {
+                    material: ai_material,
+                    material_name: AI_MATKEY_COLOR_SPECULAR,
+                    property_name: "specular",
+                    texture_type: AiTextureType::Specular,
+                },
             );
             export_material_texture(
                 scene,
                 root,
                 unique_names_map,
                 &mut textures_by_path,
-                ai_material,
                 &mut material,
-                AI_MATKEY_COLOR_EMISSIVE,
-                "emission",
-                AiTextureType::Emissive,
+                &MaterialExport {
+                    material: ai_material,
+                    material_name: AI_MATKEY_COLOR_EMISSIVE,
+                    property_name: "emission",
+                    texture_type: AiTextureType::Emissive,
+                },
             );
 
             // Handle Double Sided
@@ -139,42 +145,50 @@ impl GltfExporter {
     }
 }
 
+struct MaterialExport<'a> {
+    material: &'a AiMaterial,
+    material_name: &'a str,
+    property_name: &'a str,
+    texture_type: AiTextureType,
+}
+
 fn export_material_texture(
     scene: &AiScene,
     root: &mut Root,
     unique_names_map: &mut HashMap<String, u32>,
     textures_by_path: &mut HashMap<String, String>,
-    ai_material: &AiMaterial,
     material: &mut Material,
-    material_name: &str,
-    property_name: &str,
-    texture_type: AiTextureType,
+    material_export: &MaterialExport,
 ) {
-    if let Some(color) =
-        ai_material.get_property_ai_color_rgba(material_name, Some(AiTextureType::None), 0)
-    {
+    if let Some(color) = material_export.material.get_property_ai_color_rgba(
+        material_export.material_name,
+        Some(AiTextureType::None),
+        0,
+    ) {
         material.values.insert(
-            property_name.to_string(),
+            material_export.property_name.to_string(),
             Checked::Valid(ParameterValue::NumberArray(vec![
                 color.r, color.g, color.b, color.a,
             ])),
         );
     }
 
-    if let Some(Ok(path)) =
-        ai_material.get_property_ai_str(_AI_MATKEY_TEXTURE_BASE, Some(texture_type), 0)
-    {
+    if let Some(Ok(path)) = material_export.material.get_property_ai_str(
+        _AI_MATKEY_TEXTURE_BASE,
+        Some(material_export.texture_type),
+        0,
+    ) {
         if !path.is_empty() {
             if !path.starts_with("*") {
                 if let Some(texture_name) = textures_by_path.get(&path) {
                     material.values.insert(
-                        property_name.to_string(),
+                        material_export.property_name.to_string(),
                         Checked::Valid(ParameterValue::String(texture_name.clone())),
                     );
                 }
             }
 
-            if !material.values.contains_key(material_name) {
+            if !material.values.contains_key(material_export.material_name) {
                 let texture_name = generate_unique_name("texture", unique_names_map);
                 textures_by_path.insert(path.clone(), texture_name.clone());
 
@@ -183,10 +197,11 @@ fn export_material_texture(
                 let sampler = Sampler {
                     mag_filter: Checked::Valid(SamplerMagFilter::Linear),
                     min_filter: Checked::Valid(SamplerMinFilter::Linear),
-                    wrap_s: ai_material
+                    wrap_s: material_export
+                        .material
                         .get_property_type_info(
                             _AI_MATKEY_MAPPINGMODE_U_BASE,
-                            Some(texture_type),
+                            Some(material_export.texture_type),
                             0,
                         )
                         .and_then(|x| match x {
@@ -205,10 +220,11 @@ fn export_material_texture(
                             _ => None,
                         })
                         .unwrap_or(Checked::Valid(SamplerWrap::Repeat)),
-                    wrap_t: ai_material
+                    wrap_t: material_export
+                        .material
                         .get_property_type_info(
                             _AI_MATKEY_MAPPINGMODE_V_BASE,
-                            Some(texture_type),
+                            Some(material_export.texture_type),
                             0,
                         )
                         .and_then(|x| match x {
@@ -262,7 +278,7 @@ fn export_material_texture(
                 root.textures.insert(texture_name.clone(), texture);
 
                 material.values.insert(
-                    property_name.to_string(),
+                    material_export.property_name.to_string(),
                     Checked::Valid(ParameterValue::String(texture_name)),
                 );
             }
@@ -278,7 +294,6 @@ mod tests {
     use asset_importer_rs_scene::{
         AiColor4D, AiPropertyTypeInfo, AiTexel, AiTexture, AiTextureType,
     };
-    use std::collections::HashMap;
 
     fn create_test_material() -> AiMaterial {
         let mut material = AiMaterial::default();

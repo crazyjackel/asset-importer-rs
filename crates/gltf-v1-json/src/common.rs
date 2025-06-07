@@ -35,7 +35,7 @@ impl<'de, T> serde::Deserialize<'de> for StringIndex<T> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor<T>(marker::PhantomData<T>);
-        impl<'de, T> serde::de::Visitor<'de> for Visitor<T> {
+        impl<T> serde::de::Visitor<'_> for Visitor<T> {
             type Value = StringIndex<T>;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

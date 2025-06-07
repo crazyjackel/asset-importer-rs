@@ -3,7 +3,7 @@ use std::{
     collections::{HashMap, VecDeque},
 };
 
-use gltf_v1::{Document, buffer::Data, json::map::IndexMap};
+use gltf_v1::Document;
 
 use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{AiCamera, AiLight, AiNode, AiNodeTree, AiReal};
@@ -13,7 +13,6 @@ use super::{GltfImporter, mesh::IndexSpan};
 impl GltfImporter {
     pub(crate) fn import_nodes(
         document: &Document,
-        buffer_data: &IndexMap<String, Data>,
         mesh_offsets: &HashMap<String, IndexSpan>,
         lights: &mut [AiLight],
         light_map: &HashMap<String, usize>,
@@ -48,7 +47,6 @@ impl GltfImporter {
             Ordering::Equal => Ok((
                 import_node(
                     asset_root_nodes[0].clone(),
-                    buffer_data,
                     mesh_offsets,
                     lights,
                     light_map,
@@ -70,7 +68,6 @@ impl GltfImporter {
                 for asset_root_node in asset_root_nodes {
                     default_node.merge(import_node(
                         asset_root_node,
-                        buffer_data,
                         mesh_offsets,
                         lights,
                         light_map,
@@ -89,7 +86,6 @@ impl GltfImporter {
 
 fn import_node(
     root_node: gltf_v1::Node<'_>,
-    buffer_data: &IndexMap<String, Data>,
     mesh_offsets: &HashMap<String, IndexSpan>,
     lights: &mut [AiLight],
     light_map: &HashMap<String, usize>,

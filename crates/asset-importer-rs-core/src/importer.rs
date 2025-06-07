@@ -2,12 +2,11 @@ use std::{
     collections::HashMap,
     io::{self, BufReader, Cursor},
     path::Path,
-    sync::Arc,
 };
 
 use asset_importer_rs_scene::AiScene;
 
-use crate::{AiImporter, AiImporterExt, AiReadError, ReadSeek, default_file_loader};
+use crate::{AiImporter, AiImporterExt, AiReadError, ReadSeek};
 
 #[derive(Default)]
 pub struct Importer {

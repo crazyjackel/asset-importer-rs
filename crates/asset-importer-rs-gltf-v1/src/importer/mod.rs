@@ -1,6 +1,5 @@
 use std::{
-    fs,
-    io::{self, BufReader, Read, Seek},
+    io::{self},
     path::Path,
 };
 
@@ -118,7 +117,6 @@ impl AiImporter for GltfImporter {
 
         let (nodes, name) = GltfImporter::import_nodes(
             &document,
-            &buffer_data,
             &mesh_offsets,
             &mut lights,
             &light_map,

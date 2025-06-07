@@ -1,5 +1,3 @@
-use std::{iter, slice};
-
 use json::accessor::{ComponentType, Type};
 
 use crate::{buffer::View, document::Document};
@@ -8,6 +6,7 @@ use crate::{buffer::View, document::Document};
 #[derive(Clone, Debug)]
 pub struct Accessor<'a> {
     /// The parent `Document` struct.
+    #[allow(dead_code)]
     document: &'a Document,
 
     /// The corresponding JSON index.
@@ -72,7 +71,7 @@ pub struct Accessors<'a> {
     pub(crate) document: &'a Document,
 }
 
-impl<'a> ExactSizeIterator for Accessors<'a> {}
+impl ExactSizeIterator for Accessors<'_> {}
 impl<'a> Iterator for Accessors<'a> {
     type Item = Accessor<'a>;
 

@@ -11,7 +11,7 @@ enum Scheme<'a> {
     Unsupported,
 }
 
-impl<'a> Scheme<'a> {
+impl Scheme<'_> {
     fn parse(uri: &str) -> Scheme<'_> {
         if uri.contains(':') {
             if let Some(rest) = uri.strip_prefix("data:") {
@@ -170,7 +170,7 @@ impl image::Data {
                     "image/jpeg" => image_crate::ImageFormat::Jpeg,
                     "image/bmp" => image_crate::ImageFormat::Bmp,
                     "image/gif" => image_crate::ImageFormat::Gif,
-                    _ => match guess_format(&encoded_image) {
+                    _ => match guess_format(encoded_image) {
                         Some(format) => format,
                         None => return Err(GLTF_Error::UnsupportedImageEncoding),
                     },

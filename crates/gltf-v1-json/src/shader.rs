@@ -1,5 +1,4 @@
-use std::fmt::format;
-use std::{default, fmt};
+use std::fmt;
 
 use gltf_v1_derive::Validate;
 use serde::de;
@@ -57,7 +56,7 @@ impl<'de> Deserialize<'de> for Checked<ShaderType> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl serde::de::Visitor<'_> for Visitor {
             type Value = Checked<ShaderType>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -70,7 +69,7 @@ impl<'de> Deserialize<'de> for Checked<ShaderType> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }

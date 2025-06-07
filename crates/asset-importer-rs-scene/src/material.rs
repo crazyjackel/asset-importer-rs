@@ -4,8 +4,6 @@ use bytemuck::{Pod, Zeroable};
 use enumflags2::bitflags;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
-use crate::error::{AiFailure, AiReturnError};
-
 use super::{AiColor3D, AiColor4D, type_def::base_types::AiReal, vector::AiVector2D};
 
 //@todo Add an Enum to Matkey that can be used to convert to and from binary based on format
@@ -542,25 +540,33 @@ impl AiMaterial {
     }
 }
 
-/// Tests the code of get_real_vector's String | Buffer Match
-/// Check that strings made up of joined floats can be parsed successfully
-#[test]
-fn base_vec_to_real_vec() {
-    let base_vec = vec![0.0, 12.0, 509.0];
-    let base_str = base_vec
-        .iter()
-        .map(|x| x.to_string())
-        .collect::<Vec<String>>()
-        .join(" ");
-    let buffer_data: Vec<u8> = base_str.bytes().collect();
-    let buffer = String::from_utf8_lossy(buffer_data.as_slice());
-    let real_vec: Vec<AiReal> = buffer
-        .split_ascii_whitespace()
-        .map(|x| {
-            x.parse::<AiReal>()
-                .map_err(|_| AiReturnError::Failure(AiFailure))
-        })
-        .collect::<Result<Vec<AiReal>, AiReturnError>>()
-        .unwrap();
-    assert_eq!(base_vec, real_vec);
+mod tests {
+
+    /// Tests the code of get_real_vector's String | Buffer Match
+    /// Check that strings made up of joined floats can be parsed successfully
+    #[test]
+    fn base_vec_to_real_vec() {
+        use crate::{
+            AiReal,
+            error::{AiFailure, AiReturnError},
+        };
+
+        let base_vec = vec![0.0, 12.0, 509.0];
+        let base_str = base_vec
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
+            .join(" ");
+        let buffer_data: Vec<u8> = base_str.bytes().collect();
+        let buffer = String::from_utf8_lossy(buffer_data.as_slice());
+        let real_vec: Vec<AiReal> = buffer
+            .split_ascii_whitespace()
+            .map(|x| {
+                x.parse::<AiReal>()
+                    .map_err(|_| AiReturnError::Failure(AiFailure))
+            })
+            .collect::<Result<Vec<AiReal>, AiReturnError>>()
+            .unwrap();
+        assert_eq!(base_vec, real_vec);
+    }
 }

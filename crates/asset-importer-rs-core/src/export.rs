@@ -61,10 +61,7 @@ impl<T: AiExport + ?Sized> AiExportExt for T {
         path: P,
         properties: &ExportProperties,
         exporter: F,
-    ) -> Result<(), AiExportError>
-    where
-        P: AsRef<Path>,
-    {
+    ) -> Result<(), AiExportError> {
         self.export_file_dyn(scene, path.as_ref(), properties, &|p| {
             exporter(p).map(|w| Box::new(w) as Box<dyn Write>)
         })

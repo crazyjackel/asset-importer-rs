@@ -65,7 +65,7 @@ impl<'de> Deserialize<'de> for Checked<BufferType> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl serde::de::Visitor<'_> for Visitor {
             type Value = Checked<BufferType>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -78,7 +78,7 @@ impl<'de> Deserialize<'de> for Checked<BufferType> {
             {
                 Ok(value
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -133,7 +133,7 @@ impl<'de> Deserialize<'de> for Checked<BufferViewType> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl serde::de::Visitor<'_> for Visitor {
             type Value = Checked<BufferViewType>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -146,7 +146,7 @@ impl<'de> Deserialize<'de> for Checked<BufferViewType> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }

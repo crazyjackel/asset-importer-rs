@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, fmt};
+use std::fmt;
 
 use crate::{Node, texture::Sampler};
 
@@ -6,7 +6,6 @@ use super::{accessor::Accessor, common::StringIndex, validation::Checked};
 use gltf_v1_derive::Validate;
 use indexmap::IndexMap;
 use serde::{Serialize, de, ser};
-use serde_json::value::Index;
 
 #[derive(Clone, Debug, PartialEq, Eq, Copy)]
 pub enum SamplerInterpolation {
@@ -50,7 +49,7 @@ impl<'de> de::Deserialize<'de> for Checked<SamplerInterpolation> {
         D: de::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<SamplerInterpolation>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -66,7 +65,7 @@ impl<'de> de::Deserialize<'de> for Checked<SamplerInterpolation> {
                 E: de::Error,
             {
                 Ok(TryInto::try_into(value)
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -123,7 +122,7 @@ impl<'de> de::Deserialize<'de> for Checked<AnimationPath> {
         D: de::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<AnimationPath>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -136,7 +135,7 @@ impl<'de> de::Deserialize<'de> for Checked<AnimationPath> {
             {
                 Ok(value
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }

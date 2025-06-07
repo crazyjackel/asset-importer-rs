@@ -15,7 +15,7 @@ use crate::exporter::{
     GltfExporter,
     error::Error,
     generate_unique_name,
-    mesh::{export_data, export_float, export_vector_3d, export_vector_4d},
+    mesh::{export_float, export_vector_3d, export_vector_4d},
 };
 
 impl GltfExporter {

@@ -50,7 +50,6 @@ impl AiExport for GltfExporter {
     ) -> Result<(), AiExportError> {
         //@TODO: GLTF should always have large meshes split on export.
         let mut body_buffer_data: Vec<u8> = Vec::new();
-        let mut unique_names_map: HashMap<String, u32> = HashMap::new();
 
         let mut root = gltf_v1::json::Root {
             asset: Some(gltf_v1::json::Asset {
@@ -108,7 +107,10 @@ impl AiExport for GltfExporter {
             .map_err(|e| AiExportError::ConversionError(Box::new(e)))?;
 
         //export scene
-        let scene_name = scene.name.clone();
+        let mut scene_name = scene.name.clone();
+        if scene_name.is_empty() {
+            scene_name = "scene_0".to_string();
+        }
         let nodes = if let Some((index, _)) = root.nodes.first() {
             vec![StringIndex::new(index.clone())]
         } else {
@@ -154,8 +156,8 @@ impl AiExport for GltfExporter {
                 let length = body_buffer_data.len();
                 //We might need to pad the bin with some extra elements to align to multiples of 4 bytes
                 let bin = body_buffer_data;
-                for (_, buffer) in root.buffers.iter_mut() {
-                    buffer.uri = "binary_glTF".to_string();
+                for (_, buffer_view) in root.buffer_views.iter_mut() {
+                    buffer_view.buffer = StringIndex::new("binary_glTF".to_string());
                 }
                 //Prepare Final Buffer
                 root.buffers.insert(

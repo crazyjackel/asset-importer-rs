@@ -98,7 +98,7 @@ impl<'de> de::Deserialize<'de> for Checked<ComponentType> {
         D: de::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<ComponentType>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -110,7 +110,7 @@ impl<'de> de::Deserialize<'de> for Checked<ComponentType> {
                 E: de::Error,
             {
                 Ok(TryInto::try_into(value as u32)
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -191,7 +191,7 @@ impl<'de> de::Deserialize<'de> for Checked<Type> {
         D: de::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<Type>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -204,7 +204,7 @@ impl<'de> de::Deserialize<'de> for Checked<Type> {
             {
                 Ok(value
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }

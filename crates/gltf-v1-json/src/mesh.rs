@@ -91,7 +91,7 @@ impl<'de> de::Deserialize<'de> for Checked<Semantic> {
         D: de::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<Semantic>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -104,7 +104,7 @@ impl<'de> de::Deserialize<'de> for Checked<Semantic> {
             {
                 Ok(value
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -189,7 +189,7 @@ impl<'de> de::Deserialize<'de> for Checked<PrimitiveMode> {
         D: de::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<PrimitiveMode>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -202,7 +202,7 @@ impl<'de> de::Deserialize<'de> for Checked<PrimitiveMode> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }

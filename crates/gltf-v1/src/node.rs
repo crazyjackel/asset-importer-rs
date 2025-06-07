@@ -42,9 +42,9 @@ impl Transform {
                 scale: s,
             } => {
                 let t = Matrix4::from_translation(Vector3::new(t[0], t[1], t[2]));
-                let r = Matrix4::from_quaternion(Quaternion::new(r[3], r[0], r[1], r[2]));
+                let r = Matrix4::from(Quaternion::new(r[3], r[0], r[1], r[2]));
                 let s = Matrix4::from_nonuniform_scale(s[0], s[1], s[2]);
-                (t * r * s).as_array()
+                (t * r * s).into()
             }
         }
     }
@@ -185,7 +185,7 @@ pub struct Children<'a> {
     pub(crate) iter: slice::Iter<'a, StringIndex<json::Node>>,
 }
 
-impl<'a> ExactSizeIterator for Children<'a> {}
+impl ExactSizeIterator for Children<'_> {}
 impl<'a> Iterator for Children<'a> {
     type Item = Node<'a>;
 
@@ -220,7 +220,7 @@ pub struct Nodes<'a> {
     pub(crate) document: &'a Document,
 }
 
-impl<'a> ExactSizeIterator for Nodes<'a> {}
+impl ExactSizeIterator for Nodes<'_> {}
 impl<'a> Iterator for Nodes<'a> {
     type Item = Node<'a>;
 

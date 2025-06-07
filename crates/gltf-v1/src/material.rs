@@ -8,7 +8,7 @@ pub enum TexProperty<'a> {
     Color([f32; 4]),
 }
 
-impl<'a> Default for TexProperty<'a> {
+impl Default for TexProperty<'_> {
     fn default() -> Self {
         TexProperty::Color([0.0, 0.0, 0.0, 1.0])
     }
@@ -16,6 +16,7 @@ impl<'a> Default for TexProperty<'a> {
 
 #[derive(Clone, Debug)]
 pub struct Technique<'a> {
+    #[allow(dead_code)]
     document: &'a Document,
 
     index: &'a String,
@@ -218,7 +219,7 @@ impl<'a> Material<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for Materials<'a> {}
+impl ExactSizeIterator for Materials<'_> {}
 impl<'a> Iterator for Materials<'a> {
     type Item = Material<'a>;
 
@@ -246,7 +247,7 @@ impl<'a> Iterator for Materials<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for Techniques<'a> {}
+impl ExactSizeIterator for Techniques<'_> {}
 impl<'a> Iterator for Techniques<'a> {
     type Item = Technique<'a>;
 

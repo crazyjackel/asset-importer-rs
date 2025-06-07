@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
-use asset_importer_rs_core::AiExportError;
 use asset_importer_rs_scene::{
     AI_MAX_NUMBER_OF_TEXTURECOORDS, AiPrimitiveType, AiQuaternion, AiScene, AiVector2D, AiVector3D,
 };
 use gltf_v1::json::{
-    Accessor, BufferView, Mesh, Root, Skin, StringIndex,
+    Accessor, BufferView, Mesh, Root, StringIndex,
     accessor::{ComponentType, Type},
     buffer::BufferViewType,
     mesh::{Primitive, PrimitiveMode, Semantic},
@@ -28,12 +27,12 @@ impl GltfExporter {
     ) -> Result<(), Error> {
         //@TODO: Add support for OPEN3DGC
         //@TODO: Add support for skins
-        let mut create_skin = false;
-        for mesh in &scene.meshes {
-            if !mesh.bones.is_empty() {
-                create_skin = true;
-            }
-        }
+        // let mut create_skin = false;
+        // for mesh in &scene.meshes {
+        //     if !mesh.bones.is_empty() {
+        //         create_skin = true;
+        //     }
+        // }
         let mut unique_names_map: HashMap<String, u32> = HashMap::new();
 
         for mesh_index in 0..scene.meshes.len() {
@@ -111,7 +110,7 @@ impl GltfExporter {
                 let mut indices = Vec::with_capacity(ai_mesh.faces.len() * indices_per_face);
                 for i in 0..ai_mesh.faces.len() {
                     for j in 0..indices_per_face {
-                        indices[i * indices_per_face + j] = ai_mesh.faces[i][j] as u16;
+                        indices.push(ai_mesh.faces[i][j] as u16);
                     }
                 }
                 let indices = export_short(root, body_buffer_data, &indices, &mut unique_names_map);
@@ -156,12 +155,12 @@ pub(crate) fn export_short(
     let mut min: f32 = f32::MAX;
     let mut max: f32 = f32::MIN;
     for value in short_data {
-        let value = *value as f32;
-        if value < min {
-            min = value;
+        let value_f = *value as f32;
+        if value_f < min {
+            min = value_f;
         }
-        if value > max {
-            max = value;
+        if value_f > max {
+            max = value_f;
         }
         data.extend_from_slice(&value.to_le_bytes());
     }
@@ -175,7 +174,7 @@ pub(crate) fn export_short(
             type_in: Type::SCALAR,
             type_out: Type::SCALAR,
             component_type: ComponentType::UnsignedShort,
-            count: data.len() as u32,
+            count: short_data.len() as u32,
             min: vec![min],
             max: vec![max],
         },
@@ -210,7 +209,7 @@ pub(crate) fn export_float(
             type_in: Type::SCALAR,
             type_out: Type::SCALAR,
             component_type: ComponentType::Float,
-            count: data.len() as u32,
+            count: float_data.len() as u32,
             min: vec![min],
             max: vec![max],
         },
@@ -416,4 +415,268 @@ pub(crate) fn export_data(
     };
     root.accessors.insert(accessor_name.clone(), accessor);
     StringIndex::new(accessor_name)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::Output;
+
+    use super::*;
+    use asset_importer_rs_scene::{AiMesh, AiPrimitiveType, AiVector2D, AiVector3D};
+    use std::collections::HashMap;
+
+    fn create_test_mesh() -> AiMesh {
+        let mut mesh = AiMesh {
+            name: "mesh_0".to_string(),
+            primitive_types: AiPrimitiveType::Triangle.into(),
+            vertices: vec![
+                AiVector3D::new(0.0, 0.0, 0.0),
+                AiVector3D::new(1.0, 0.0, 0.0),
+                AiVector3D::new(0.0, 1.0, 0.0),
+            ],
+            normals: vec![
+                AiVector3D::new(0.0, 0.0, 1.0),
+                AiVector3D::new(0.0, 0.0, 1.0),
+                AiVector3D::new(0.0, 0.0, 1.0),
+            ],
+            faces: vec![vec![0, 1, 2]],
+            ..Default::default()
+        };
+
+        // Add texture coordinates
+        mesh.texture_coords[0] = Some(vec![
+            AiVector3D::new(0.0, 0.0, 0.0),
+            AiVector3D::new(1.0, 0.0, 0.0),
+            AiVector3D::new(0.0, 1.0, 0.0),
+        ]);
+
+        mesh
+    }
+
+    #[test]
+    fn test_export_meshes_basic() {
+        let mut scene = AiScene::default();
+        scene.meshes.push(create_test_mesh());
+
+        let mut root = Root::default();
+        let mut body_buffer_data = Vec::new();
+        let mut mesh_index_map = HashMap::new();
+        mesh_index_map.insert(0, "mesh_0".to_string());
+        let mut material_index_map = HashMap::new();
+        material_index_map.insert(0, "material_0".to_string());
+
+        let exporter = GltfExporter::new(Output::Standard);
+
+        let result = exporter.export_meshes(
+            &scene,
+            &mut root,
+            &mut body_buffer_data,
+            &mesh_index_map,
+            &material_index_map,
+        );
+        assert!(result.is_ok());
+
+        // Check if mesh was exported
+        assert!(!root.meshes.is_empty());
+
+        // Get the exported mesh
+        let mesh = root.meshes.get("mesh_0").unwrap();
+
+        // Check mesh name
+        assert_eq!(mesh.name.as_ref().unwrap(), "mesh_0");
+
+        // Check primitive
+        assert_eq!(mesh.primitives.len(), 1);
+        let primitive = &mesh.primitives[0];
+
+        // Check material reference
+        assert_eq!(primitive.material.value(), "material_0");
+
+        // Check primitive mode
+        assert_eq!(primitive.mode, Checked::Valid(PrimitiveMode::Triangles));
+
+        // Check attributes
+        assert!(
+            primitive
+                .attributes
+                .contains_key(&Checked::Valid(Semantic::Positions))
+        );
+        assert!(
+            primitive
+                .attributes
+                .contains_key(&Checked::Valid(Semantic::Normals))
+        );
+        assert!(
+            primitive
+                .attributes
+                .contains_key(&Checked::Valid(Semantic::TexCoords(0)))
+        );
+
+        // Check indices
+        assert!(primitive.indices.is_some());
+    }
+
+    #[test]
+    fn test_export_meshes_without_texture_coords() {
+        let mut scene = AiScene::default();
+        let mut mesh = create_test_mesh();
+        mesh.texture_coords = [const { None }; AI_MAX_NUMBER_OF_TEXTURECOORDS];
+        scene.meshes.push(mesh);
+
+        let mut root = Root::default();
+        let mut body_buffer_data = Vec::new();
+        let mut mesh_index_map = HashMap::new();
+        mesh_index_map.insert(0, "mesh_0".to_string());
+        let mut material_index_map = HashMap::new();
+        material_index_map.insert(0, "material_0".to_string());
+
+        let exporter = GltfExporter::new(Output::Standard);
+
+        let result = exporter.export_meshes(
+            &scene,
+            &mut root,
+            &mut body_buffer_data,
+            &mesh_index_map,
+            &material_index_map,
+        );
+        assert!(result.is_ok());
+
+        let mesh = root.meshes.get("mesh_0").unwrap();
+        let primitive = &mesh.primitives[0];
+
+        // Check that texture coordinates are not present
+        assert!(
+            !primitive
+                .attributes
+                .contains_key(&Checked::Valid(Semantic::TexCoords(0)))
+        );
+    }
+
+    #[test]
+    fn test_export_data_vector2d() {
+        let mut root = Root::default();
+        let mut buffer_data = Vec::new();
+        let mut unique_names_map = HashMap::new();
+
+        let test_data = vec![
+            AiVector2D::new(0.0, 0.0),
+            AiVector2D::new(1.0, 1.0),
+            AiVector2D::new(-1.0, -1.0),
+        ];
+
+        let result = export_vector_2d(
+            &mut root,
+            &mut buffer_data,
+            &test_data,
+            &mut unique_names_map,
+        );
+
+        // Check that buffer data was written
+        assert!(!buffer_data.is_empty());
+
+        // Check that buffer view was created
+        assert!(!root.buffer_views.is_empty());
+
+        // Check that accessor was created
+        assert!(!root.accessors.is_empty());
+
+        // Get the accessor
+        let accessor = root.accessors.get(result.value()).unwrap();
+
+        // Check accessor properties
+        assert_eq!(accessor.count, 3);
+        assert_eq!(
+            accessor.component_type,
+            Checked::Valid(ComponentType::Float)
+        );
+        assert_eq!(accessor.type_, Checked::Valid(Type::VEC2));
+
+        // Check min/max values
+        assert_eq!(accessor.min, vec![-1.0, -1.0]);
+        assert_eq!(accessor.max, vec![1.0, 1.0]);
+    }
+
+    #[test]
+    fn test_export_data_vector3d() {
+        let mut root = Root::default();
+        let mut buffer_data = Vec::new();
+        let mut unique_names_map = HashMap::new();
+
+        let test_data = vec![
+            AiVector3D::new(0.0, 0.0, 0.0),
+            AiVector3D::new(1.0, 1.0, 1.0),
+            AiVector3D::new(-1.0, -1.0, -1.0),
+        ];
+
+        let result = export_vector_3d(
+            &mut root,
+            &mut buffer_data,
+            &test_data,
+            &mut unique_names_map,
+        );
+
+        // Check that buffer data was written
+        assert!(!buffer_data.is_empty());
+
+        // Check that buffer view was created
+        assert!(!root.buffer_views.is_empty());
+
+        // Check that accessor was created
+        assert!(!root.accessors.is_empty());
+
+        // Get the accessor
+        let accessor = root.accessors.get(result.value()).unwrap();
+
+        // Check accessor properties
+        assert_eq!(accessor.count, 3);
+        assert_eq!(
+            accessor.component_type,
+            Checked::Valid(ComponentType::Float)
+        );
+        assert_eq!(accessor.type_, Checked::Valid(Type::VEC3));
+
+        // Check min/max values
+        assert_eq!(accessor.min, vec![-1.0, -1.0, -1.0]);
+        assert_eq!(accessor.max, vec![1.0, 1.0, 1.0]);
+    }
+
+    #[test]
+    fn test_export_data_short() {
+        let mut root = Root::default();
+        let mut buffer_data = Vec::new();
+        let mut unique_names_map = HashMap::new();
+
+        let test_data = vec![0u16, 1u16, 2u16, 3u16];
+
+        let result = export_short(
+            &mut root,
+            &mut buffer_data,
+            &test_data,
+            &mut unique_names_map,
+        );
+
+        // Check that buffer data was written
+        assert!(!buffer_data.is_empty());
+
+        // Check that buffer view was created
+        assert!(!root.buffer_views.is_empty());
+
+        // Check that accessor was created
+        assert!(!root.accessors.is_empty());
+
+        // Get the accessor
+        let accessor = root.accessors.get(result.value()).unwrap();
+
+        // Check accessor properties
+        assert_eq!(accessor.count, 4);
+        assert_eq!(
+            accessor.component_type,
+            Checked::Valid(ComponentType::UnsignedShort)
+        );
+        assert_eq!(accessor.type_, Checked::Valid(Type::SCALAR));
+
+        // Check min/max values
+        assert_eq!(accessor.min, vec![0.0]);
+        assert_eq!(accessor.max, vec![3.0]);
+    }
 }

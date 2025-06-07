@@ -49,7 +49,7 @@ impl<'a> Primitive<'a> {
     pub fn get(&self, semantic: &Semantic) -> Option<Accessor<'a>> {
         self.json
             .attributes
-            .get(&Checked::Valid(semantic.clone()))
+            .get(&Checked::Valid(*semantic))
             .and_then(|x| {
                 self.mesh
                     .document
@@ -128,7 +128,7 @@ pub struct Meshes<'a> {
     pub(crate) document: &'a Document,
 }
 
-impl<'a> ExactSizeIterator for Meshes<'a> {}
+impl ExactSizeIterator for Meshes<'_> {}
 impl<'a> Iterator for Meshes<'a> {
     type Item = Mesh<'a>;
 
@@ -164,7 +164,7 @@ pub struct Primitives<'a> {
     /// The internal JSON primitive iterator.
     pub(crate) iter: iter::Enumerate<slice::Iter<'a, json::mesh::Primitive>>,
 }
-impl<'a> ExactSizeIterator for Primitives<'a> {}
+impl ExactSizeIterator for Primitives<'_> {}
 impl<'a> Iterator for Primitives<'a> {
     type Item = Primitive<'a>;
     fn next(&mut self) -> Option<Self::Item> {
@@ -178,10 +178,10 @@ impl<'a> Iterator for Primitives<'a> {
     fn count(self) -> usize {
         self.iter.count()
     }
-    fn last(self) -> Option<Self::Item> {
+    fn last(mut self) -> Option<Self::Item> {
         let mesh = self.mesh;
         self.iter
-            .last()
+            .next_back()
             .map(|(index, json)| Primitive::new(mesh, index, json))
     }
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
@@ -191,12 +191,12 @@ impl<'a> Iterator for Primitives<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for Attributes<'a> {}
+impl ExactSizeIterator for Attributes<'_> {}
 impl<'a> Iterator for Attributes<'a> {
     type Item = Attribute<'a>;
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next().map(|(key, index)| {
-            let semantic = key.clone();
+            let semantic = *key;
             let accessor = self
                 .document
                 .accessors()

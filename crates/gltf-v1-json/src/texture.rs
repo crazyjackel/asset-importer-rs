@@ -2,7 +2,7 @@ use std::fmt;
 
 use super::{common::StringIndex, image::Image, validation::Checked};
 use gltf_v1_derive::Validate;
-use serde::de::{self, value};
+use serde::de;
 use serde::{Deserialize, Serialize};
 
 pub const NEAREST: u32 = 9728;
@@ -36,7 +36,7 @@ impl TryFrom<u32> for SamplerMagFilter {
     type Error = ();
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
-        match value as u32 {
+        match value {
             NEAREST => Ok(SamplerMagFilter::Nearest),
             LINEAR => Ok(SamplerMagFilter::Linear),
             _ => Err(()),
@@ -58,7 +58,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerMagFilter> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<SamplerMagFilter>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -75,7 +75,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerMagFilter> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -149,7 +149,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerMinFilter> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<SamplerMinFilter>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -166,7 +166,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerMinFilter> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -228,7 +228,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerWrap> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<SamplerWrap>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -241,7 +241,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerWrap> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -259,6 +259,7 @@ pub struct Sampler {
     pub wrap_s: Checked<SamplerWrap>,
     #[serde(rename = "wrapT", default = "default_wrap")]
     pub wrap_t: Checked<SamplerWrap>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 
@@ -336,7 +337,7 @@ impl<'de> Deserialize<'de> for Checked<TextureFormat> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl serde::de::Visitor<'_> for Visitor {
             type Value = Checked<TextureFormat>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -349,7 +350,7 @@ impl<'de> Deserialize<'de> for Checked<TextureFormat> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -403,7 +404,7 @@ impl<'de> Deserialize<'de> for Checked<TextureTarget> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<TextureTarget>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -416,7 +417,7 @@ impl<'de> Deserialize<'de> for Checked<TextureTarget> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -487,7 +488,7 @@ impl<'de> Deserialize<'de> for Checked<TextureType> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<TextureType>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -500,7 +501,7 @@ impl<'de> Deserialize<'de> for Checked<TextureType> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -520,6 +521,7 @@ pub struct Texture {
     pub target: Checked<TextureTarget>,
     #[serde(rename = "type", default = "default_texture_type")]
     pub type_: Checked<TextureType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 

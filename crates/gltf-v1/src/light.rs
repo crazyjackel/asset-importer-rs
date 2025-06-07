@@ -139,7 +139,7 @@ pub struct Lights<'a> {
     pub(crate) document: &'a Document,
 }
 
-impl<'a> ExactSizeIterator for Lights<'a> {}
+impl ExactSizeIterator for Lights<'_> {}
 impl<'a> Iterator for Lights<'a> {
     type Item = Light<'a>;
     fn next(&mut self) -> Option<Self::Item> {
