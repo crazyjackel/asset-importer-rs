@@ -22,6 +22,7 @@ pub struct Buffer<'a> {
 #[derive(Clone, Debug)]
 pub struct View<'a> {
     /// The parent `Document` struct.
+    #[allow(dead_code)]
     document: &'a Document,
 
     /// The corresponding JSON index.
@@ -142,7 +143,7 @@ pub struct Buffers<'a> {
     pub(crate) document: &'a Document,
 }
 
-impl<'a> ExactSizeIterator for Buffers<'a> {}
+impl ExactSizeIterator for Buffers<'_> {}
 impl<'a> Iterator for Buffers<'a> {
     type Item = Buffer<'a>;
     fn next(&mut self) -> Option<Self::Item> {
@@ -179,7 +180,7 @@ pub struct Views<'a> {
     pub(crate) document: &'a Document,
 }
 
-impl<'a> ExactSizeIterator for Views<'a> {}
+impl ExactSizeIterator for Views<'_> {}
 impl<'a> Iterator for Views<'a> {
     type Item = View<'a>;
     fn next(&mut self) -> Option<Self::Item> {

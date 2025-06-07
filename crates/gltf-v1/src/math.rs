@@ -23,7 +23,6 @@ impl Vector3 {
         self.z *= s;
     }
 
-    #[cfg(test)]
     pub fn normalize(self) -> Vector3 {
         self * (1.0 / self.magnitude())
     }
@@ -57,14 +56,22 @@ impl Vector4 {
         self.z *= s;
         self.w *= s;
     }
+}
 
-    pub fn as_array(&self) -> [f32; 4] {
-        [self.x, self.y, self.z, self.w]
+impl From<[f32; 4]> for Vector4 {
+    fn from(array: [f32; 4]) -> Self {
+        Self {
+            x: array[0],
+            y: array[1],
+            z: array[2],
+            w: array[3],
+        }
     }
+}
 
-    #[cfg(test)]
-    pub fn from_array([x, y, z, w]: [f32; 4]) -> Self {
-        Self { x, y, z, w }
+impl From<Vector4> for [f32; 4] {
+    fn from(vector: Vector4) -> Self {
+        [vector.x, vector.y, vector.z, vector.w]
     }
 }
 
@@ -149,16 +156,6 @@ impl Matrix4 {
         }
     }
 
-    #[cfg(test)]
-    pub fn from_array([x, y, z, w]: [[f32; 4]; 4]) -> Matrix4 {
-        Matrix4 {
-            x: Vector4::from_array(x),
-            y: Vector4::from_array(y),
-            z: Vector4::from_array(z),
-            w: Vector4::from_array(w),
-        }
-    }
-
     /// Create a homogeneous transformation matrix from a translation vector.
     #[rustfmt::skip]
     pub fn from_translation(v: Vector3) -> Matrix4 {
@@ -180,9 +177,32 @@ impl Matrix4 {
             0.0, 0.0, 0.0, 1.0,
         )
     }
+}
 
-    /// Convert the quaternion to a 4 x 4 rotation matrix.
-    pub fn from_quaternion(q: Quaternion) -> Matrix4 {
+impl From<[[f32; 4]; 4]> for Matrix4 {
+    fn from(array: [[f32; 4]; 4]) -> Self {
+        Matrix4 {
+            x: Vector4::from(array[0]),
+            y: Vector4::from(array[1]),
+            z: Vector4::from(array[2]),
+            w: Vector4::from(array[3]),
+        }
+    }
+}
+
+impl From<Matrix4> for [[f32; 4]; 4] {
+    fn from(matrix: Matrix4) -> Self {
+        [
+            matrix.x.into(),
+            matrix.y.into(),
+            matrix.z.into(),
+            matrix.w.into(),
+        ]
+    }
+}
+
+impl From<Quaternion> for Matrix4 {
+    fn from(q: Quaternion) -> Self {
         let x2 = q.v.x + q.v.x;
         let y2 = q.v.y + q.v.y;
         let z2 = q.v.z + q.v.z;
@@ -205,15 +225,6 @@ impl Matrix4 {
             z: Vector4::new(xz2 + sy2, yz2 - sx2, 1.0 - xx2 - yy2, 0.0),
             w: Vector4::new(0.0, 0.0, 0.0, 1.0),
         }
-    }
-
-    pub fn as_array(&self) -> [[f32; 4]; 4] {
-        [
-            self.x.as_array(),
-            self.y.as_array(),
-            self.z.as_array(),
-            self.w.as_array(),
-        ]
     }
 }
 
@@ -248,7 +259,6 @@ impl Quaternion {
         }
     }
 
-    #[cfg(test)]
     pub fn from_axis_angle(axis: Vector3, radians: f32) -> Quaternion {
         Quaternion {
             s: (0.5 * radians).cos(),

@@ -2,12 +2,11 @@ use std::{
     collections::HashMap,
     io::{self, BufReader, Cursor},
     path::Path,
-    sync::Arc,
 };
 
 use asset_importer_rs_scene::AiScene;
 
-use crate::{AiImporter, AiImporterExt, AiReadError, ReadSeek, default_file_loader};
+use crate::{AiImporter, AiImporterExt, AiReadError, ReadSeek};
 
 #[derive(Default)]
 pub struct Importer {
@@ -29,15 +28,15 @@ impl Importer {
                 continue;
             }
 
-            if importer.can_read(path, default_file_loader) {
-                return importer.read_file(path, default_file_loader);
+            if importer.can_read_default(path) {
+                return importer.read_file_default(path);
             }
         }
 
         Err(AiReadError::UnsupportedFileExtension(extension.to_string()))
     }
 
-    pub fn import_memory(
+    pub fn import_from_memory(
         &self,
         file_name: &str,
         data: &HashMap<String, Vec<u8>>,

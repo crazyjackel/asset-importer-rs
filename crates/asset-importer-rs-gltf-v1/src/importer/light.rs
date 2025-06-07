@@ -8,7 +8,7 @@ use gltf_v1::{
 use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{AiLight, AiLightSourceType};
 
-use super::gltf_importer::GltfImporter;
+use super::GltfImporter;
 
 pub struct ImportLights(pub Vec<AiLight>, pub HashMap<String, usize>);
 impl GltfImporter {
@@ -32,7 +32,7 @@ impl GltfImporter {
             light_map.insert(name.clone(), index);
             if light_map.contains_key(&name) {
                 return Err(AiReadError::FileFormatError(Box::new(
-                    super::gltf_error::Error::DuplicateName,
+                    super::error::Error::DuplicateName,
                 )));
             }
             light_map.insert(name.clone(), index);

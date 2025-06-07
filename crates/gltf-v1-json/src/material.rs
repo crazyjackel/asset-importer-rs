@@ -2,12 +2,11 @@ use std::fmt;
 
 use gltf_v1_derive::Validate;
 use indexmap::IndexMap;
-use serde::{de, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, de, ser::SerializeSeq};
 
 use crate::{
-    extensions,
+    Path, Program, Root, extensions,
     validation::{Error, USize64},
-    Path, Program, Root,
 };
 
 use super::{common::StringIndex, node::Node, validation::Checked};
@@ -160,7 +159,7 @@ impl<'de> Deserialize<'de> for Checked<ParameterType> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl serde::de::Visitor<'_> for Visitor {
             type Value = Checked<ParameterType>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -173,7 +172,7 @@ impl<'de> Deserialize<'de> for Checked<ParameterType> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -181,7 +180,7 @@ impl<'de> Deserialize<'de> for Checked<ParameterType> {
     }
 }
 
-#[derive(Clone, Debug, serde_derive::Serialize)]
+#[derive(Clone, Debug)]
 pub enum ParameterValue {
     Number(f32),
     Boolean(bool),
@@ -189,6 +188,40 @@ pub enum ParameterValue {
     NumberArray(Vec<f32>),
     BoolArray(Vec<bool>),
     StringArray(Vec<String>),
+}
+
+impl Serialize for ParameterValue {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            ParameterValue::Number(value) => serializer.serialize_f32(*value),
+            ParameterValue::Boolean(value) => serializer.serialize_bool(*value),
+            ParameterValue::String(value) => serializer.serialize_str(value),
+            ParameterValue::NumberArray(value) => {
+                let mut seq = serializer.serialize_seq(Some(value.len()))?;
+                for v in value {
+                    seq.serialize_element(v)?;
+                }
+                seq.end()
+            }
+            ParameterValue::BoolArray(value) => {
+                let mut seq = serializer.serialize_seq(Some(value.len()))?;
+                for v in value {
+                    seq.serialize_element(v)?;
+                }
+                seq.end()
+            }
+            ParameterValue::StringArray(value) => {
+                let mut seq = serializer.serialize_seq(Some(value.len()))?;
+                for v in value {
+                    seq.serialize_element(v)?;
+                }
+                seq.end()
+            }
+        }
+    }
 }
 
 impl<'de> Deserialize<'de> for Checked<ParameterValue> {
@@ -351,7 +384,7 @@ impl<'de> Deserialize<'de> for Checked<WebGLState> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl serde::de::Visitor<'_> for Visitor {
             type Value = Checked<WebGLState>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -364,7 +397,7 @@ impl<'de> Deserialize<'de> for Checked<WebGLState> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -440,7 +473,7 @@ impl<'de> Deserialize<'de> for Checked<BlendEquationSeparate> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl serde::de::Visitor<'_> for Visitor {
             type Value = Checked<BlendEquationSeparate>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -457,7 +490,7 @@ impl<'de> Deserialize<'de> for Checked<BlendEquationSeparate> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -582,7 +615,7 @@ impl<'de> Deserialize<'de> for Checked<BlendFuncSeparate> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl serde::de::Visitor<'_> for Visitor {
             type Value = Checked<BlendFuncSeparate>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -599,7 +632,7 @@ impl<'de> Deserialize<'de> for Checked<BlendFuncSeparate> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -660,7 +693,7 @@ impl<'de> Deserialize<'de> for Checked<CullFace> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl serde::de::Visitor<'_> for Visitor {
             type Value = Checked<CullFace>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -673,7 +706,7 @@ impl<'de> Deserialize<'de> for Checked<CullFace> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -756,7 +789,7 @@ impl<'de> Deserialize<'de> for Checked<DepthFunc> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl serde::de::Visitor<'_> for Visitor {
             type Value = Checked<DepthFunc>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -769,7 +802,7 @@ impl<'de> Deserialize<'de> for Checked<DepthFunc> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -826,7 +859,7 @@ impl<'de> Deserialize<'de> for Checked<FrontFace> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl serde::de::Visitor<'_> for Visitor {
             type Value = Checked<FrontFace>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -839,7 +872,7 @@ impl<'de> Deserialize<'de> for Checked<FrontFace> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -981,7 +1014,7 @@ fn default_depth_func() -> [Checked<DepthFunc>; 1] {
 }
 
 fn depth_mask_is_default(value: &[bool; 1]) -> bool {
-    value[0] == true
+    value[0]
 }
 
 fn default_depth_mask() -> [bool; 1] {
@@ -1138,7 +1171,7 @@ where
     }
 }
 
-#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate, Default)]
 pub struct Material {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub technique: Option<StringIndex<Technique>>,

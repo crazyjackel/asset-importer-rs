@@ -3,7 +3,7 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::extensions;
 
-#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, Serialize, Validate, Default)]
 pub struct Image {
     pub uri: String,
     #[serde(skip_serializing_if = "Option::is_none")]

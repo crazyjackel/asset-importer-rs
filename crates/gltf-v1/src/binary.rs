@@ -2,9 +2,10 @@ use std::{
     borrow::Cow,
     fmt,
     io::{self, Read},
+    mem,
 };
 
-use byteorder::{LittleEndian, ReadBytesExt};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
 #[derive(Debug)]
 pub enum Error {
@@ -34,7 +35,7 @@ pub struct Glb<'a> {
 }
 
 /// The header section of a .glb file.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 #[repr(C)]
 pub struct Header {
     /// Must be `b"glTF"`.
@@ -148,6 +149,50 @@ impl<'a> Glb<'a> {
             x => Err(crate::GLTF_Error::Binary(Error::Version(x))),
         }
     }
+    pub fn to_writer<W: io::Write>(&self, mut writer: W) -> Result<(), crate::GLTF_Error> {
+        // Write GLB header
+        {
+            let magic = b"glTF";
+            let version: u32 = 1;
+            let mut length = mem::size_of::<Header>() + self.content.len();
+            align_to_multiple_of_four(&mut length);
+            if let Some(body) = self.body.as_ref() {
+                length += body.len();
+                align_to_multiple_of_four(&mut length);
+            }
+
+            writer.write_all(&magic[..])?;
+            writer.write_u32::<LittleEndian>(version)?;
+            writer.write_u32::<LittleEndian>(length as u32)?;
+        }
+
+        // Write JSON chunk header
+        {
+            let mut length = self.content.len();
+            let format: u32 = 0;
+            align_to_multiple_of_four(&mut length);
+            let padding = length - self.content.len();
+
+            writer.write_u32::<LittleEndian>(length as u32)?;
+            writer.write_u32::<LittleEndian>(format)?;
+            writer.write_all(&self.content)?;
+            for _ in 0..padding {
+                writer.write_u8(0x20)?;
+            }
+        }
+
+        if let Some(body) = self.body.as_ref() {
+            let mut length = body.len();
+            align_to_multiple_of_four(&mut length);
+            let padding = length - body.len();
+            writer.write_all(body)?;
+            for _ in 0..padding {
+                writer.write_u8(0)?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 impl fmt::Display for Error {
@@ -166,3 +211,7 @@ impl fmt::Display for Error {
 }
 
 impl ::std::error::Error for Error {}
+
+fn align_to_multiple_of_four(n: &mut usize) {
+    *n = (*n + 3) & !3;
+}

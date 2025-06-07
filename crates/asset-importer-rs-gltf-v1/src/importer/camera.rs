@@ -8,7 +8,8 @@ use gltf_v1::{
 use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{AiCamera, AiVector3D};
 
-use super::gltf_importer::GltfImporter;
+use super::GltfImporter;
+use super::error::Error;
 
 pub struct ImportCameras(pub Vec<AiCamera>, pub HashMap<String, usize>);
 
@@ -25,9 +26,7 @@ impl GltfImporter {
                 .unwrap_or(format!("{}", index));
             camera_map.insert(name.clone(), index);
             if camera_map.contains_key(&name) {
-                return Err(AiReadError::FileFormatError(Box::new(
-                    super::gltf_error::Error::DuplicateName,
-                )));
+                return Err(AiReadError::FileFormatError(Box::new(Error::DuplicateName)));
             }
             camera_map.insert(name.clone(), index);
             let mut ai_camera = AiCamera {

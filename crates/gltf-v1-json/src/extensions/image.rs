@@ -1,5 +1,5 @@
 #[allow(unused_imports)] // different features use different imports
-use crate::{validation::USize64, BufferView, StringIndex};
+use crate::{BufferView, StringIndex, validation::USize64};
 use gltf_v1_derive::Validate;
 use serde_derive::{Deserialize, Serialize};
 #[cfg(feature = "extensions")]

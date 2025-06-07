@@ -18,7 +18,7 @@ use asset_importer_rs_scene::{
     AiPrimitiveType, AiReal, AiVector3D,
 };
 
-use super::{gltf_error::Error, gltf_importer::GltfImporter};
+use super::{GltfImporter, error::Error};
 
 pub(crate) trait ExtractData {
     fn extract_data<T>(&self, buffers: &IndexMap<String, Data>) -> Result<Vec<T>, Error>

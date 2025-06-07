@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use asset_importer_rs_core::{AiExport, AiImporterExt, default_file_loader};
+use asset_importer_rs_core::{AiExportExt, AiImporterExt, default_file_loader};
 use asset_importer_rs_gltf::{Gltf2Exporter, Output};
 use asset_importer_rs_gltf_v1::GltfImporter;
 
@@ -21,7 +21,7 @@ fn test_gltf_export_file_binary() {
     let mut exe_path_2 = binding.join("tests").join("output").join("gltf");
     exe_path_2.push("Avocado_v2.glb");
     let path = exe_path_2.as_path();
-    let _ = exporter.export_file(&scene, path, &HashMap::new());
+    let _ = exporter.export_file_default(&scene, path, &HashMap::new());
 }
 
 #[test]
@@ -41,5 +41,5 @@ fn test_gltf_export_file_binary_v2() {
     let mut exe_path_2 = binding.join("tests").join("output").join("gltf");
     exe_path_2.push("Avocado_v2.glb");
     let path = exe_path_2.as_path();
-    let _ = exporter.export_file(&scene, path, &HashMap::new());
+    let _ = exporter.export_file_default(&scene, path, &HashMap::new());
 }

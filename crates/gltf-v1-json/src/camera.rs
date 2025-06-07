@@ -70,7 +70,7 @@ impl<'de> de::Deserialize<'de> for Checked<CameraType> {
         D: de::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<CameraType>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -83,7 +83,7 @@ impl<'de> de::Deserialize<'de> for Checked<CameraType> {
             {
                 Ok(value
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }

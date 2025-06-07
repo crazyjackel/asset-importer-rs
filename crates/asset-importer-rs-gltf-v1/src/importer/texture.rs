@@ -5,7 +5,7 @@ use gltf_v1::{buffer, document::Document, json::map::IndexMap};
 use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{AiTexel, AiTexture, AiTextureFormat};
 
-use super::gltf_importer::GltfImporter;
+use super::GltfImporter;
 
 impl GltfImporter {
     pub(crate) fn import_embedded_textures(

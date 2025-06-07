@@ -2,7 +2,6 @@ use gltf_v1_derive::Validate;
 use indexmap::IndexMap;
 
 use crate::extensions;
-use crate::validation::Validate;
 
 use super::accessor::Accessor;
 use super::animation::Animation;
@@ -47,7 +46,7 @@ impl UniqueKeyGenerator {
     }
 }
 
-#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate, Default)]
 pub struct Root {
     #[serde(default)]
     #[serde(skip_serializing_if = "IndexMap::is_empty")]
@@ -117,7 +116,7 @@ impl Root {
         let materials_with_no_technique: Vec<(&String, &mut Material)> = self
             .materials
             .iter_mut()
-            .filter(|x| x.1.technique == None)
+            .filter(|x| x.1.technique.is_none())
             .collect();
         if materials_with_no_technique.is_empty() {
             return;

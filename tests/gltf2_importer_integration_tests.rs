@@ -1,6 +1,8 @@
 use asset_importer_rs_core::{AiImporterExt, default_file_loader};
 use asset_importer_rs_gltf::Gltf2Importer;
 
+// These tests check that the gltf2 importer works as expected.
+
 /// This test is to make sure that basic files can be read.
 #[test]
 fn test_gltf2_read_file() {

@@ -1,4 +1,4 @@
-use json::{material::ParameterValue, StringIndex};
+use json::{StringIndex, material::ParameterValue};
 
 use crate::{document::Document, texture::Texture};
 
@@ -8,7 +8,7 @@ pub enum TexProperty<'a> {
     Color([f32; 4]),
 }
 
-impl<'a> Default for TexProperty<'a> {
+impl Default for TexProperty<'_> {
     fn default() -> Self {
         TexProperty::Color([0.0, 0.0, 0.0, 1.0])
     }
@@ -16,6 +16,7 @@ impl<'a> Default for TexProperty<'a> {
 
 #[derive(Clone, Debug)]
 pub struct Technique<'a> {
+    #[allow(dead_code)]
     document: &'a Document,
 
     index: &'a String,
@@ -150,16 +151,14 @@ impl<'a> Material<'a> {
                 {
                     Some(TexProperty::Color([b[0], b[1], b[2], b[3]]))
                 }
-                json::validation::Checked::Valid(ParameterValue::String(str)) => {
-                    if let Some(texture) = self.document.textures().find(|x| x.index() == str) {
-                        Some(TexProperty::Texture(texture))
-                    } else {
-                        None
-                    }
-                }
+                json::validation::Checked::Valid(ParameterValue::String(str)) => self
+                    .document
+                    .textures()
+                    .find(|x| x.index() == str)
+                    .map(TexProperty::Texture),
                 _ => None,
             })
-            .unwrap_or(TexProperty::default())
+            .unwrap_or_default()
     }
     pub fn diffuse(&self) -> TexProperty<'a> {
         self.json
@@ -171,16 +170,14 @@ impl<'a> Material<'a> {
                 {
                     Some(TexProperty::Color([b[0], b[1], b[2], b[3]]))
                 }
-                json::validation::Checked::Valid(ParameterValue::String(str)) => {
-                    if let Some(texture) = self.document.textures().find(|x| x.index() == str) {
-                        Some(TexProperty::Texture(texture))
-                    } else {
-                        None
-                    }
-                }
+                json::validation::Checked::Valid(ParameterValue::String(str)) => self
+                    .document
+                    .textures()
+                    .find(|x| x.index() == str)
+                    .map(TexProperty::Texture),
                 _ => None,
             })
-            .unwrap_or(TexProperty::default())
+            .unwrap_or_default()
     }
     pub fn specular(&self) -> TexProperty<'a> {
         self.json
@@ -192,16 +189,14 @@ impl<'a> Material<'a> {
                 {
                     Some(TexProperty::Color([b[0], b[1], b[2], b[3]]))
                 }
-                json::validation::Checked::Valid(ParameterValue::String(str)) => {
-                    if let Some(texture) = self.document.textures().find(|x| x.index() == str) {
-                        Some(TexProperty::Texture(texture))
-                    } else {
-                        None
-                    }
-                }
+                json::validation::Checked::Valid(ParameterValue::String(str)) => self
+                    .document
+                    .textures()
+                    .find(|x| x.index() == str)
+                    .map(TexProperty::Texture),
                 _ => None,
             })
-            .unwrap_or(TexProperty::default())
+            .unwrap_or_default()
     }
     pub fn emission(&self) -> TexProperty<'a> {
         self.json
@@ -213,20 +208,18 @@ impl<'a> Material<'a> {
                 {
                     Some(TexProperty::Color([b[0], b[1], b[2], b[3]]))
                 }
-                json::validation::Checked::Valid(ParameterValue::String(str)) => {
-                    if let Some(texture) = self.document.textures().find(|x| x.index() == str) {
-                        Some(TexProperty::Texture(texture))
-                    } else {
-                        None
-                    }
-                }
+                json::validation::Checked::Valid(ParameterValue::String(str)) => self
+                    .document
+                    .textures()
+                    .find(|x| x.index() == str)
+                    .map(TexProperty::Texture),
                 _ => None,
             })
-            .unwrap_or(TexProperty::default())
+            .unwrap_or_default()
     }
 }
 
-impl<'a> ExactSizeIterator for Materials<'a> {}
+impl ExactSizeIterator for Materials<'_> {}
 impl<'a> Iterator for Materials<'a> {
     type Item = Material<'a>;
 
@@ -254,7 +247,7 @@ impl<'a> Iterator for Materials<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for Techniques<'a> {}
+impl ExactSizeIterator for Techniques<'_> {}
 impl<'a> Iterator for Techniques<'a> {
     type Item = Technique<'a>;
 

@@ -143,7 +143,7 @@ pub struct Cameras<'a> {
     pub(crate) document: &'a Document,
 }
 
-impl<'a> ExactSizeIterator for Cameras<'a> {}
+impl ExactSizeIterator for Cameras<'_> {}
 impl<'a> Iterator for Cameras<'a> {
     type Item = Camera<'a>;
     fn next(&mut self) -> Option<Self::Item> {

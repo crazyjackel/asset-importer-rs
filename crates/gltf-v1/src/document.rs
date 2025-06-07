@@ -1,8 +1,3 @@
-use std::default;
-
-use json::extensions::Light;
-use json::gltf::Get;
-
 use crate::accessor::Accessors;
 use crate::buffer::Buffers;
 use crate::buffer::Views;

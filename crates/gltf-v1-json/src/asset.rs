@@ -9,13 +9,13 @@ pub struct AssetProfile {
     pub version: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, Serialize, Validate, Default)]
 pub struct Asset {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub copyright: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub generator: Option<String>,
-    #[serde(rename = "premultipliedAlpha")]
+    #[serde(rename = "premultipliedAlpha", skip_serializing_if = "Option::is_none")]
     pub premultiplied_alpha: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub profile: Option<AssetProfile>,

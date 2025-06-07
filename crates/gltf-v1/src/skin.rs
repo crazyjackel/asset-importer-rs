@@ -3,12 +3,14 @@ use crate::Document;
 #[derive(Clone, Debug)]
 pub struct Skin<'a> {
     /// The parent `Document` struct.
+    #[allow(dead_code)]
     document: &'a Document,
 
     /// The corresponding JSON index.
     index: &'a String,
 
     /// The corresponding JSON struct.
+    #[allow(dead_code)]
     json: &'a json::skin::Skin,
 }
 
@@ -36,7 +38,7 @@ pub struct Skins<'a> {
     pub(crate) document: &'a Document,
 }
 
-impl<'a> ExactSizeIterator for Skins<'a> {}
+impl ExactSizeIterator for Skins<'_> {}
 impl<'a> Iterator for Skins<'a> {
     type Item = Skin<'a>;
 

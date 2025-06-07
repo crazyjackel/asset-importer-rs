@@ -96,6 +96,18 @@ impl ops::Index<u8> for AiVector2D {
     }
 }
 
+impl ops::Index<usize> for AiVector2D {
+    type Output = AiReal;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            _ => &self.x,
+        }
+    }
+}
+
 impl ops::Mul<AiReal> for AiVector2D {
     type Output = AiVector2D;
 
@@ -238,6 +250,19 @@ impl ops::Index<u8> for AiVector3D {
     type Output = AiReal;
 
     fn index(&self, index: u8) -> &Self::Output {
+        match index {
+            0 => &self.x,
+            1 => &self.y,
+            2 => &self.z,
+            _ => &self.x,
+        }
+    }
+}
+
+impl ops::Index<usize> for AiVector3D {
+    type Output = AiReal;
+
+    fn index(&self, index: usize) -> &Self::Output {
         match index {
             0 => &self.x,
             1 => &self.y,
