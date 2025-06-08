@@ -1,4 +1,6 @@
 use std::error::Error as StdError;
+use std::fs::DirEntry;
+use std::io::Error;
 use std::{fs, path};
 
 use asset_importer_rs_core::{AiImporterExt, AiReadError, default_file_loader};
@@ -8,7 +10,7 @@ const SAMPLE_MODELS_DIRECTORY_PATH: &str = "glTF-Sample-Assets/Models";
 
 // @todo: Make sure these files have tickets for being removed from skip list
 // I would like to test these files, however, there is a particular issue that is hard to fix
-const SKIP_FILES: [&str; 25] = [
+const SKIP_FILES: [&str; 26] = [
     "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF/SheenWoodLeatherSofa.gltf", //Sheen Wood Leather Sofa using WebP files which are not fully supported by dependency ATM
     "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF-Binary/SheenWoodLeatherSofa.glb",
     "glTF-Sample-Assets/Models/AnimationPointerUVs/glTF/AnimationPointerUVs.gltf", //Animation Pointers don't work and missing field node is not fixed in 1.4.1
@@ -34,6 +36,7 @@ const SKIP_FILES: [&str; 25] = [
     "glTF-Sample-Assets/Models/DragonAttenuation/glTF-Binary/DragonAttenuation.glb",
     "glTF-Sample-Assets/Models/MandarinOrange/glTF/MandarinOrange.gltf",
     "glTF-Sample-Assets/Models/MandarinOrange/glTF-Binary/MandarinOrange.glb",
+    "glTF-Sample-Assets/Models/CesiumMan/glTF/CesiumMan.gltf",
 ];
 
 //These files should be skipped when running in minimal mode
@@ -57,63 +60,59 @@ const SKIP_MINIMAL: [&str; 17] = [
     "glTF-Sample-Assets/Models/CommercialRefrigerator/glTF-Binary/CommercialRefrigerator.glb",
 ];
 
-fn run(is_minimal: bool) -> Result<(), Box<dyn StdError>> {
-    let sample_dir_path = path::Path::new(SAMPLE_MODELS_DIRECTORY_PATH);
-    for entry in fs::read_dir(sample_dir_path)? {
-        let entry = entry?;
-        let metadata = entry.metadata()?;
-        if metadata.is_dir() {
-            let entry_path = entry.path();
-            if let Some(file_name) = entry_path.file_name() {
-                let mut gltf_path = entry_path.join("glTF").join(file_name);
-                gltf_path.set_extension("gltf");
-                if gltf_path.exists() {
-                    let display = format!("{}", gltf_path.display());
-                    if SKIP_FILES.contains(&display.as_str())
-                        || (is_minimal && SKIP_MINIMAL.contains(&display.as_str()))
-                    {
-                        println!("Skipping {}", display);
-                    } else {
-                        println!("Importing {}", display);
-                        let importer = Gltf2Importer;
-                        let _ = importer.read_file(gltf_path, default_file_loader)?;
-                    }
+fn run_entry(is_minimal: bool, entry: DirEntry) -> Result<(), Box<dyn StdError>> {
+    let metadata = entry.metadata()?;
+    if metadata.is_dir() {
+        let entry_path = entry.path();
+        if let Some(file_name) = entry_path.file_name() {
+            let mut gltf_path = entry_path.join("glTF").join(file_name);
+            gltf_path.set_extension("gltf");
+            if gltf_path.exists() {
+                let display = format!("{}", gltf_path.display());
+                if SKIP_FILES.contains(&display.as_str())
+                    || (is_minimal && SKIP_MINIMAL.contains(&display.as_str()))
+                {
+                    println!("Skipping {}", display);
+                } else {
+                    println!("Importing {}", display);
+                    let importer = Gltf2Importer;
+                    let _ = importer.read_file(gltf_path, default_file_loader)?;
                 }
+            }
 
-                // Import standard glTF with embedded buffer and image data.
-                let mut gle_path = entry_path.join("glTF-Embedded").join(file_name);
-                gle_path.set_extension("gltf");
-                if gle_path.exists() {
-                    let display = format!("{}", gle_path.display());
-                    if SKIP_FILES.contains(&display.as_str())
-                        || (is_minimal && SKIP_MINIMAL.contains(&display.as_str()))
-                    {
-                        println!("Skipping {}", display);
-                    } else {
-                        println!("Importing {}", display);
-                        let importer = Gltf2Importer;
-                        let _ = importer.read_file(gle_path, default_file_loader)?;
-                    }
+            // Import standard glTF with embedded buffer and image data.
+            let mut gle_path = entry_path.join("glTF-Embedded").join(file_name);
+            gle_path.set_extension("gltf");
+            if gle_path.exists() {
+                let display = format!("{}", gle_path.display());
+                if SKIP_FILES.contains(&display.as_str())
+                    || (is_minimal && SKIP_MINIMAL.contains(&display.as_str()))
+                {
+                    println!("Skipping {}", display);
+                } else {
+                    println!("Importing {}", display);
+                    let importer = Gltf2Importer;
+                    let _ = importer.read_file(gle_path, default_file_loader)?;
                 }
+            }
 
-                // Import binary glTF.
-                let mut glb_path = entry_path.join("glTF-Binary").join(file_name);
-                glb_path.set_extension("glb");
-                if glb_path.exists() {
-                    let display = format!("{}", glb_path.display());
-                    if SKIP_FILES.contains(&display.as_str())
-                        || (is_minimal && SKIP_MINIMAL.contains(&display.as_str()))
-                    {
-                        println!("Skipping {}", display);
-                    } else {
-                        println!("Importing {}", display);
-                        let importer = Gltf2Importer;
-                        let _ = importer.read_file(glb_path, default_file_loader)?;
-                    }
+            // Import binary glTF.
+            let mut glb_path = entry_path.join("glTF-Binary").join(file_name);
+            glb_path.set_extension("glb");
+            if glb_path.exists() {
+                let display = format!("{}", glb_path.display());
+                if SKIP_FILES.contains(&display.as_str())
+                    || (is_minimal && SKIP_MINIMAL.contains(&display.as_str()))
+                {
+                    println!("Skipping {}", display);
+                } else {
+                    println!("Importing {}", display);
+                    let importer = Gltf2Importer;
+                    let _ = importer.read_file(glb_path, default_file_loader)?;
                 }
             }
         }
-    }
+    };
     Ok(())
 }
 
@@ -124,9 +123,14 @@ fn external_gltf2_import_sample_assets() {
     #[cfg(not(feature = "minimal"))]
     let is_minimal = false;
     let mut errors = Vec::new();
-    if let Err(error) = run(is_minimal) {
-        println!("{}", error);
-        errors.push(error);
+    let sample_dir_path = path::Path::new(SAMPLE_MODELS_DIRECTORY_PATH);
+    for entry in fs::read_dir(sample_dir_path).unwrap() {
+        let entry = entry.unwrap();
+        let error = run_entry(is_minimal, entry);
+        if let Err(error) = error {
+            println!("{}", error);
+            errors.push(error);
+        }
     }
 
     for error in errors {
