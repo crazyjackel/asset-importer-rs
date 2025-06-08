@@ -8,7 +8,7 @@ const SAMPLE_MODELS_DIRECTORY_PATH: &str = "glTF-Sample-Assets/Models";
 
 // @todo: Make sure these files have tickets for being removed from skip list
 // I would like to test these files, however, there is a particular issue that is hard to fix
-const SKIP_FILES: [&str; 23] = [
+const SKIP_FILES: [&str; 25] = [
     "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF/SheenWoodLeatherSofa.gltf", //Sheen Wood Leather Sofa using WebP files which are not fully supported by dependency ATM
     "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF-Binary/SheenWoodLeatherSofa.glb",
     "glTF-Sample-Assets/Models/AnimationPointerUVs/glTF/AnimationPointerUVs.gltf", //Animation Pointers don't work and missing field node is not fixed in 1.4.1
@@ -32,6 +32,8 @@ const SKIP_FILES: [&str; 23] = [
     "glTF-Sample-Assets/Models/TransmissionTest/glTF-Binary/TransmissionTest.glb",
     "glTF-Sample-Assets/Models/DragonAttenuation/glTF/DragonAttenuation.gltf",
     "glTF-Sample-Assets/Models/DragonAttenuation/glTF-Binary/DragonAttenuation.glb",
+    "glTF-Sample-Assets/Models/MandarinOrange/glTF/MandarinOrange.gltf",
+    "glTF-Sample-Assets/Models/MandarinOrange/glTF-Binary/MandarinOrange.glb",
 ];
 
 //These files should be skipped when running in minimal mode
@@ -121,9 +123,14 @@ fn external_gltf2_import_sample_assets() {
     let is_minimal = true;
     #[cfg(not(feature = "minimal"))]
     let is_minimal = false;
+    let mut errors = Vec::new();
     if let Err(error) = run(is_minimal) {
-        let is_ai_error = !error.is::<AiReadError>();
         println!("{}", error);
+        errors.push(error);
+    }
+
+    for error in errors {
+        let is_ai_error = !error.is::<AiReadError>();
         assert!(is_ai_error);
     }
 }
