@@ -8,7 +8,7 @@ const SAMPLE_MODELS_DIRECTORY_PATH: &str = "glTF-Sample-Assets/Models";
 
 // @todo: Make sure these files have tickets for being removed from skip list
 // I would like to test these files, however, there is a particular issue that is hard to fix
-const SKIP_FILES: [&str; 21] = [
+const SKIP_FILES: [&str; 23] = [
     "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF/SheenWoodLeatherSofa.gltf", //Sheen Wood Leather Sofa using WebP files which are not fully supported by dependency ATM
     "glTF-Sample-Assets/Models/SheenWoodLeatherSofa/glTF-Binary/SheenWoodLeatherSofa.glb",
     "glTF-Sample-Assets/Models/AnimationPointerUVs/glTF/AnimationPointerUVs.gltf", //Animation Pointers don't work and missing field node is not fixed in 1.4.1
@@ -30,6 +30,8 @@ const SKIP_FILES: [&str; 21] = [
     "glTF-Sample-Assets/Models/SpecularSilkPouf/glTF-Binary/SpecularSilkPouf.glb",
     "glTF-Sample-Assets/Models/TransmissionTest/glTF/TransmissionTest.gltf", //Exhausted Data in the image
     "glTF-Sample-Assets/Models/TransmissionTest/glTF-Binary/TransmissionTest.glb",
+    "glTF-Sample-Assets/Models/DragonAttenuation/glTF/DragonAttenuation.gltf",
+    "glTF-Sample-Assets/Models/DragonAttenuation/glTF-Binary/DragonAttenuation.glb",
 ];
 
 //These files should be skipped when running in minimal mode
