@@ -2,7 +2,7 @@ use std::fmt;
 
 use super::{common::StringIndex, image::Image, validation::Checked};
 use gltf_v1_derive::Validate;
-use serde::de::{self, value};
+use serde::de;
 use serde::{Deserialize, Serialize};
 
 pub const NEAREST: u32 = 9728;
@@ -12,8 +12,9 @@ pub const LINEAR_MIPMAP_NEAREST: u32 = 9985;
 pub const NEAREST_MIPMAP_LINEAR: u32 = 9986;
 pub const LINEAR_MIPMAP_LINEAR: u32 = 9987;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub enum SamplerMagFilter {
+    #[default]
     Nearest,
     Linear,
 }
@@ -35,7 +36,7 @@ impl TryFrom<u32> for SamplerMagFilter {
     type Error = ();
 
     fn try_from(value: u32) -> Result<Self, Self::Error> {
-        match value as u32 {
+        match value {
             NEAREST => Ok(SamplerMagFilter::Nearest),
             LINEAR => Ok(SamplerMagFilter::Linear),
             _ => Err(()),
@@ -57,7 +58,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerMagFilter> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<SamplerMagFilter>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -74,7 +75,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerMagFilter> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -82,8 +83,9 @@ impl<'de> Deserialize<'de> for Checked<SamplerMagFilter> {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub enum SamplerMinFilter {
+    #[default]
     Nearest,
     Linear,
     NearestMipmapNearest,
@@ -147,7 +149,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerMinFilter> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<SamplerMinFilter>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -164,7 +166,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerMinFilter> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -176,8 +178,9 @@ pub const CLAMP_TO_EDGE: u32 = 33071;
 pub const MIRRORED_REPEAT: u32 = 33648;
 pub const REPEAT: u32 = 10497;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub enum SamplerWrap {
+    #[default]
     ClampToEdge,
     MirroredRepeat,
     Repeat,
@@ -225,7 +228,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerWrap> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<SamplerWrap>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -238,7 +241,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerWrap> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -246,7 +249,7 @@ impl<'de> Deserialize<'de> for Checked<SamplerWrap> {
     }
 }
 
-#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate)]
+#[derive(Clone, Debug, serde_derive::Deserialize, serde_derive::Serialize, Validate, Default)]
 pub struct Sampler {
     #[serde(rename = "magFilter", default = "default_mag_filter")]
     pub mag_filter: Checked<SamplerMagFilter>,
@@ -256,6 +259,7 @@ pub struct Sampler {
     pub wrap_s: Checked<SamplerWrap>,
     #[serde(rename = "wrapT", default = "default_wrap")]
     pub wrap_t: Checked<SamplerWrap>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 
@@ -277,10 +281,11 @@ pub const RGBA: u32 = 6408;
 pub const LUMINANCE: u32 = 6409;
 pub const LUMINANCE_ALPHA: u32 = 6410;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub enum TextureFormat {
     Alpha,
     Rgb,
+    #[default]
     Rgba,
     Luminance,
     LuminanceAlpha,
@@ -332,7 +337,7 @@ impl<'de> Deserialize<'de> for Checked<TextureFormat> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl serde::de::Visitor<'_> for Visitor {
             type Value = Checked<TextureFormat>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -345,7 +350,7 @@ impl<'de> Deserialize<'de> for Checked<TextureFormat> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -355,8 +360,9 @@ impl<'de> Deserialize<'de> for Checked<TextureFormat> {
 
 pub const TEXTURE_2D: u32 = 3553;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub enum TextureTarget {
+    #[default]
     Texture2d,
 }
 
@@ -398,7 +404,7 @@ impl<'de> Deserialize<'de> for Checked<TextureTarget> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<TextureTarget>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -411,7 +417,7 @@ impl<'de> Deserialize<'de> for Checked<TextureTarget> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -424,8 +430,9 @@ pub const UNSIGNED_SHORT5_6_5: u32 = 33635;
 pub const UNSIGNED_SHORT4_4_4_4: u32 = 32819;
 pub const UNSIGNED_SHORT5_5_5_1: u32 = 32820;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default)]
 pub enum TextureType {
+    #[default]
     UnsignedByte,
     UnsignedShort5_6_5,
     UnsignedShort4_4_4_4,
@@ -481,7 +488,7 @@ impl<'de> Deserialize<'de> for Checked<TextureType> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<TextureType>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -494,7 +501,7 @@ impl<'de> Deserialize<'de> for Checked<TextureType> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -514,7 +521,22 @@ pub struct Texture {
     pub target: Checked<TextureTarget>,
     #[serde(rename = "type", default = "default_texture_type")]
     pub type_: Checked<TextureType>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+}
+
+impl Texture {
+    pub fn new(source: StringIndex<Image>, sampler: StringIndex<Sampler>) -> Self {
+        Self {
+            source,
+            format: Default::default(),
+            internal_format: Default::default(),
+            sampler,
+            target: Default::default(),
+            type_: Default::default(),
+            name: None,
+        }
+    }
 }
 
 fn default_texture_format() -> Checked<TextureFormat> {

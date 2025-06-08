@@ -1,9 +1,11 @@
 use gltf_v1_derive::Validate;
 use serde_derive::{Deserialize, Serialize};
 
+use crate::extensions;
+
 use super::{camera::Camera, common::StringIndex, mesh::Mesh, skin::Skin};
 
-#[derive(Clone, Debug, Deserialize, Serialize, Validate)]
+#[derive(Clone, Debug, Deserialize, Serialize, Validate, Default)]
 pub struct Node {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub camera: Option<StringIndex<Camera>>,
@@ -30,6 +32,8 @@ pub struct Node {
     pub translation: Option<[f32; 3]>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extensions: Option<extensions::node::Node>,
 }
 
 #[test]

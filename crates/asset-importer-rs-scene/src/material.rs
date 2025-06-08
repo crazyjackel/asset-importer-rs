@@ -1,10 +1,8 @@
-use std::fmt::Display;
+use std::{fmt::Display, string::FromUtf8Error};
 
 use bytemuck::{Pod, Zeroable};
 use enumflags2::bitflags;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
-
-use crate::error::{AiFailure, AiReturnError};
 
 use super::{AiColor3D, AiColor4D, type_def::base_types::AiReal, vector::AiVector2D};
 
@@ -153,12 +151,27 @@ pub enum AiTextureOp {
 }
 
 #[repr(u8)]
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, PartialEq, Default)]
 pub enum AiTextureMapMode {
     Wrap = 3,
+    #[default]
     Clamp = 1,
     Mirror = 2,
     Decal = 4,
+}
+
+impl TryFrom<u8> for AiTextureMapMode {
+    type Error = ();
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            1 => Ok(Self::Clamp),
+            2 => Ok(Self::Mirror),
+            3 => Ok(Self::Wrap),
+            4 => Ok(Self::Decal),
+            _ => Err(()),
+        }
+    }
 }
 
 #[repr(u8)]
@@ -454,6 +467,35 @@ impl AiMaterial {
             })
     }
 
+    pub fn get_property_ai_str(
+        &self,
+        key: &str,
+        semantic_type: Option<AiTextureType>,
+        index: u32,
+    ) -> Option<Result<String, FromUtf8Error>> {
+        self.get_property_type_info(key, semantic_type, index)
+            .and_then(|x| match x {
+                AiPropertyTypeInfo::Binary(binary) => {
+                    let str = String::from_utf8(binary.to_vec());
+                    Some(str)
+                }
+                _ => None,
+            })
+    }
+
+    pub fn get_property_ai_bool(
+        &self,
+        key: &str,
+        semantic_type: Option<AiTextureType>,
+        index: u32,
+    ) -> Option<bool> {
+        self.get_property_type_info(key, semantic_type, index)
+            .and_then(|info| match info {
+                AiPropertyTypeInfo::Binary(binary) if binary.len() == 1 => Some(binary[0] != 0),
+                _ => None,
+            })
+    }
+
     pub fn get_property_byte(
         &self,
         key: &str,
@@ -498,25 +540,33 @@ impl AiMaterial {
     }
 }
 
-/// Tests the code of get_real_vector's String | Buffer Match
-/// Check that strings made up of joined floats can be parsed successfully
-#[test]
-fn base_vec_to_real_vec() {
-    let base_vec = vec![0.0, 12.0, 509.0];
-    let base_str = base_vec
-        .iter()
-        .map(|x| x.to_string())
-        .collect::<Vec<String>>()
-        .join(" ");
-    let buffer_data: Vec<u8> = base_str.bytes().collect();
-    let buffer = String::from_utf8_lossy(buffer_data.as_slice());
-    let real_vec: Vec<AiReal> = buffer
-        .split_ascii_whitespace()
-        .map(|x| {
-            x.parse::<AiReal>()
-                .map_err(|_| AiReturnError::Failure(AiFailure))
-        })
-        .collect::<Result<Vec<AiReal>, AiReturnError>>()
-        .unwrap();
-    assert_eq!(base_vec, real_vec);
+mod tests {
+
+    /// Tests the code of get_real_vector's String | Buffer Match
+    /// Check that strings made up of joined floats can be parsed successfully
+    #[test]
+    fn base_vec_to_real_vec() {
+        use crate::{
+            AiReal,
+            error::{AiFailure, AiReturnError},
+        };
+
+        let base_vec = vec![0.0, 12.0, 509.0];
+        let base_str = base_vec
+            .iter()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
+            .join(" ");
+        let buffer_data: Vec<u8> = base_str.bytes().collect();
+        let buffer = String::from_utf8_lossy(buffer_data.as_slice());
+        let real_vec: Vec<AiReal> = buffer
+            .split_ascii_whitespace()
+            .map(|x| {
+                x.parse::<AiReal>()
+                    .map_err(|_| AiReturnError::Failure(AiFailure))
+            })
+            .collect::<Result<Vec<AiReal>, AiReturnError>>()
+            .unwrap();
+        assert_eq!(base_vec, real_vec);
+    }
 }

@@ -1,5 +1,4 @@
-use std::fmt::format;
-use std::{default, fmt};
+use std::fmt;
 
 use gltf_v1_derive::Validate;
 use serde::de;
@@ -57,7 +56,7 @@ impl<'de> Deserialize<'de> for Checked<ShaderType> {
         D: serde::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> serde::de::Visitor<'de> for Visitor {
+        impl serde::de::Visitor<'_> for Visitor {
             type Value = Checked<ShaderType>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -70,7 +69,7 @@ impl<'de> Deserialize<'de> for Checked<ShaderType> {
             {
                 Ok((value as u32)
                     .try_into()
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
@@ -93,8 +92,8 @@ impl Shader {
         //The strings are base64 encoded variants on the Shaders
         Self {
             uri: format!(
-                "{}{}", 
-                "data:text/plain;base64,", 
+                "{}{}",
+                "data:text/plain;base64,",
                 "cHJlY2lzaW9uIGhpZ2hwIGZsb2F0OwoKdW5pZm9ybSBtYXQ0IHVfbW9kZWxWaWV3TWF0cml4Owp1bmlmb3JtIG1hdDQgdV9wcm9qZWN0aW9uTWF0cml4OwoKYXR0cmlidXRlIHZlYzMgYV9wb3NpdGlvbjsKCnZvaWQgbWFpbih2b2lkKQp7CiAgICBnbF9Qb3NpdGlvbiA9IHVfcHJvamVjdGlvbk1hdHJpeCAqIHVfbW9kZWxWaWV3TWF0cml4ICogdmVjNChhX3Bvc2l0aW9uLDEuMCk7Cn0="
             ),
             type_: Checked::Valid(ShaderType::FragmentShader),
@@ -104,8 +103,8 @@ impl Shader {
     pub(crate) fn default_vertex_shader() -> Self {
         Self {
             uri: format!(
-                "{}{}", 
-                "data:text/plain;base64,", 
+                "{}{}",
+                "data:text/plain;base64,",
                 "cHJlY2lzaW9uIGhpZ2hwIGZsb2F0OwoKdW5pZm9ybSB2ZWM0IHVfZW1pc3Npb247Cgp2b2lkIG1haW4odm9pZCkKewogICAgZ2xfRnJhZ0NvbG9yID0gdV9lbWlzc2lvbjsKfQ=="
             ),
             type_: Checked::Valid(ShaderType::VertexShader),

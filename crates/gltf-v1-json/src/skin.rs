@@ -10,14 +10,14 @@ pub struct Skin {
         skip_serializing_if = "matrix_is_default",
         default = "default_matrix"
     )]
-    bind_shape_matrix: [f32; 16],
+    pub bind_shape_matrix: [f32; 16],
     #[serde(rename = "inverseBindMatrices")]
-    inverse_bind_matrices: StringIndex<Accessor>,
+    pub inverse_bind_matrices: StringIndex<Accessor>,
     #[serde(default)]
     #[serde(rename = "jointNames")]
-    joint_names: Vec<StringIndex<Node>>,
+    pub joint_names: Vec<StringIndex<Node>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
+    pub name: Option<String>,
 }
 
 fn matrix_is_default(value: &[f32; 16]) -> bool {

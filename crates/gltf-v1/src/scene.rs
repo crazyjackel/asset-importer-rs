@@ -1,11 +1,8 @@
-use std::{iter, slice};
+use std::slice;
 
 use json::StringIndex;
 
-use crate::{
-    node::{Node, Nodes},
-    Document,
-};
+use crate::{Document, node::Node};
 
 #[derive(Clone, Debug)]
 pub struct Scene<'a> {
@@ -65,7 +62,7 @@ pub struct SceneNodes<'a> {
     pub(crate) document: &'a Document,
 }
 
-impl<'a> ExactSizeIterator for SceneNodes<'a> {}
+impl ExactSizeIterator for SceneNodes<'_> {}
 impl<'a> Iterator for SceneNodes<'a> {
     type Item = Node<'a>;
     fn next(&mut self) -> Option<Self::Item> {
@@ -91,7 +88,7 @@ impl<'a> Iterator for SceneNodes<'a> {
     }
 }
 
-impl<'a> ExactSizeIterator for Scenes<'a> {}
+impl ExactSizeIterator for Scenes<'_> {}
 impl<'a> Iterator for Scenes<'a> {
     type Item = Scene<'a>;
     fn next(&mut self) -> Option<Self::Item> {

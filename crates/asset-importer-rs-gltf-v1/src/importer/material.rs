@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use gltf_v1::document::Document;
 
-use super::gltf_importer::GltfImporter;
+use super::GltfImporter;
 use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{
     AiColor4D, AiMaterial, AiPropertyTypeInfo, AiTextureType,

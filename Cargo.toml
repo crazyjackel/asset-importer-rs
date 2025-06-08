@@ -60,6 +60,7 @@ syn = "2"
 all = "warn"
 
 [dependencies]
+enumflags2 = {workspace = true}
 asset-importer-rs-core = { path = "crates/asset-importer-rs-core", version = "0.2.0" }
 asset-importer-rs-scene = { path = "crates/asset-importer-rs-scene", version = "0.2.0" }
 asset-importer-rs-gltf = { path = "crates/asset-importer-rs-gltf", optional = true, default-features = false, version = "0.2.0" }
@@ -78,6 +79,9 @@ gltf = ["dep:asset-importer-rs-gltf-v1"]
 gltf-default = ["asset-importer-rs-gltf-v1/default"]
 gltf2 = ["dep:asset-importer-rs-gltf"]
 gltf2-default = ["asset-importer-rs-gltf/default"]
+
+[lib]
+bench = false
 
 [[bench]]
 name = "benchmark"

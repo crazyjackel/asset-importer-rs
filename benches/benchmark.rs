@@ -1,8 +1,8 @@
 use std::{collections::HashMap, time::Duration};
 
-use asset_importer_rs_core::{AiExport, AiImporterExt, default_file_loader};
+use asset_importer_rs_core::{AiExportExt, AiImporterExt, default_file_loader};
 use asset_importer_rs_gltf::{Gltf2Exporter, Gltf2Importer, Output};
-use asset_importer_rs_gltf_v1::GltfImporter;
+use asset_importer_rs_gltf_v1::{GltfExporter, GltfImporter, Output as GltfV1Output};
 use criterion::{Criterion, criterion_group, criterion_main};
 
 fn read_file_gltf() {
@@ -13,6 +13,24 @@ fn read_file_gltf() {
 
     let importer: GltfImporter = GltfImporter;
     let _ = importer.read_file(path, default_file_loader).unwrap();
+}
+
+fn export_file_gltf() {
+    let binding = std::env::current_dir().expect("Failed to get the current executable path");
+    let mut exe_path = binding.join("tests").join("model").join("gltf");
+    exe_path.push("Avocado_v1.glb");
+    let path = exe_path.as_path();
+    let importer = GltfImporter;
+    let scene = importer.read_file(path, default_file_loader).unwrap();
+    assert_eq!(scene.name, "");
+
+    let exporter = GltfExporter {
+        output_type: GltfV1Output::Binary,
+    };
+    let mut exe_path_2 = binding.join("test").join("output");
+    exe_path_2.push("Avocado2.glb");
+    let path = exe_path_2.as_path();
+    let _ = exporter.export_file_default(&scene, path, &HashMap::new());
 }
 
 /// Reads Avocado File as a Benchmark
@@ -43,7 +61,7 @@ fn export_file_gltf2() {
     let mut exe_path_2 = binding.join("test").join("output");
     exe_path_2.push("Avocado2.glb");
     let path = exe_path_2.as_path();
-    let _ = exporter.export_file(&scene, path, &HashMap::new());
+    let _ = exporter.export_file_default(&scene, path, &HashMap::new());
 }
 
 fn criterion_benchmark(c: &mut Criterion) {
@@ -59,6 +77,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         group_2.sample_size(10);
         group_2.measurement_time(Duration::from_millis(3000));
         group_2.bench_function("export avocado (gltf2)", |b| b.iter(export_file_gltf2));
+        group_2.bench_function("export avocado (gltf)", |b| b.iter(export_file_gltf));
     }
 }
 

@@ -2,8 +2,8 @@ use std::ops::Deref;
 
 use image_crate::DynamicImage;
 
-use crate::error::Result;
 use crate::GLTF_Error;
+use crate::error::Result;
 use crate::{buffer, document::Document};
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
@@ -89,7 +89,7 @@ pub struct Images<'a> {
     pub(crate) document: &'a Document,
 }
 
-impl<'a> ExactSizeIterator for Images<'a> {}
+impl ExactSizeIterator for Images<'_> {}
 impl<'a> Iterator for Images<'a> {
     type Item = Image<'a>;
 
@@ -144,10 +144,7 @@ impl<'a> Image<'a> {
                     .views()
                     .find(|x| x.index() == binary.buffer_view.value())
                     .unwrap();
-                return Source::View {
-                    view,
-                    json: &binary,
-                };
+                return Source::View { view, json: binary };
             }
         }
         let uri = self.json.uri.deref();

@@ -5,7 +5,7 @@ use map::IndexMap;
 use serde::{de, ser};
 use serde_derive::{Deserialize, Serialize};
 
-use crate::{gltf::Get, validation::Checked, Path, Root, StringIndex};
+use crate::{Path, Root, StringIndex, gltf::Get, validation::Checked};
 
 #[derive(Clone, Debug, PartialEq, Eq, Copy, Default)]
 pub enum Type {
@@ -59,7 +59,7 @@ impl<'de> de::Deserialize<'de> for Checked<Type> {
         D: de::Deserializer<'de>,
     {
         struct Visitor;
-        impl<'de> de::Visitor<'de> for Visitor {
+        impl de::Visitor<'_> for Visitor {
             type Value = Checked<Type>;
 
             fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -71,7 +71,7 @@ impl<'de> de::Deserialize<'de> for Checked<Type> {
                 E: de::Error,
             {
                 Ok(TryInto::try_into(value)
-                    .map(|x| Checked::Valid(x))
+                    .map(Checked::Valid)
                     .unwrap_or(Checked::Invalid))
             }
         }
