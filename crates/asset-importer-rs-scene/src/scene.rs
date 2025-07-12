@@ -40,6 +40,22 @@ pub struct AiNodeTree {
 }
 
 impl AiNodeTree {
+    /// Creates a new `AiNodeTree` with a single root node.
+    ///
+    /// This initializes the tree with:
+    /// - A root node at index 0
+    /// - An empty default node as the root
+    /// - No children or parent references
+    ///
+    /// # Returns
+    /// A new `AiNodeTree` instance with a single root node
+    pub fn with_root() -> Self {
+        Self {
+            root: Some(0),
+            arena: vec![AiNode::default()],
+        }
+    }
+
     pub fn merge(&mut self, other: AiNodeTree) {
         let offset = self.arena.len();
         let mut new_nodes: Vec<AiNode> = other
@@ -72,7 +88,26 @@ pub enum AiSceneFlag {
     Terrain = 0x10,
     AllowShared = 0x20,
 }
-
+/// Represents a complete 3D scene containing all the elements needed for rendering.
+///
+/// This structure serves as the root container for all scene data, including:
+/// - Scene name and metadata
+/// - Scene-wide flags controlling behavior
+/// - Node hierarchy defining the scene structure
+/// - Collections of scene elements (meshes, materials, etc.)
+///
+/// # Fields
+/// * `name` - The name of the scene
+/// * `flags` - Bit flags controlling scene behavior and state
+/// * `nodes` - The scene graph containing all nodes and their hierarchy
+/// * `meshes` - Collection of all meshes in the scene
+/// * `materials` - Collection of all materials used by meshes
+/// * `animations` - Collection of all animations in the scene
+/// * `textures` - Collection of all textures used by materials
+/// * `lights` - Collection of all light sources in the scene
+/// * `cameras` - Collection of all cameras in the scene
+/// * `skeletons` - Collection of all skeletal animations
+/// * `metadata` - Additional scene metadata and properties
 #[derive(Debug, PartialEq, Default)]
 pub struct AiScene {
     pub name: String,

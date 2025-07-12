@@ -1,0 +1,18 @@
+[package]
+name = "asset-importer-rs-obj"
+version = {workspace = true}
+authors = {workspace = true}
+edition = {workspace = true}
+description = "OBJ importer for asset-importer-rs"
+license = {workspace = true}
+repository = {workspace = true}
+documentation = "https://docs.rs/asset-importer-rs-obj"
+
+[dependencies]
+asset-importer-rs-core = {workspace = true}
+asset-importer-rs-scene = {workspace = true}
+tobj = {workspace = true}
+enumflags2 = {workspace = true}
+
+[features]
+default = []
