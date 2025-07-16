@@ -12,7 +12,9 @@ documentation = "https://docs.rs/asset-importer-rs-obj"
 asset-importer-rs-core = {workspace = true}
 asset-importer-rs-scene = {workspace = true}
 tobj = {workspace = true}
+bytemuck = {workspace = true}
 enumflags2 = {workspace = true}
+image ={ workspace = true }
 
 [features]
 default = []

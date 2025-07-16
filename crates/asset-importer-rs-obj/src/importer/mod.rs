@@ -6,9 +6,11 @@ use std::{
 use asset_importer_rs_core::{
     AiImporter, AiImporterDesc, AiImporterFlags, AiImporterInfo, AiReadError, DataLoader,
 };
-use asset_importer_rs_scene::{AiMesh, AiNode, AiNodeTree, AiScene};
+use asset_importer_rs_scene::{AiMaterial, AiMesh, AiNode, AiNodeTree, AiScene};
 use enumflags2::BitFlags;
 use tobj::{LoadError, LoadOptions, load_mtl_buf, load_obj_buf};
+
+mod material;
 
 pub struct ObjImporter;
 
@@ -110,6 +112,13 @@ impl AiImporter for ObjImporter {
             ..AiScene::default()
         };
 
+        let (ai_materials, ai_textures) = ObjImporter::import_materials(&path, materials, loader)?;
+        scene.materials = ai_materials;
+        scene.textures = ai_textures;
+
+        //Note: material indexes match mesh material indexes
+
+        //Create Models and Node in Scene
         for model in &models {
             let mut node = AiNode {
                 name: model.name.clone(),

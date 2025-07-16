@@ -27,6 +27,21 @@ impl From<AiTextureFormat> for ImageFormat {
     }
 }
 
+impl TryFrom<ImageFormat> for AiTextureFormat {
+    type Error = ();
+
+    fn try_from(value: ImageFormat) -> Result<Self, Self::Error> {
+        match value {
+            ImageFormat::Png => Ok(AiTextureFormat::PNG),
+            ImageFormat::Jpeg => Ok(AiTextureFormat::JPEG),
+            ImageFormat::WebP => Ok(AiTextureFormat::WEBP),
+            ImageFormat::Bmp => Ok(AiTextureFormat::BMP),
+            ImageFormat::Gif => Ok(AiTextureFormat::GIF),
+            _ => Err(()),
+        }
+    }
+}
+
 impl AiTextureFormat {
     pub fn get_mime_type(&self) -> String {
         match self {
@@ -63,6 +78,12 @@ pub struct AiTexel {
 impl AiTexel {
     pub fn new(r: u8, g: u8, b: u8, a: u8) -> Self {
         AiTexel { b, g, r, a }
+    }
+}
+
+impl From<[u8; 4]> for AiTexel {
+    fn from(value: [u8; 4]) -> Self {
+        AiTexel::new(value[0], value[1], value[2], value[3])
     }
 }
 
