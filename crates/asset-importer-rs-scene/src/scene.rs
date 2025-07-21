@@ -33,6 +33,12 @@ impl Default for AiNode {
     }
 }
 
+#[derive(Debug)]
+pub enum InsertError {
+    InvalidParent,
+    RootAlreadyExists,
+}
+
 #[derive(Debug, PartialEq, Default)]
 pub struct AiNodeTree {
     pub root: Option<usize>,
@@ -58,14 +64,17 @@ impl AiNodeTree {
 
     pub fn merge(&mut self, other: AiNodeTree) {
         let offset = self.arena.len();
+        let mut new_root_indices: Vec<usize> = Vec::with_capacity(offset);
         let mut new_nodes: Vec<AiNode> = other
             .arena
             .into_iter()
-            .map(|mut node| {
+            .enumerate()
+            .map(|(index, mut node)| {
                 if let Some(parent_idx) = node.parent {
                     node.parent = Some(parent_idx + offset);
                 } else {
                     node.parent = self.root;
+                    new_root_indices.push(index);
                 }
                 for child in &mut node.children {
                     *child += offset;
@@ -74,6 +83,47 @@ impl AiNodeTree {
             })
             .collect();
         self.arena.append(&mut new_nodes);
+        if let Some(root) = self.root {
+            if let Some(root_ele) = self.arena.get_mut(root) {
+                root_ele.children.append(&mut new_root_indices);
+            }
+        }
+    }
+
+    pub fn insert(
+        &mut self,
+        mut node: AiNode,
+        parent_index: Option<usize>,
+    ) -> Result<usize, InsertError> {
+        let new_index = self.arena.len();
+        node.parent = parent_index;
+
+        // Validate first
+        match parent_index {
+            Some(parent_idx) => {
+                if self.arena.get(parent_idx).is_none() {
+                    return Err(InsertError::InvalidParent);
+                }
+            }
+            None => {
+                if self.root.is_some() {
+                    return Err(InsertError::RootAlreadyExists);
+                }
+            }
+        }
+
+        // Apply side effects
+        match parent_index {
+            Some(parent_idx) => {
+                self.arena[parent_idx].children.push(new_index);
+            }
+            None => {
+                self.root = Some(new_index);
+            }
+        }
+
+        self.arena.push(node);
+        Ok(new_index)
     }
 }
 

@@ -1,16 +1,19 @@
 use std::{
-    io::{BufRead, BufReader, Read},
+    io::{BufRead, BufReader},
     path::Path,
 };
 
 use asset_importer_rs_core::{
     AiImporter, AiImporterDesc, AiImporterFlags, AiImporterInfo, AiReadError, DataLoader,
 };
-use asset_importer_rs_scene::{AiMaterial, AiMesh, AiNode, AiNodeTree, AiScene};
+use asset_importer_rs_scene::{AiNodeTree, AiScene};
 use enumflags2::BitFlags;
 use tobj::{LoadError, LoadOptions, load_mtl_buf, load_obj_buf};
 
+use crate::importer::{material::ImportMaterials, mesh::ImportMeshes};
+
 mod material;
+mod mesh;
 
 pub struct ObjImporter;
 
@@ -112,23 +115,16 @@ impl AiImporter for ObjImporter {
             ..AiScene::default()
         };
 
-        let (ai_materials, ai_textures) = ObjImporter::import_materials(&path, materials, loader)?;
+        let ImportMaterials(ai_materials, ai_textures) =
+            ObjImporter::import_materials(path, materials, loader)?;
         scene.materials = ai_materials;
         scene.textures = ai_textures;
 
         //Note: material indexes match mesh material indexes
-
-        //Create Models and Node in Scene
-        for model in &models {
-            let mut node = AiNode {
-                name: model.name.clone(),
-                ..AiNode::default()
-            };
-
-            let mut mesh = AiMesh {
-                name: model.name.clone(),
-                ..AiMesh::default()
-            };
+        let ImportMeshes(ai_meshes, ai_nodes) = ObjImporter::import_meshes(models);
+        scene.meshes = ai_meshes;
+        for node in ai_nodes {
+            scene.nodes.insert(node, scene.nodes.root).unwrap();
         }
 
         Ok(scene)
