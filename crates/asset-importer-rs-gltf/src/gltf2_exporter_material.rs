@@ -154,7 +154,10 @@ impl Gltf2Exporter {
                         ai_material,
                         extensions,
                         self.output_type == Output::Binary,
-                    ) {
+                    ) && !root
+                        .extensions_used
+                        .contains(&"KHR_materials_transmission".to_string())
+                    {
                         root.extensions_used
                             .push("KHR_materials_transmission".to_string());
                     }
@@ -168,20 +171,30 @@ impl Gltf2Exporter {
                         ai_material,
                         extensions,
                         self.output_type == Output::Binary,
-                    ) {
+                    ) && !root
+                        .extensions_used
+                        .contains(&"KHR_materials_volume".to_string())
+                    {
                         root.extensions_used
                             .push("KHR_materials_volume".to_string());
                     }
                     //handle ior
-                    if handle_ior(ai_material, extensions) {
+                    if handle_ior(ai_material, extensions)
+                        && !root
+                            .extensions_used
+                            .contains(&"KHR_materials_ior".to_string())
+                    {
                         root.extensions_used.push("KHR_materials_ior".to_string());
                     }
                     //handle emissive strength
-                    if handle_emissive_strength(ai_material, extensions) {
+                    if handle_emissive_strength(ai_material, extensions)
+                        && !root
+                            .extensions_used
+                            .contains(&"KHR_materials_emissive_strength".to_string())
+                    {
                         root.extensions_used
                             .push("KHR_materials_emissive_strength".to_string());
                     }
-
                     //handle anisotropy
                 }
             }

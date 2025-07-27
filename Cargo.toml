@@ -67,6 +67,7 @@ asset-importer-rs-core = { path = "crates/asset-importer-rs-core", version = "0.
 asset-importer-rs-scene = { path = "crates/asset-importer-rs-scene", version = "0.2.0" }
 asset-importer-rs-gltf = { path = "crates/asset-importer-rs-gltf", optional = true, default-features = false, version = "0.2.0" }
 asset-importer-rs-gltf-v1 = { path = "crates/asset-importer-rs-gltf-v1", optional = true, default-features = false, version = "0.2.0" }
+asset-importer-rs-obj = { path = "crates/asset-importer-rs-obj", optional = true, default-features = false, version = "0.2.0" }
 
 [dev-dependencies]
 criterion = "0.6.0"
@@ -74,13 +75,15 @@ asset-importer-rs-gltf = { path = "crates/asset-importer-rs-gltf", version = "0.
 asset-importer-rs-gltf-v1 = { path = "crates/asset-importer-rs-gltf-v1", version = "0.2.0" }
 
 [features]
-default = ["gltf", "gltf2", "gltf-default", "gltf2-default"]
-minimal = ["gltf", "gltf2"]
+default = ["gltf", "gltf2", "gltf-default", "gltf2-default", "obj", "obj-default"]
+minimal = ["gltf", "gltf2", "obj"]
 extras = ["default"]
 gltf = ["dep:asset-importer-rs-gltf-v1"]
 gltf-default = ["asset-importer-rs-gltf-v1/default"]
 gltf2 = ["dep:asset-importer-rs-gltf"]
 gltf2-default = ["asset-importer-rs-gltf/default"]
+obj = ["dep:asset-importer-rs-obj"]
+obj-default = ["asset-importer-rs-obj/default"]
 
 [lib]
 bench = false

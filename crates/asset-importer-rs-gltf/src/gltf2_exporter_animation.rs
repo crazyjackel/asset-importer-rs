@@ -48,10 +48,13 @@ impl Gltf2Exporter {
                         }
                         let input = AccessorExporter::export_real(root, buffer_data, &times);
                         let output = AccessorExporter::export_vector_3d(root, buffer_data, &values);
+                        if input.is_none() || output.is_none() {
+                            continue;
+                        }
                         let sampler = Sampler {
                             interpolation: Checked::Valid(Interpolation::Linear),
-                            input: root.push(input),
-                            output: root.push(output),
+                            input: root.push(input.unwrap()),
+                            output: root.push(output.unwrap()),
                             extensions: Default::default(),
                             extras: Default::default(),
                         };
@@ -83,10 +86,13 @@ impl Gltf2Exporter {
                         let input = AccessorExporter::export_real(root, buffer_data, &times);
                         let output =
                             AccessorExporter::export_quaternion(root, buffer_data, &values);
+                        if input.is_none() || output.is_none() {
+                            continue;
+                        }
                         let sampler = Sampler {
                             interpolation: Checked::Valid(Interpolation::Linear),
-                            input: root.push(input),
-                            output: root.push(output),
+                            input: root.push(input.unwrap()),
+                            output: root.push(output.unwrap()),
                             extensions: Default::default(),
                             extras: Default::default(),
                         };
@@ -117,10 +123,13 @@ impl Gltf2Exporter {
                         }
                         let input = AccessorExporter::export_real(root, buffer_data, &times);
                         let output = AccessorExporter::export_vector_3d(root, buffer_data, &values);
+                        if input.is_none() || output.is_none() {
+                            continue;
+                        }
                         let sampler = Sampler {
                             interpolation: Checked::Valid(Interpolation::Linear),
-                            input: root.push(input),
-                            output: root.push(output),
+                            input: root.push(input.unwrap()),
+                            output: root.push(output.unwrap()),
                             extensions: Default::default(),
                             extras: Default::default(),
                         };
