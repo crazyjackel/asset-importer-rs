@@ -290,7 +290,7 @@ fn import_texture(
             .map(|pixel| AiTexel::from(pixel.0))
             .collect();
         let ai_texture = AiTexture::new(
-            texture.clone().to_string(),
+            file_path.file_name().unwrap().to_string_lossy().to_string(),
             width,
             height,
             format.try_into().unwrap_or(AiTextureFormat::Unknown),

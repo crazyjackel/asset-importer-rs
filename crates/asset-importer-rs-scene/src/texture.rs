@@ -47,7 +47,7 @@ impl AiTextureFormat {
         match self {
             AiTextureFormat::Unknown => "image/unknown".to_string(),
             AiTextureFormat::PNG => "image/png".to_string(),
-            AiTextureFormat::JPEG => "image/jpg".to_string(),
+            AiTextureFormat::JPEG => "image/jpeg".to_string(),
             AiTextureFormat::WEBP => "image/webp".to_string(),
             AiTextureFormat::BMP => "image/bmp".to_string(),
             AiTextureFormat::GIF => "image/gif".to_string(),
