@@ -59,7 +59,12 @@ impl Gltf2Exporter {
             //handle positions
             let positions =
                 AccessorExporter::export_vector_3d(root, buffer_data, &ai_mesh.vertices);
-            attributes.insert(Checked::Valid(Semantic::Positions), root.push(positions));
+            // If Mesh has no positions, skip the mesh
+            if let Some(positions) = positions {
+                attributes.insert(Checked::Valid(Semantic::Positions), root.push(positions));
+            } else {
+                continue;
+            }
 
             //handle normals
             let normals = AccessorExporter::export_vector_3d(
@@ -67,7 +72,9 @@ impl Gltf2Exporter {
                 buffer_data,
                 &ai_mesh.normals.iter().map(|x| x.norm()).collect(),
             );
-            attributes.insert(Checked::Valid(Semantic::Normals), root.push(normals));
+            if let Some(normals) = normals {
+                attributes.insert(Checked::Valid(Semantic::Normals), root.push(normals));
+            }
 
             //handle tangents
             let tangents = AccessorExporter::export_quaternion(
@@ -79,7 +86,9 @@ impl Gltf2Exporter {
                     .map(|x| x.norm().to_quat(1.0))
                     .collect(),
             );
-            attributes.insert(Checked::Valid(Semantic::Tangents), root.push(tangents));
+            if let Some(tangents) = tangents {
+                attributes.insert(Checked::Valid(Semantic::Tangents), root.push(tangents));
+            }
 
             //handle texture coordinates
             for (index, uv) in ai_mesh.texture_coords.iter().enumerate() {
@@ -104,10 +113,12 @@ impl Gltf2Exporter {
                                 .collect(),
                         )
                     };
-                    attributes.insert(
-                        Checked::Valid(Semantic::TexCoords(index as u32)),
-                        root.push(uvs),
-                    );
+                    if let Some(uvs) = uvs {
+                        attributes.insert(
+                            Checked::Valid(Semantic::TexCoords(index as u32)),
+                            root.push(uvs),
+                        );
+                    }
                 }
             }
 
@@ -115,10 +126,12 @@ impl Gltf2Exporter {
             for (index, color) in ai_mesh.colors.iter().enumerate() {
                 if let Some(ai_color) = color {
                     let colors = AccessorExporter::export_color(root, buffer_data, ai_color);
-                    attributes.insert(
-                        Checked::Valid(Semantic::Colors(index as u32)),
-                        root.push(colors),
-                    );
+                    if let Some(colors) = colors {
+                        attributes.insert(
+                            Checked::Valid(Semantic::Colors(index as u32)),
+                            root.push(colors),
+                        );
+                    }
                 }
             }
 
@@ -133,7 +146,11 @@ impl Gltf2Exporter {
                     }
                 }
                 let accessor = AccessorExporter::export_u32(root, buffer_data, &indices);
-                Some(root.push(accessor))
+                if let Some(accessor) = accessor {
+                    Some(root.push(accessor))
+                } else {
+                    None
+                }
             } else {
                 None
             };
@@ -235,17 +252,21 @@ impl Gltf2Exporter {
                         let end_index = start_index + num_verts;
                         let slice = &vertex_joint_data[start_index..end_index];
                         let joints = AccessorExporter::export_usize_4(root, buffer_data, slice);
-                        attributes.insert(
-                            Checked::Valid(Semantic::Joints(group_index as u32)),
-                            root.push(joints),
-                        );
+                        if let Some(joints) = joints {
+                            attributes.insert(
+                                Checked::Valid(Semantic::Joints(group_index as u32)),
+                                root.push(joints),
+                            );
+                        }
 
                         let slice = &vertex_weight_data[start_index..end_index];
                         let joints = AccessorExporter::export_real_4(root, buffer_data, slice);
-                        attributes.insert(
-                            Checked::Valid(Semantic::Weights(group_index as u32)),
-                            root.push(joints),
-                        );
+                        if let Some(joints) = joints {
+                            attributes.insert(
+                                Checked::Valid(Semantic::Weights(group_index as u32)),
+                                root.push(joints),
+                            );
+                        }
                     }
                 }
             }
@@ -269,7 +290,11 @@ impl Gltf2Exporter {
                         .collect();
                     let positions =
                         AccessorExporter::export_vector_3d(root, buffer_data, &positon_diff);
-                    let positions = Some(root.push(positions));
+                    let positions = if let Some(positions) = positions {
+                        Some(root.push(positions))
+                    } else {
+                        continue;
+                    };
 
                     //handle normals
                     let normals = if export_anim_normals {
@@ -281,7 +306,11 @@ impl Gltf2Exporter {
                             .collect();
                         let normals =
                             AccessorExporter::export_vector_3d(root, buffer_data, &normals_diff);
-                        Some(root.push(normals))
+                        if let Some(normals) = normals {
+                            Some(root.push(normals))
+                        } else {
+                            None
+                        }
                     } else {
                         None
                     };
@@ -326,7 +355,9 @@ impl Gltf2Exporter {
             //export inverse_bind_matrices
             let inverse_mat_data =
                 AccessorExporter::export_mat4(root, buffer_data, inverse_bind_matrices_data);
-            skin_ref.inverse_bind_matrices = Some(root.push(inverse_mat_data));
+            if let Some(inverse_mat_data) = inverse_mat_data {
+                skin_ref.inverse_bind_matrices = Some(root.push(inverse_mat_data));
+            }
 
             // Find nodes that contain a mesh with bones and add "skeletons" and "skin" attributes to those nodes.
             // @todo: add skeleton support
@@ -385,7 +416,7 @@ impl AccessorExporter {
         root: &mut Root,
         buffer_data: &mut Vec<u8>,
         vector_data: Vec<AiMatrix4x4>,
-    ) -> Accessor {
+    ) -> Option<Accessor> {
         let mut min = if vector_data.is_empty() {
             [
                 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
@@ -502,7 +533,10 @@ impl AccessorExporter {
         root: &mut Root,
         buffer_data: &mut Vec<u8>,
         vector_data: &[[AiReal; 4]],
-    ) -> Accessor {
+    ) -> Option<Accessor> {
+        if vector_data.is_empty() {
+            return None;
+        }
         let mut min_x = if vector_data.is_empty() {
             0.0
         } else {
@@ -549,7 +583,10 @@ impl AccessorExporter {
         root: &mut Root,
         buffer_data: &mut Vec<u8>,
         vector_data: &[[usize; 4]],
-    ) -> Accessor {
+    ) -> Option<Accessor> {
+        if vector_data.is_empty() {
+            return None;
+        }
         let mut min_x = if vector_data.is_empty() { 0 } else { u32::MAX } as usize;
         let mut max_x = if vector_data.is_empty() { 0 } else { u32::MIN } as usize;
         let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4 * 4);
@@ -584,7 +621,10 @@ impl AccessorExporter {
         root: &mut Root,
         buffer_data: &mut Vec<u8>,
         vector_data: &Vec<u32>,
-    ) -> Accessor {
+    ) -> Option<Accessor> {
+        if vector_data.is_empty() {
+            return None;
+        }
         let mut min_x = if vector_data.is_empty() { 0 } else { u32::MAX };
         let mut max_x = if vector_data.is_empty() { 0 } else { u32::MIN };
         let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4);
@@ -616,7 +656,10 @@ impl AccessorExporter {
         root: &mut Root,
         buffer_data: &mut Vec<u8>,
         vector_data: &Vec<f32>,
-    ) -> Accessor {
+    ) -> Option<Accessor> {
+        if vector_data.is_empty() {
+            return None;
+        }
         let mut min_x = if vector_data.is_empty() {
             0.0
         } else {
@@ -660,7 +703,10 @@ impl AccessorExporter {
         root: &mut Root,
         buffer_data: &mut Vec<u8>,
         vector_data: &Vec<AiVector2D>,
-    ) -> Accessor {
+    ) -> Option<Accessor> {
+        if vector_data.is_empty() {
+            return None;
+        }
         let (mut min_x, mut min_y) = if vector_data.is_empty() {
             (0.0, 0.0)
         } else {
@@ -713,7 +759,7 @@ impl AccessorExporter {
         root: &mut Root,
         buffer_data: &mut Vec<u8>,
         vector_data: &Vec<AiVector3D>,
-    ) -> Accessor {
+    ) -> Option<Accessor> {
         let (mut min_x, mut min_y, mut min_z) = if vector_data.is_empty() {
             (0.0, 0.0, 0.0)
         } else {
@@ -774,7 +820,10 @@ impl AccessorExporter {
         root: &mut Root,
         buffer_data: &mut Vec<u8>,
         vector_data: &Vec<AiQuaternion>,
-    ) -> Accessor {
+    ) -> Option<Accessor> {
+        if vector_data.is_empty() {
+            return None;
+        }
         let (mut min_x, mut min_y, mut min_z, mut min_w) = if vector_data.is_empty() {
             (0.0, 0.0, 0.0, 0.0)
         } else {
@@ -845,7 +894,10 @@ impl AccessorExporter {
         root: &mut Root,
         buffer_data: &mut Vec<u8>,
         vector_data: &Vec<AiColor4D>,
-    ) -> Accessor {
+    ) -> Option<Accessor> {
+        if vector_data.is_empty() {
+            return None;
+        }
         let (mut min_x, mut min_y, mut min_z, mut min_w) = if vector_data.is_empty() {
             (0.0, 0.0, 0.0, 0.0)
         } else {
@@ -921,7 +973,10 @@ impl AccessorExporter {
         acc_type: Dimensions,
         min: Option<Value>,
         max: Option<Value>,
-    ) -> Accessor {
+    ) -> Option<Accessor> {
+        if data.is_empty() {
+            return None;
+        }
         let bytes_per_component = component_type.size();
         let dimension_size = acc_type.multiplicity();
         let mut buffer_offset = buffer_data.len();
@@ -943,7 +998,7 @@ impl AccessorExporter {
             extras: Default::default(),
         };
 
-        Accessor {
+        Some(Accessor {
             buffer_view: Some(root.push(buffer_view)),
             byte_offset: Some(USize64(0)),
             component_type: Checked::Valid(GenericComponentType(component_type)),
@@ -956,6 +1011,6 @@ impl AccessorExporter {
             sparse: None,
             extensions: Default::default(),
             extras: Default::default(),
-        }
+        })
     }
 }

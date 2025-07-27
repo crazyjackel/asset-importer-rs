@@ -154,7 +154,10 @@ impl Gltf2Exporter {
                         ai_material,
                         extensions,
                         self.output_type == Output::Binary,
-                    ) {
+                    ) && !root
+                        .extensions_used
+                        .contains(&"KHR_materials_transmission".to_string())
+                    {
                         root.extensions_used
                             .push("KHR_materials_transmission".to_string());
                     }
@@ -168,20 +171,30 @@ impl Gltf2Exporter {
                         ai_material,
                         extensions,
                         self.output_type == Output::Binary,
-                    ) {
+                    ) && !root
+                        .extensions_used
+                        .contains(&"KHR_materials_volume".to_string())
+                    {
                         root.extensions_used
                             .push("KHR_materials_volume".to_string());
                     }
                     //handle ior
-                    if handle_ior(ai_material, extensions) {
+                    if handle_ior(ai_material, extensions)
+                        && !root
+                            .extensions_used
+                            .contains(&"KHR_materials_ior".to_string())
+                    {
                         root.extensions_used.push("KHR_materials_ior".to_string());
                     }
                     //handle emissive strength
-                    if handle_emissive_strength(ai_material, extensions) {
+                    if handle_emissive_strength(ai_material, extensions)
+                        && !root
+                            .extensions_used
+                            .contains(&"KHR_materials_emissive_strength".to_string())
+                    {
                         root.extensions_used
                             .push("KHR_materials_emissive_strength".to_string());
                     }
-
                     //handle anisotropy
                 }
             }
@@ -310,163 +323,210 @@ fn get_material_texture(
             _ => None,
         })
         .and_then(|texture_name| {
-            texture_name_to_index_map
-                .get(&texture_name)
-                .copied()
-                .or_else(|| {
-                    ai_scene
-                        .textures
-                        .iter()
-                        .find(|texture| texture_name.ends_with(&texture.filename)) //Texture Name is in Format *Name
-                        .map(|ai_texture| {
-                            //Handle Image
-                            //If GLTF2 Exporter is binary, update the buffers, if not images will be exported based on Uri Later
-                            let image = if is_binary {
-                                let buffer_offset = buffer.len();
-                                let export = ai_texture.export(APPROVED_FORMATS).unwrap();
-                                let mut exported_buffer = export.data;
-                                let length = exported_buffer.len();
-                                buffer.append(&mut exported_buffer);
-                                let buffer_view = View {
-                                    buffer: Index::new(0), //Body Buffer will be 0.bin
-                                    byte_length: USize64(length as u64),
-                                    byte_offset: Some(USize64(buffer_offset as u64)),
-                                    byte_stride: None,
-                                    name: Some(generate_unique_name(
-                                        "imgdata",
-                                        unique_names_map,
-                                    )),
-                                    target: None,
-                                    extensions: Default::default(),
-                                    extras: Default::default(),
-                                };
-                                let format = ai_texture.get_approved_format(APPROVED_FORMATS);
-                                Image {
-                                    buffer_view: Some(root.push(buffer_view)),
-                                    mime_type: Some(MimeType(
-                                        format.get_mime_type(),
-                                    )),
-                                    name: Some(ai_texture.filename.clone()),
-                                    uri: None,
-                                    extensions: Default::default(),
-                                    extras: Default::default(),
-                                }
-                            } else {
-                                Image {
-                                    buffer_view: None,
-                                    mime_type: Some(MimeType(
-                                        ai_texture.ach_format_hint.get_mime_type(),
-                                    )),
-                                    name: Some(ai_texture.filename.clone()),
-                                    uri: Some(format!(
-                                        "{}.{}",
-                                        ai_texture.filename,
-                                        ai_texture.ach_format_hint.get_extension()
-                                    )),
-                                    extensions: Default::default(),
-                                    extras: Default::default(),
-                                }
-                            };
+            if let Some(texture_index) = texture_name_to_index_map.get(&texture_name) {
+                Some(*texture_index)
+            } else {
+                let texture_index = texture_name
+                    .strip_prefix("*")
+                    .and_then(|x| x.parse::<usize>().ok());
+                if let Some(ai_texture) = texture_index.and_then(|x| ai_scene.textures.get(x)) {
+                    //Handle Image
+                    //If GLTF2 Exporter is binary, update the buffers, if not images will be exported based on Uri Later
+                    let image = if is_binary {
+                        let buffer_offset = buffer.len();
+                        let export = ai_texture.export(APPROVED_FORMATS).unwrap();
+                        let mut exported_buffer = export.data;
+                        let length = exported_buffer.len();
+                        buffer.append(&mut exported_buffer);
+                        let buffer_view = View {
+                            buffer: Index::new(0), //Body Buffer will be 0.bin
+                            byte_length: USize64(length as u64),
+                            byte_offset: Some(USize64(buffer_offset as u64)),
+                            byte_stride: None,
+                            name: Some(generate_unique_name("imgdata", unique_names_map)),
+                            target: None,
+                            extensions: Default::default(),
+                            extras: Default::default(),
+                        };
+                        let format = ai_texture.get_approved_format(APPROVED_FORMATS);
+                        Image {
+                            buffer_view: Some(root.push(buffer_view)),
+                            mime_type: Some(MimeType(format.get_mime_type())),
+                            name: Some(ai_texture.filename.clone()),
+                            uri: None,
+                            extensions: Default::default(),
+                            extras: Default::default(),
+                        }
+                    } else {
+                        Image {
+                            buffer_view: None,
+                            mime_type: Some(MimeType(ai_texture.ach_format_hint.get_mime_type())),
+                            name: Some(ai_texture.filename.clone()),
+                            uri: Some(format!(
+                                "{}.{}",
+                                ai_texture.filename,
+                                ai_texture.ach_format_hint.get_extension()
+                            )),
+                            extensions: Default::default(),
+                            extras: Default::default(),
+                        }
+                    };
 
-                            //handle sampler
-                            let sampler = ai_material
-                                .get_property_type_info(
-                                    _AI_MATKEY_GLTF_MAPPINGID_BASE,
-                                    Some(texture_type),
-                                    index,
-                                )
-                                .and_then(|property_type| match property_type {
-                                    AiPropertyTypeInfo::Binary(binary) if binary.len() == 4 => {
-                                        Some(
-                                            u32::from_le_bytes([
-                                                binary[0], binary[1], binary[2], binary[3],
-                                            ])
-                                            .to_string(),
-                                        )
-                                    }
-                                    _ => None,
-                                })
-                                .map(|name| {
-                                    if let Some((index, _)) = root
-                                        .samplers
-                                        .iter()
-                                        .enumerate()
-                                        .find(|(_, sampler)| sampler.name == Some(name.clone()))
-                                    {
-                                        Index::new(index as u32)
-                                    } else {
-                                        root.push(Sampler {
-                                            mag_filter: ai_material.get_property_type_info(_AI_MATKEY_GLTF_MAPPINGFILTER_MAG_BASE,
-                                                Some(texture_type), 0).and_then(|x|{
-                                                    match x{
-                                                        AiPropertyTypeInfo::Binary(items) if items.len() == 1 => match items[0]{
-                                                            2 => Some(Checked::Valid(gltf::texture::MagFilter::Linear)),
-                                                            1 => Some(Checked::Valid(gltf::texture::MagFilter::Nearest)),
-                                                            _ => None,
-                                                        },
-                                                        _ => None
-                                                    }
-                                                }),
-                                            min_filter: ai_material.get_property_type_info(_AI_MATKEY_GLTF_MAPPINGFILTER_MIN_BASE,
-                                                Some(texture_type), 0).and_then(|x|{
-                                                    match x{
-                                                        AiPropertyTypeInfo::Binary(items) if items.len() == 1 => match items[0]{
-                                                            2 => Some(Checked::Valid(gltf::texture::MinFilter::Linear)),
-                                                            1 => Some(Checked::Valid(gltf::texture::MinFilter::Nearest)),
-                                                            _ => None,
-                                                        },
-                                                        _ => None
-                                                    }
-                                                }),
-                                            name: ai_material.get_property_type_info(_AI_MATKEY_GLTF_MAPPINGNAME_BASE,
-                                                Some(texture_type), 0).and_then(|x|{
-                                                    match x{
-                                                        AiPropertyTypeInfo::Binary(items) => String::from_utf8(items.to_vec()).ok(),
-                                                        _ => None
-                                                    }
-                                                }),
-                                            wrap_s: ai_material.get_property_type_info(_AI_MATKEY_MAPPINGMODE_U_BASE,
-                                                Some(texture_type), 0).and_then(|x|{
-                                                    match x{
-                                                        AiPropertyTypeInfo::Binary(items) if items.len() == 1 => match items[0]{
-                                                            1 => Some(Checked::Valid(gltf::texture::WrappingMode::ClampToEdge)),
-                                                            2 => Some(Checked::Valid(gltf::texture::WrappingMode::MirroredRepeat)),
-                                                            3 => Some(Checked::Valid(gltf::texture::WrappingMode::Repeat)),
-                                                            _ => None,
-                                                        },
-                                                        _ => None
-                                                    }
-                                                }).unwrap_or(Checked::Valid(gltf::texture::WrappingMode::ClampToEdge)),
-                                            wrap_t: ai_material.get_property_type_info(_AI_MATKEY_MAPPINGMODE_V_BASE,
-                                                Some(texture_type), 0).and_then(|x|{
-                                                    match x{
-                                                        AiPropertyTypeInfo::Binary(items) if items.len() == 1 => match items[0]{
-                                                            1 => Some(Checked::Valid(gltf::texture::WrappingMode::ClampToEdge)),
-                                                            2 => Some(Checked::Valid(gltf::texture::WrappingMode::MirroredRepeat)),
-                                                            3 => Some(Checked::Valid(gltf::texture::WrappingMode::Repeat)),
-                                                            _ => None,
-                                                        },
-                                                        _ => None
-                                                    }
-                                                }).unwrap_or(Checked::Valid(gltf::texture::WrappingMode::ClampToEdge)),
-                                            extensions: Default::default(),
-                                            extras: Default::default(),
-                                        })
-                                    }
-                                });
-
-                            let texture = Texture {
-                                name: Some(ai_texture.filename.clone()),
-                                sampler,
-                                source: root.push(image),
-                                extensions: Default::default(),
-                                extras: Default::default(),
-                            };
-                            let value = root.push(texture).value() as u32;
-                            texture_name_to_index_map.insert(texture_name, value);
-                            value
+                    //handle sampler
+                    let sampler = ai_material
+                        .get_property_type_info(
+                            _AI_MATKEY_GLTF_MAPPINGID_BASE,
+                            Some(texture_type),
+                            index,
+                        )
+                        .and_then(|property_type| match property_type {
+                            AiPropertyTypeInfo::Binary(binary) if binary.len() == 4 => Some(
+                                u32::from_le_bytes([binary[0], binary[1], binary[2], binary[3]])
+                                    .to_string(),
+                            ),
+                            _ => None,
                         })
-                })
+                        .map(|name| {
+                            if let Some((index, _)) = root
+                                .samplers
+                                .iter()
+                                .enumerate()
+                                .find(|(_, sampler)| sampler.name == Some(name.clone()))
+                            {
+                                Index::new(index as u32)
+                            } else {
+                                root.push(Sampler {
+                                    mag_filter: ai_material
+                                        .get_property_type_info(
+                                            _AI_MATKEY_GLTF_MAPPINGFILTER_MAG_BASE,
+                                            Some(texture_type),
+                                            0,
+                                        )
+                                        .and_then(|x| match x {
+                                            AiPropertyTypeInfo::Binary(items)
+                                                if items.len() == 1 =>
+                                            {
+                                                match items[0] {
+                                                    2 => Some(Checked::Valid(
+                                                        gltf::texture::MagFilter::Linear,
+                                                    )),
+                                                    1 => Some(Checked::Valid(
+                                                        gltf::texture::MagFilter::Nearest,
+                                                    )),
+                                                    _ => None,
+                                                }
+                                            }
+                                            _ => None,
+                                        }),
+                                    min_filter: ai_material
+                                        .get_property_type_info(
+                                            _AI_MATKEY_GLTF_MAPPINGFILTER_MIN_BASE,
+                                            Some(texture_type),
+                                            0,
+                                        )
+                                        .and_then(|x| match x {
+                                            AiPropertyTypeInfo::Binary(items)
+                                                if items.len() == 1 =>
+                                            {
+                                                match items[0] {
+                                                    2 => Some(Checked::Valid(
+                                                        gltf::texture::MinFilter::Linear,
+                                                    )),
+                                                    1 => Some(Checked::Valid(
+                                                        gltf::texture::MinFilter::Nearest,
+                                                    )),
+                                                    _ => None,
+                                                }
+                                            }
+                                            _ => None,
+                                        }),
+                                    name: ai_material
+                                        .get_property_type_info(
+                                            _AI_MATKEY_GLTF_MAPPINGNAME_BASE,
+                                            Some(texture_type),
+                                            0,
+                                        )
+                                        .and_then(|x| match x {
+                                            AiPropertyTypeInfo::Binary(items) => {
+                                                String::from_utf8(items.to_vec()).ok()
+                                            }
+                                            _ => None,
+                                        }),
+                                    wrap_s: ai_material
+                                        .get_property_type_info(
+                                            _AI_MATKEY_MAPPINGMODE_U_BASE,
+                                            Some(texture_type),
+                                            0,
+                                        )
+                                        .and_then(|x| match x {
+                                            AiPropertyTypeInfo::Binary(items)
+                                                if items.len() == 1 =>
+                                            {
+                                                match items[0] {
+                                                    1 => Some(Checked::Valid(
+                                                        gltf::texture::WrappingMode::ClampToEdge,
+                                                    )),
+                                                    2 => Some(Checked::Valid(
+                                                        gltf::texture::WrappingMode::MirroredRepeat,
+                                                    )),
+                                                    3 => Some(Checked::Valid(
+                                                        gltf::texture::WrappingMode::Repeat,
+                                                    )),
+                                                    _ => None,
+                                                }
+                                            }
+                                            _ => None,
+                                        })
+                                        .unwrap_or(Checked::Valid(
+                                            gltf::texture::WrappingMode::ClampToEdge,
+                                        )),
+                                    wrap_t: ai_material
+                                        .get_property_type_info(
+                                            _AI_MATKEY_MAPPINGMODE_V_BASE,
+                                            Some(texture_type),
+                                            0,
+                                        )
+                                        .and_then(|x| match x {
+                                            AiPropertyTypeInfo::Binary(items)
+                                                if items.len() == 1 =>
+                                            {
+                                                match items[0] {
+                                                    1 => Some(Checked::Valid(
+                                                        gltf::texture::WrappingMode::ClampToEdge,
+                                                    )),
+                                                    2 => Some(Checked::Valid(
+                                                        gltf::texture::WrappingMode::MirroredRepeat,
+                                                    )),
+                                                    3 => Some(Checked::Valid(
+                                                        gltf::texture::WrappingMode::Repeat,
+                                                    )),
+                                                    _ => None,
+                                                }
+                                            }
+                                            _ => None,
+                                        })
+                                        .unwrap_or(Checked::Valid(
+                                            gltf::texture::WrappingMode::ClampToEdge,
+                                        )),
+                                    extensions: Default::default(),
+                                    extras: Default::default(),
+                                })
+                            }
+                        });
+
+                    let texture = Texture {
+                        name: Some(ai_texture.filename.clone()),
+                        sampler,
+                        source: root.push(image),
+                        extensions: Default::default(),
+                        extras: Default::default(),
+                    };
+                    let value = root.push(texture).value() as u32;
+                    texture_name_to_index_map.insert(texture_name, value);
+                    return Some(value);
+                }
+                None
+            }
         });
 
     let texture_info = Info {

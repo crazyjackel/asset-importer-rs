@@ -13,6 +13,7 @@ pub mod matkey {
     pub const AI_MATKEY_NAME: &str = "?mat.name";
     pub const AI_MATKEY_TWOSIDED: &str = "$mat.twosided";
     pub const AI_MATKEY_SHADING_MODEL: &str = "$mat.shadingm";
+    pub const AI_MATKEY_OBJ_ILLUM: &str = "$mat.illum";
     pub const AI_MATKEY_ENABLE_WIREFRAME: &str = "$mat.wireframe";
     pub const AI_MATKEY_BLEND_FUNC: &str = "$mat.blend";
     pub const AI_MATKEY_OPACITY: &str = "$mat.opacity";

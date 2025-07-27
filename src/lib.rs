@@ -3,6 +3,8 @@ use asset_importer_rs_core::{AiExportError, AiReadError, ExportFormatEntry, Expo
 use asset_importer_rs_gltf::{Gltf2Exporter, Gltf2Importer, Output as Gltf2Output};
 #[cfg(feature = "gltf")]
 use asset_importer_rs_gltf_v1::{GltfExporter, GltfImporter, Output as GltfOutput};
+#[cfg(feature = "obj")]
+use asset_importer_rs_obj::ObjImporter;
 use asset_importer_rs_scene::AiScene;
 use enumflags2::BitFlags;
 
@@ -15,6 +17,8 @@ impl AssetImporter {
             Box::new(Gltf2Importer::new()),
             #[cfg(feature = "gltf")]
             Box::new(GltfImporter::new()),
+            #[cfg(feature = "obj")]
+            Box::new(ObjImporter::new()),
         ])
     }
 
