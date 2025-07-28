@@ -6,7 +6,7 @@
 <h5 align="center"> A safe, high-performance 3D asset import/export library </h5>
 
 <p align="center"> 
-  <img src="https://img.shields.io/badge/Version-0.1.0-blue?style=for-the-badge" alt="Version">
+  <img src="https://img.shields.io/badge/Version-0.3.0-blue?style=for-the-badge" alt="Version">
   <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License">
   <img src="https://img.shields.io/badge/Rust-1.70+-orange?style=for-the-badge" alt="Rust Version">
 </p>
@@ -36,7 +36,7 @@
 <h2 id="about-the-project"> :pencil: About The Project</h2>
 
 <p align="justify"> 
-  asset-importer-rs is a Rust implementation of the popular Assimp library, providing safe and efficient 3D asset import and export functionality. Built with Rust's memory safety guarantees and performance characteristics, this library aims to be a modern, thread-safe alternative to the C++ Assimp library while maintaining compatibility with existing workflows.
+  asset-importer-rs is a Rust implementation of the popular Assimp library, providing safe and efficient 3D asset import and export functionality. Built with Rust's memory safety guarantees and performance characteristics, this library aims to be a modern alternative to the C++ Assimp library.
 </p>
 
 ![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/cloudy.png)
@@ -45,8 +45,20 @@
 <h2 id="overview"> :cloud: Overview</h2>
 
 <p align="justify"> 
-  This project provides a comprehensive solution for loading, processing, and exporting 3D assets in various formats. The library is designed with a modular architecture, allowing for easy extension and customization. It supports both modern formats like glTF 2.0 and legacy formats like glTF 1.0, with plans to support additional formats including OBJ.
+  This project provides a comprehensive solution for loading, processing, and exporting 3D assets in various formats. The library is designed with a modular architecture, allowing for easy extension and customization. It supports modern formats like glTF 2.0, legacy formats like glTF 1.0, and classic formats like OBJ, with plans to support additional industry-standard formats.
 </p>
+
+<p align="justify">
+  Built with Rust's memory safety guarantees and performance characteristics, asset-importer-rs offers:
+</p>
+
+<ul>
+  <li><b>Memory Safety</b> - Leverages Rust's ownership system for automatic memory management</li>
+  <li><b>Thread Safety</b> - Built with Rust's thread safety guarantees from the ground up</li>
+  <li><b>Modular Design</b> - Each format is implemented as a separate crate for easy maintenance</li>
+  <li><b>Extensible Architecture</b> - Easy to add new format support through the core importer interface</li>
+  <li><b>Comprehensive Testing</b> - Full test coverage for all supported formats</li>
+</ul>
 
 ![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/cloudy.png)
 
@@ -59,7 +71,7 @@
   <li><b>asset-importer-rs-scene</b> - 3D scene data structures and types</li>
   <li><b>asset-importer-rs-gltf</b> - glTF 2.0 import/export support</li>
   <li><b>asset-importer-rs-gltf-v1</b> - glTF 1.0 import support (legacy)</li>
-  <li><b>asset-importer-rs-obj</b> - OBJ format support (planned)</li>
+  <li><b>asset-importer-rs-obj</b> - OBJ format support</li>
 </ul>
 
 <h3>Supporting Crates</h3>
@@ -77,12 +89,14 @@
 <p>Add the following to your <code>Cargo.toml</code>:</p>
 
 <pre><code>[dependencies]
-asset-importer-rs-core = { path = "crates/asset-importer-rs-core" }
-asset-importer-rs-scene = { path = "crates/asset-importer-rs-scene" }
-asset-importer-rs-gltf = { path = "crates/asset-importer-rs-gltf" }
+asset-importer-rs = "0.3.0"
 
-# For legacy glTF 1.0 support
-asset-importer-rs-gltf-v1 = { path = "crates/asset-importer-rs-gltf-v1" }
+# Or for specific format support only:
+asset-importer-rs-core = "0.2.0"
+asset-importer-rs-scene = "0.2.0"
+asset-importer-rs-gltf = "0.2.0"        # glTF 2.0 support
+asset-importer-rs-gltf-v1 = "0.2.0"     # glTF 1.0 support
+asset-importer-rs-obj = "0.2.0"         # OBJ support
 </code></pre>
 
 <p>Basic usage example:</p>
@@ -92,6 +106,10 @@ asset-importer-rs-gltf-v1 = { path = "crates/asset-importer-rs-gltf-v1" }
 // Import a glTF file
 let importer = Gltf2Importer::new();
 let scene = importer.import_file("model.gltf")?;
+
+// Or use the main crate for automatic format detection
+use asset_importer_rs::AssetImporter;
+let scene = AssetImporter::import_file("model.gltf")?;
 </code></pre>
 
 ![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/cloudy.png)
@@ -103,11 +121,11 @@ let scene = importer.import_file("model.gltf")?;
 <ul>
   <li><b>glTF 2.0</b> - Complete specification support with extensions</li>
   <li><b>glTF 1.0</b> - Legacy format support with KHR_materials_common</li>
+  <li><b>OBJ</b> - Wavefront OBJ format with material support</li>
 </ul>
 
 <h3>Planned Support</h3>
 <ul>
-  <li><b>OBJ</b> - Wavefront OBJ format</li>
   <li><b>FBX</b> - Autodesk FBX format</li>
   <li><b>3DS</b> - 3D Studio format</li>
   <li><b>DAE</b> - Collada format</li>
@@ -117,6 +135,20 @@ let scene = importer.import_file("model.gltf")?;
 
 <!-- IMPLEMENTATION NOTES -->
 <h2 id="implementation-notes"> :small_orange_diamond: Implementation Notes</h2>
+
+<h3>Implementation Plan 1.0.0</h3>
+
+<p align="justify"> 
+  The goal for Version 1.0.0 is to ensure robust support for the most widely used 3D file formats in the industry, including GLTF, OBJ, FBX, DAE, 3DS, and MD3. This means being able to import and export these formats with expected results. In addition, the release should aim to provide the most common post-processing operations, such as Triangulation, Splitting Large Meshes, Optimize Meshes, Optimize Graph, Join Nearby Vertices, and Improving Cache Locality. All of these features should be fully implemented, thoroughly tested, and validated to ensure reliability and correctness across a wide range of real-world models.
+</p>
+
+<p align="justify">
+  In addition, a significant emphasis will be placed on expanding the suite of model-based tests.
+</p>
+
+<p align="justify">
+  Achieving parity with the original Assimp library -- or otherwise, justifying differences -- is an important long-term aspiration, though it is not a strict requirement for the 1.0.0 release. Nevertheless, it is desired to begin the process of having code to compare test outputs to similarly exported outputs from assimp.
+</p>
 
 <h3>Implementation Plan 0.1.0</h3>
 
@@ -154,11 +186,10 @@ let scene = importer.import_file("model.gltf")?;
 </p>
 
 <ul>
-  <li><b>AiTexture</b> - Uses an enum for format rather than a text-based hint. This should reduce memory usage and result in higher stability in terms of options</li>
-  <li><b>AiMaterial</b> - Encodes AiPropertyInfo differently in order to retain semantics, taking advantage of rust's enum system for types. This makes working with it easier</li>
+  <li><b>Enum-based Types</b> - Uses Rust's enum system for texture formats and material properties rather than C-style enums</li>
+  <li><b>Error Handling</b> - Leverages Rust's Result type and custom error types for robust error handling</li>
   <li><b>AiNodes</b> - Are saved in an Arena instead of using a typical arena structure</li>
-  <li><b>Memory Safety</b> - Leverages Rust's ownership system for automatic memory management</li>
-  <li><b>Thread Safety</b> - Built with Rust's thread safety guarantees from the ground up</li>
+  <li><b>Memory Safety</b> - Leverages Rust's ownership system for automatic memory management<li>
 </ul>
 
 ![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/cloudy.png)
@@ -166,20 +197,21 @@ let scene = importer.import_file("model.gltf")?;
 <!-- ROADMAP -->
 <h2 id="roadmap"> :small_orange_diamond: Roadmap</h2>
 
-<h3>Version 0.1.0 (Current)</h3>
+<h3>Version 0.3.0 (Current)</h3>
 <ul>
   <li>✅ glTF 2.0 import/export support</li>
   <li>✅ glTF 1.0 import support</li>
-  <li>🔄 OBJ format support</li>
-  <li>🔄 Benchmark system setup</li>
-  <li>🔄 Comprehensive testing suite</li>
+  <li>✅ OBJ format support with materials</li>
+  <li>✅ Comprehensive testing suite</li>
+  <li>🔄 Basic post-processing features</li>
 </ul>
 
-<h3>Future Versions</h3>
+<h3>Version 1.0.0</h3>
 <ul>
-  <li>Additional format support (FBX, 3DS, DAE)</li>
-  <li>Performance optimizations</li>
+  <li>Additional format support (FBX, 3DS, DAE, MD3)</li>
+  <li>Performance optimizations and better benchmarking</li>
   <li>Advanced post-processing features</li>
+  <li>Export functionality for all supported formats</li>
 </ul>
 
 ![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/cloudy.png)
@@ -205,7 +237,7 @@ let scene = importer.import_file("model.gltf")?;
 </p>
 
 <p align="center">
-  <a href="https://github.com/your-username/asset-importer-rs">
+  <a href="https://github.com/crazyjackel/asset-importer-rs">
     <img src="https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white" alt="GitHub">
   </a>
   <a href="https://crates.io/crates/asset-importer-rs">

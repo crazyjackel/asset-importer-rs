@@ -1,17 +1,18 @@
-use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{AiColor3D, AiLight, AiLightSourceType, AiVector3D};
 
-use super::gltf2_importer::Gltf2Importer;
+use crate::importer::error::Gltf2ImportError;
+
+use super::importer::Gltf2Importer;
 
 use gltf::Document;
 
 impl Gltf2Importer {
     #[cfg(not(feature = "KHR_lights_punctual"))]
-    pub(crate) fn import_lights(_document: &Document) -> Result<Vec<AiLight>, AiReadError> {
+    pub(crate) fn import_lights(_document: &Document) -> Result<Vec<AiLight>, Gltf2ImportError> {
         Ok(Vec::new())
     }
     #[cfg(feature = "KHR_lights_punctual")]
-    pub(crate) fn import_lights(document: &Document) -> Result<Vec<AiLight>, AiReadError> {
+    pub(crate) fn import_lights(document: &Document) -> Result<Vec<AiLight>, Gltf2ImportError> {
         if document.lights().is_none() {
             return Ok(Vec::new());
         }
@@ -67,10 +68,14 @@ impl Gltf2Importer {
     }
 }
 
-#[cfg(feature = "KHR_lights_punctual")]
-#[test]
-fn test_gltf2_light_import() {
-    let gltf_data = r#"{
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(feature = "KHR_lights_punctual")]
+    #[test]
+    fn test_gltf2_light_import() {
+        let gltf_data = r#"{
             "extensions": {
                 "KHR_lights_punctual": {
                     "lights": [
@@ -129,8 +134,9 @@ fn test_gltf2_light_import() {
                 "version" : "2.0"
             }
         }"#;
-    let scene = serde_json::from_str(gltf_data).unwrap();
-    let document = Document::from_json_without_validation(scene);
-    let lights = Gltf2Importer::import_lights(&document).unwrap();
-    assert_eq!(5, lights.len());
+        let scene = serde_json::from_str(gltf_data).unwrap();
+        let document = Document::from_json_without_validation(scene);
+        let lights = Gltf2Importer::import_lights(&document).unwrap();
+        assert_eq!(5, lights.len());
+    }
 }

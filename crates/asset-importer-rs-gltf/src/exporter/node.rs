@@ -2,10 +2,11 @@ use std::collections::HashMap;
 
 use gltf::json::{Index, Node, Root, scene::UnitQuaternion};
 
-use asset_importer_rs_core::AiExportError;
 use asset_importer_rs_scene::{AiReal, AiScene};
 
-use super::gltf2_exporter::{Gltf2Exporter, generate_unique_name};
+use crate::exporter::error::Gltf2ExportError;
+
+use super::exporter::{Gltf2Exporter, generate_unique_name};
 
 impl Gltf2Exporter {
     pub(crate) fn export_nodes(
@@ -16,7 +17,7 @@ impl Gltf2Exporter {
         name_to_camera_index: HashMap<String, usize>,
         config_epsilon: AiReal,
         use_translate_rotate_scale: bool,
-    ) -> Result<HashMap<usize, Vec<usize>>, AiExportError> {
+    ) -> Result<HashMap<usize, Vec<usize>>, Gltf2ExportError> {
         let mut node_to_mesh_indexes: HashMap<usize, Vec<usize>> = HashMap::new();
         for (index, ai_node) in scene.nodes.arena.iter().enumerate() {
             let mut node = Node {

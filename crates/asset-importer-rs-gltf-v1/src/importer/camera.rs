@@ -5,16 +5,15 @@ use gltf_v1::{
     camera::{Camera, Projection},
 };
 
-use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{AiCamera, AiVector3D};
 
 use super::GltfImporter;
-use super::error::Error;
+use super::error::GLTFImportError;
 
 pub struct ImportCameras(pub Vec<AiCamera>, pub HashMap<String, usize>);
 
 impl GltfImporter {
-    pub(crate) fn import_cameras(document: &Document) -> Result<ImportCameras, AiReadError> {
+    pub(crate) fn import_cameras(document: &Document) -> Result<ImportCameras, GLTFImportError> {
         let asset_cameras: Vec<Camera<'_>> = document.cameras().collect();
         let mut cameras: Vec<AiCamera> = Vec::with_capacity(asset_cameras.len());
         let mut camera_map: HashMap<String, usize> = HashMap::new();
@@ -26,7 +25,7 @@ impl GltfImporter {
                 .unwrap_or(format!("{}", index));
             camera_map.insert(name.clone(), index);
             if camera_map.contains_key(&name) {
-                return Err(AiReadError::FileFormatError(Box::new(Error::DuplicateName)));
+                return Err(GLTFImportError::DuplicateName);
             }
             camera_map.insert(name.clone(), index);
             let mut ai_camera = AiCamera {

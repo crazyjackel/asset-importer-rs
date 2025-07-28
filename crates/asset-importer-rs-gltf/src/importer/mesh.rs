@@ -1,20 +1,21 @@
 use bytemuck::Pod;
 use gltf::{Document, Mesh, Semantic, buffer};
 
-use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{
     AI_MAX_NUMBER_OF_COLORS_SETS, AI_MAX_NUMBER_OF_TEXTURECOORDS, AiAnimMesh, AiColor4D, AiMesh,
     AiPrimitiveType, AiReal, AiVector3D,
 };
 
-use super::{gltf2_error::Gtlf2Error, gltf2_importer::Gltf2Importer};
+use crate::importer::error::MeshError;
+
+use super::{error::Gltf2ImportError, importer::Gltf2Importer};
 
 pub(crate) trait ExtractData {
     fn extract_data<T>(
         &self,
         buffers: &[buffer::Data],
         vertex_remapping_table: Option<&Vec<usize>>,
-    ) -> Result<Vec<T>, Gtlf2Error>
+    ) -> Result<Vec<T>, MeshError>
     where
         T: Sized + Default + Pod;
 }
@@ -24,7 +25,7 @@ impl ExtractData for gltf::Accessor<'_> {
         &self,
         buffers: &[buffer::Data],
         remapping_indices: Option<&Vec<usize>>,
-    ) -> Result<Vec<T>, Gtlf2Error>
+    ) -> Result<Vec<T>, MeshError>
     where
         T: Sized + Default + Pod,
     {
@@ -34,7 +35,7 @@ impl ExtractData for gltf::Accessor<'_> {
             let data_index = view.buffer().index();
             let data = buffers
                 .get(data_index)
-                .ok_or(Gtlf2Error::MissingBufferData)?;
+                .ok_or(MeshError::MissingBufferData)?;
 
             let elem_size = self.size(); //how large each element is
             let count = self.count(); //how many elements there is
@@ -45,18 +46,18 @@ impl ExtractData for gltf::Accessor<'_> {
             };
 
             if stride < elem_size {
-                return Err(Gtlf2Error::InvalidStride);
+                return Err(MeshError::InvalidStride);
             }
 
             if elem_size > target_elem_size {
-                return Err(Gtlf2Error::SizeExceedsTarget);
+                return Err(MeshError::SizeExceedsTarget);
             }
 
             //Get Slice of Data
             let start_index = self.offset() + view.offset();
             let end_index = start_index + (count - 1) * stride + elem_size; //The Last Element
             if end_index > data.len() {
-                return Err(Gtlf2Error::ExceedsBounds);
+                return Err(MeshError::ExceedsBounds);
             }
             let data_slice = &data[start_index..end_index];
 
@@ -67,7 +68,7 @@ impl ExtractData for gltf::Accessor<'_> {
                 if target_elem_size == elem_size {
                     for src_index in remap {
                         if src_index >= &count {
-                            return Err(Gtlf2Error::ExceedsBounds);
+                            return Err(MeshError::ExceedsBounds);
                         }
                         let start = src_index * stride;
                         let end = start + elem_size;
@@ -77,7 +78,7 @@ impl ExtractData for gltf::Accessor<'_> {
                 } else {
                     for src_index in remap {
                         if src_index >= &count {
-                            return Err(Gtlf2Error::ExceedsBounds);
+                            return Err(MeshError::ExceedsBounds);
                         }
                         let start = src_index * stride;
                         let end = start + elem_size;
@@ -112,7 +113,7 @@ impl ExtractData for gltf::Accessor<'_> {
         } else {
             //Early Out as we must be Sparse if we don't have a view
             if self.sparse().is_none() {
-                return Err(Gtlf2Error::BrokenSparseDataAccess);
+                return Err(MeshError::BrokenSparseDataAccess);
             }
             let count = self.count();
             let mut result = Vec::with_capacity(count);
@@ -130,9 +131,9 @@ impl ExtractData for gltf::Accessor<'_> {
             let index_data_end_index = index_data_start_index + index_data_size * sparse.count();
             let index_data = buffers
                 .get(index_data_index)
-                .ok_or(Gtlf2Error::MissingBufferData)?;
+                .ok_or(MeshError::MissingBufferData)?;
             if index_data_end_index > index_data.len() {
-                return Err(Gtlf2Error::ExceedsBounds);
+                return Err(MeshError::ExceedsBounds);
             }
 
             //Load Value Data Buffer
@@ -143,9 +144,9 @@ impl ExtractData for gltf::Accessor<'_> {
             let values_data_end_index = values_data_start_index + values_data_size * sparse.count();
             let values_data = buffers
                 .get(values_data_index)
-                .ok_or(Gtlf2Error::MissingBufferData)?;
+                .ok_or(MeshError::MissingBufferData)?;
             if values_data_end_index > values_data.len() {
-                return Err(Gtlf2Error::ExceedsBounds);
+                return Err(MeshError::ExceedsBounds);
             }
 
             //Get Indices and Values
@@ -189,7 +190,7 @@ impl Gltf2Importer {
         document: &'a Document,
         buffer_data: &'a [buffer::Data],
         last_material_index: usize,
-    ) -> Result<(Vec<AiMesh>, Vec<u32>, Vec<Vec<usize>>), AiReadError> {
+    ) -> Result<(Vec<AiMesh>, Vec<u32>, Vec<Vec<usize>>), Gltf2ImportError> {
         let asset_meshes: Vec<Mesh<'_>> = document.meshes().collect();
 
         //Maps Document Mesh Index to Offset. Lets us add all primitives to a Node as Meshes
@@ -238,19 +239,19 @@ impl Gltf2Importer {
                         gltf::accessor::DataType::I8 | gltf::accessor::DataType::U8 => {
                             let index_data: Vec<u8> = indices
                                 .extract_data(buffer_data, None)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                .map_err(Gltf2ImportError::MeshError)?;
                             index_data.into_iter().map(|x| x as u32).collect()
                         }
                         gltf::accessor::DataType::I16 | gltf::accessor::DataType::U16 => {
                             let index_data: Vec<u16> = indices
                                 .extract_data(buffer_data, None)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                .map_err(Gltf2ImportError::MeshError)?;
                             index_data.into_iter().map(|x| x as u32).collect()
                         }
                         gltf::accessor::DataType::U32 | gltf::accessor::DataType::F32 => {
                             let index_data: Vec<u32> = indices
                                 .extract_data(buffer_data, None)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                .map_err(Gltf2ImportError::MeshError)?;
                             index_data
                         }
                     };
@@ -308,7 +309,7 @@ impl Gltf2Importer {
                 {
                     let data: Vec<[f32; 3]> = attr_position
                         .extract_data(buffer_data, vertex_remapping_table)
-                        .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                        .map_err(Gltf2ImportError::MeshError)?;
                     ai_mesh.vertices = data
                         .iter()
                         .map(|x| AiVector3D::new(x[0] as AiReal, x[1] as AiReal, x[2] as AiReal))
@@ -329,7 +330,7 @@ impl Gltf2Importer {
                     } else {
                         let data: Vec<[f32; 3]> = attr_normals
                             .extract_data(buffer_data, vertex_remapping_table)
-                            .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            .map_err(Gltf2ImportError::MeshError)?;
                         ai_mesh.normals = data
                             .iter()
                             .map(|x| {
@@ -350,7 +351,7 @@ impl Gltf2Importer {
                             } else {
                                 let data: Vec<[f32; 4]> = attr_tangents
                                     .extract_data(buffer_data, vertex_remapping_table)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                    .map_err(Gltf2ImportError::MeshError)?;
 
                                 ai_mesh.tangents.resize(data.len(), AiVector3D::default());
                                 ai_mesh
@@ -387,7 +388,7 @@ impl Gltf2Importer {
                             gltf::accessor::DataType::U8 => {
                                 let data: Vec<[u8; 3]> = attr_color
                                     .extract_data(buffer_data, vertex_remapping_table)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                    .map_err(Gltf2ImportError::MeshError)?;
                                 Some(
                                     data.iter()
                                         .map(|chunk| {
@@ -404,7 +405,7 @@ impl Gltf2Importer {
                             gltf::accessor::DataType::U16 => {
                                 let data: Vec<[u16; 3]> = attr_color
                                     .extract_data(buffer_data, vertex_remapping_table)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                    .map_err(Gltf2ImportError::MeshError)?;
                                 Some(
                                     data.iter()
                                         .map(|chunk| {
@@ -421,7 +422,7 @@ impl Gltf2Importer {
                             gltf::accessor::DataType::F32 => {
                                 let data: Vec<[f32; 3]> = attr_color
                                     .extract_data(buffer_data, vertex_remapping_table)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                    .map_err(Gltf2ImportError::MeshError)?;
                                 Some(
                                     data.iter()
                                         .map(|chunk| {
@@ -436,7 +437,7 @@ impl Gltf2Importer {
                             gltf::accessor::DataType::U8 => {
                                 let data: Vec<[u8; 4]> = attr_color
                                     .extract_data(buffer_data, vertex_remapping_table)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                    .map_err(Gltf2ImportError::MeshError)?;
                                 Some(
                                     data.iter()
                                         .map(|chunk| {
@@ -453,7 +454,7 @@ impl Gltf2Importer {
                             gltf::accessor::DataType::U16 => {
                                 let data: Vec<[u16; 4]> = attr_color
                                     .extract_data(buffer_data, vertex_remapping_table)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                    .map_err(Gltf2ImportError::MeshError)?;
                                 Some(
                                     data.iter()
                                         .map(|chunk| {
@@ -470,7 +471,7 @@ impl Gltf2Importer {
                             gltf::accessor::DataType::F32 => {
                                 let data: Vec<[f32; 4]> = attr_color
                                     .extract_data(buffer_data, vertex_remapping_table)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                    .map_err(Gltf2ImportError::MeshError)?;
                                 Some(
                                     data.iter()
                                         .map(|chunk| {
@@ -500,7 +501,7 @@ impl Gltf2Importer {
                         gltf::accessor::DataType::U8 => {
                             let data: Vec<[u8; 2]> = attr_texcoords
                                 .extract_data(buffer_data, vertex_remapping_table)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                .map_err(Gltf2ImportError::MeshError)?;
                             Some(
                                 data.iter()
                                     .map(|chunk| {
@@ -514,7 +515,7 @@ impl Gltf2Importer {
                         gltf::accessor::DataType::U16 => {
                             let data: Vec<[u16; 2]> = attr_texcoords
                                 .extract_data(buffer_data, vertex_remapping_table)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                .map_err(Gltf2ImportError::MeshError)?;
                             Some(
                                 data.iter()
                                     .map(|chunk| {
@@ -528,7 +529,7 @@ impl Gltf2Importer {
                         gltf::accessor::DataType::F32 => {
                             let data: Vec<[f32; 2]> = attr_texcoords
                                 .extract_data(buffer_data, vertex_remapping_table)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                .map_err(Gltf2ImportError::MeshError)?;
                             Some(
                                 data.iter()
                                     .map(|chunk| {
@@ -564,9 +565,7 @@ impl Gltf2Importer {
                                 if positions.count() == num_all_vertices {
                                     let data: Vec<[f32; 3]> = positions
                                         .extract_data(buffer_data, vertex_remapping_table)
-                                        .map_err(|err| {
-                                            AiReadError::FileFormatError(Box::new(err))
-                                        })?;
+                                        .map_err(Gltf2ImportError::MeshError)?;
                                     let offsets: Vec<AiVector3D> = data
                                         .iter()
                                         .map(|x| {
@@ -592,9 +591,7 @@ impl Gltf2Importer {
                                 if normals.count() == num_all_vertices {
                                     let data: Vec<[f32; 3]> = normals
                                         .extract_data(buffer_data, vertex_remapping_table)
-                                        .map_err(|err| {
-                                            AiReadError::FileFormatError(Box::new(err))
-                                        })?;
+                                        .map_err(Gltf2ImportError::MeshError)?;
                                     let offsets: Vec<AiVector3D> = data
                                         .iter()
                                         .map(|x| {
@@ -621,9 +618,7 @@ impl Gltf2Importer {
                                 {
                                     let tangents_offsets: Vec<[f32; 3]> = tangents
                                         .extract_data(buffer_data, vertex_remapping_table)
-                                        .map_err(|err| {
-                                            AiReadError::FileFormatError(Box::new(err))
-                                        })?;
+                                        .map_err(Gltf2ImportError::MeshError)?;
 
                                     if tangents_offsets.len() == ai_mesh.tangents.len() {
                                         anim_mesh.tangents = ai_mesh.tangents.clone();

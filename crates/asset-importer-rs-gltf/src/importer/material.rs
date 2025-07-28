@@ -6,7 +6,6 @@ use gltf::{
     texture::{self, WrappingMode},
 };
 
-use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{
     AiColor3D, AiColor4D, AiMaterial, AiPropertyTypeInfo, AiTextureMapMode, AiTextureType,
     matkey::{
@@ -14,19 +13,15 @@ use asset_importer_rs_scene::{
     },
 };
 
-use super::gltf2_importer::Gltf2Importer;
+use crate::{
+    _AI_MATKEY_GLTF_MAPPINGFILTER_MAG_BASE, _AI_MATKEY_GLTF_MAPPINGFILTER_MIN_BASE,
+    _AI_MATKEY_GLTF_MAPPINGID_BASE, _AI_MATKEY_GLTF_MAPPINGNAME_BASE, _AI_MATKEY_GLTF_SCALE_BASE,
+    AI_MATKEY_GLTF_ALPHACUTOFF, AI_MATKEY_GLTF_ALPHAMODE,
+    AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE,
+    importer::error::Gltf2ImportError,
+};
 
-pub const AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE: AiTextureType =
-    AiTextureType::Unknown;
-pub const AI_MATKEY_GLTF_ALPHAMODE: &str = "$mat.gltf.alphaMode";
-pub const AI_MATKEY_GLTF_ALPHACUTOFF: &str = "$mat.gltf.alphaCutoff";
-
-pub const _AI_MATKEY_GLTF_MAPPINGNAME_BASE: &str = "$tex.mappingname";
-pub const _AI_MATKEY_GLTF_MAPPINGID_BASE: &str = "$tex.mappingid";
-pub const _AI_MATKEY_GLTF_MAPPINGFILTER_MAG_BASE: &str = "$tex.mappingfiltermag";
-pub const _AI_MATKEY_GLTF_MAPPINGFILTER_MIN_BASE: &str = "$tex.mappingfiltermin";
-pub const _AI_MATKEY_GLTF_SCALE_BASE: &str = "$tex.scale";
-pub const _AI_MATKEY_GLTF_STRENGTH_BASE: &str = "$tex.strength";
+use super::importer::Gltf2Importer;
 
 trait ImportTexture<'a> {
     fn texture(&self) -> gltf::Texture<'a>;
@@ -83,7 +78,7 @@ impl Gltf2Importer {
     pub(crate) fn import_embedded_materials(
         document: &Document,
         embedded_tex_ids: &HashMap<usize, usize>,
-    ) -> Result<Vec<AiMaterial>, AiReadError> {
+    ) -> Result<Vec<AiMaterial>, Gltf2ImportError> {
         let mut materials: Vec<AiMaterial> = Vec::new();
         for material in document.materials() {
             let mut ai_material = AiMaterial::new();
@@ -778,9 +773,13 @@ fn handle_emissive_strength(
     }
 }
 
-#[test]
-fn test_gltf2_material_import() {
-    let gltf_data = r#"{
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_gltf2_material_import() {
+        let gltf_data = r#"{
             "asset": {
                 "generator": "COLLADA2GLTF",
                 "version": "2.0"
@@ -922,8 +921,10 @@ fn test_gltf2_material_import() {
                 }
             ]
         }"#;
-    let scene = serde_json::from_str(gltf_data).unwrap();
-    let document = Document::from_json_without_validation(scene);
-    let materials = Gltf2Importer::import_embedded_materials(&document, &HashMap::new()).unwrap();
-    assert_eq!(1, materials.len())
+        let scene = serde_json::from_str(gltf_data).unwrap();
+        let document = Document::from_json_without_validation(scene);
+        let materials =
+            Gltf2Importer::import_embedded_materials(&document, &HashMap::new()).unwrap();
+        assert_eq!(1, materials.len())
+    }
 }

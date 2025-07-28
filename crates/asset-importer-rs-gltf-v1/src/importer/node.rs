@@ -5,9 +5,9 @@ use std::{
 
 use gltf_v1::Document;
 
-use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{AiCamera, AiLight, AiNode, AiNodeTree, AiReal};
 
+use super::error::GLTFImportError;
 use super::{GltfImporter, mesh::IndexSpan};
 
 impl GltfImporter {
@@ -18,7 +18,7 @@ impl GltfImporter {
         light_map: &HashMap<String, usize>,
         cameras: &mut [AiCamera],
         camera_map: &HashMap<String, usize>,
-    ) -> Result<(AiNodeTree, String), AiReadError> {
+    ) -> Result<(AiNodeTree, String), GLTFImportError> {
         let scene = document
             .default_scene()
             .or_else(|| document.scenes().nth(0));
@@ -91,7 +91,7 @@ fn import_node(
     light_map: &HashMap<String, usize>,
     cameras: &mut [AiCamera],
     camera_map: &HashMap<String, usize>,
-) -> Result<AiNodeTree, AiReadError> {
+) -> Result<AiNodeTree, GLTFImportError> {
     let mut ai_node_tree = AiNodeTree::default();
     let mut node_queue: VecDeque<(gltf_v1::Node<'_>, Option<usize>)> = VecDeque::new();
     node_queue.push_back((root_node, None));

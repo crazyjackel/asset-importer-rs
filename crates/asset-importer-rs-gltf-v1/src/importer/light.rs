@@ -5,7 +5,7 @@ use gltf_v1::{
     light::{Kind, Light},
 };
 
-use asset_importer_rs_core::AiReadError;
+use super::error::GLTFImportError;
 use asset_importer_rs_scene::{AiLight, AiLightSourceType};
 
 use super::GltfImporter;
@@ -13,12 +13,12 @@ use super::GltfImporter;
 pub struct ImportLights(pub Vec<AiLight>, pub HashMap<String, usize>);
 impl GltfImporter {
     #[cfg(not(feature = "KHR_materials_common"))]
-    pub(crate) fn import_lights(document: &Document) -> Result<ImportLights, AiReadError> {
+    pub(crate) fn import_lights(document: &Document) -> Result<ImportLights, GLTFImportError> {
         //@todo: Handle KHR_materials_common ext for lights
         Ok(ImportLights(Vec::new(), HashMap::new()))
     }
     #[cfg(feature = "KHR_materials_common")]
-    pub(crate) fn import_lights(document: &Document) -> Result<ImportLights, AiReadError> {
+    pub(crate) fn import_lights(document: &Document) -> Result<ImportLights, GLTFImportError> {
         let asset_lights: Vec<Light<'_>> =
             document.lights().map(|x| x.collect()).unwrap_or_default();
         let mut lights: Vec<AiLight> = Vec::with_capacity(asset_lights.len());
@@ -31,9 +31,7 @@ impl GltfImporter {
                 .unwrap_or(format!("{}", index));
             light_map.insert(name.clone(), index);
             if light_map.contains_key(&name) {
-                return Err(AiReadError::FileFormatError(Box::new(
-                    super::error::Error::DuplicateName,
-                )));
+                return Err(GLTFImportError::DuplicateName);
             }
             light_map.insert(name.clone(), index);
             let mut ai_light = AiLight {

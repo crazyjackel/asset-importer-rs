@@ -13,7 +13,7 @@ use gltf_v1::json::{
 
 use crate::exporter::{
     GltfExporter,
-    error::Error,
+    error::GltfExportError,
     generate_unique_name,
     mesh::{export_float, export_vector_3d, export_vector_4d},
 };
@@ -24,7 +24,7 @@ impl GltfExporter {
         scene: &AiScene,
         root: &mut Root,
         body_buffer_data: &mut Vec<u8>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), GltfExportError> {
         let mut unique_names_map = HashMap::new();
         for i in 0..scene.animations.len() {
             let animation = &scene.animations[i];

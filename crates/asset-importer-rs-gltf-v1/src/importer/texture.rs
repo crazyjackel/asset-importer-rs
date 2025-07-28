@@ -2,17 +2,16 @@ use std::{collections::HashMap, path::Path};
 
 use gltf_v1::{buffer, document::Document, json::map::IndexMap};
 
-use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{AiTexel, AiTexture, AiTextureFormat};
 
-use super::GltfImporter;
+use super::{GltfImporter, error::GLTFImportError};
 
 impl GltfImporter {
     pub(crate) fn import_embedded_textures(
         document: &Document,
         base: Option<&Path>,
         buffer_data: &IndexMap<String, buffer::Data>,
-    ) -> Result<(Vec<AiTexture>, HashMap<String, usize>), AiReadError> {
+    ) -> Result<(Vec<AiTexture>, HashMap<String, usize>), GLTFImportError> {
         let mut textures: Vec<AiTexture> = Vec::new();
         let mut embedded_tex_ids: HashMap<String, usize> = HashMap::new();
         for image in document.images() {
@@ -30,7 +29,7 @@ impl GltfImporter {
             };
             let data: gltf_v1::image::Data =
                 gltf_v1::image::Data::from_source(image.source(), base, buffer_data)
-                    .map_err(|x| AiReadError::FileFormatError(Box::new(x)))?;
+                    .map_err(GLTFImportError::FileFormatError)?;
 
             let texels = get_texels(&data);
             textures.push(AiTexture::new(
