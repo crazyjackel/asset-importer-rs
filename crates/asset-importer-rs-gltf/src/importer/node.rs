@@ -6,13 +6,14 @@ use std::{
 use gltf::{Document, Node, Semantic, buffer};
 use serde_json::Value;
 
-use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{
     AiBone, AiCamera, AiLight, AiMatrix4x4, AiMesh, AiMetadataEntry, AiNode, AiNodeTree, AiReal,
     AiVertexWeight,
 };
 
-use super::{gltf2_importer::Gltf2Importer, gltf2_importer_mesh::ExtractData};
+use crate::importer::error::Gltf2ImportError;
+
+use super::{importer::Gltf2Importer, mesh::ExtractData};
 
 impl Gltf2Importer {
     pub(crate) fn import_nodes(
@@ -23,7 +24,7 @@ impl Gltf2Importer {
         remap_table: &[Vec<usize>],
         lights: &mut [AiLight],
         cameras: &mut [AiCamera],
-    ) -> Result<(AiNodeTree, String), AiReadError> {
+    ) -> Result<(AiNodeTree, String), Gltf2ImportError> {
         let mut default_scene = document.default_scene();
         if default_scene.is_none() {
             default_scene = document.scenes().next();
@@ -101,7 +102,7 @@ fn import_node<'a>(
     remap_table: &[Vec<usize>],
     lights: &mut [AiLight],
     cameras: &mut [AiCamera],
-) -> Result<AiNodeTree, AiReadError> {
+) -> Result<AiNodeTree, Gltf2ImportError> {
     let mut ai_node_tree = AiNodeTree::default();
     let mut node_queue: VecDeque<(gltf::Node<'_>, Option<usize>)> = VecDeque::new();
     node_queue.push_back((root_node, None));
@@ -163,10 +164,9 @@ fn import_node<'a>(
                         if let Some((acc_weight, _)) = attr_weights.iter().find(|x| x.1 == index) {
                             let joint_data: Vec<[u32; 4]> = match acc_joint.data_type() {
                                 gltf::accessor::DataType::U8 => {
-                                    let data_joint: Vec<[u8; 4]> =
-                                        acc_joint.extract_data(buffer_data, remap_table).map_err(
-                                            |err| AiReadError::FileFormatError(Box::new(err)),
-                                        )?;
+                                    let data_joint: Vec<[u8; 4]> = acc_joint
+                                        .extract_data(buffer_data, remap_table)
+                                        .map_err(Gltf2ImportError::MeshError)?;
 
                                     data_joint
                                         .iter()
@@ -181,10 +181,9 @@ fn import_node<'a>(
                                         .collect()
                                 }
                                 gltf::accessor::DataType::U16 => {
-                                    let data_joint: Vec<[u16; 4]> =
-                                        acc_joint.extract_data(buffer_data, remap_table).map_err(
-                                            |err| AiReadError::FileFormatError(Box::new(err)),
-                                        )?;
+                                    let data_joint: Vec<[u16; 4]> = acc_joint
+                                        .extract_data(buffer_data, remap_table)
+                                        .map_err(Gltf2ImportError::MeshError)?;
 
                                     data_joint
                                         .iter()
@@ -205,10 +204,9 @@ fn import_node<'a>(
 
                             let weight_data: Vec<[AiReal; 4]> = match acc_weight.data_type() {
                                 gltf::accessor::DataType::U8 => {
-                                    let data_weight: Vec<[u8; 4]> =
-                                        acc_weight.extract_data(buffer_data, remap_table).map_err(
-                                            |err| AiReadError::FileFormatError(Box::new(err)),
-                                        )?;
+                                    let data_weight: Vec<[u8; 4]> = acc_weight
+                                        .extract_data(buffer_data, remap_table)
+                                        .map_err(Gltf2ImportError::MeshError)?;
 
                                     data_weight
                                         .iter()
@@ -223,10 +221,9 @@ fn import_node<'a>(
                                         .collect()
                                 }
                                 gltf::accessor::DataType::U16 => {
-                                    let data_weight: Vec<[u8; 4]> =
-                                        acc_weight.extract_data(buffer_data, remap_table).map_err(
-                                            |err| AiReadError::FileFormatError(Box::new(err)),
-                                        )?;
+                                    let data_weight: Vec<[u8; 4]> = acc_weight
+                                        .extract_data(buffer_data, remap_table)
+                                        .map_err(Gltf2ImportError::MeshError)?;
 
                                     data_weight
                                         .iter()
@@ -241,10 +238,9 @@ fn import_node<'a>(
                                         .collect()
                                 }
                                 gltf::accessor::DataType::F32 => {
-                                    let data_weight: Vec<[f32; 4]> =
-                                        acc_weight.extract_data(buffer_data, remap_table).map_err(
-                                            |err| AiReadError::FileFormatError(Box::new(err)),
-                                        )?;
+                                    let data_weight: Vec<[f32; 4]> = acc_weight
+                                        .extract_data(buffer_data, remap_table)
+                                        .map_err(Gltf2ImportError::MeshError)?;
 
                                     data_weight
                                         .iter()

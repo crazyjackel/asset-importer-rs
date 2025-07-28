@@ -1,18 +1,18 @@
 use std::{
     collections::HashMap,
-    fs::File,
-    io::{self, BufReader, Read, Seek},
+    io::{self, Read, Seek},
     path::Path,
 };
 
 use gltf::{Document, buffer};
 
-use asset_importer_rs_core::{AiReadError, default_file_loader};
 use asset_importer_rs_scene::{AiTexel, AiTexture, AiTextureFormat};
 
 use image::ImageFormat;
 
-use super::gltf2_importer::Gltf2Importer;
+use crate::importer::error::Gltf2ImportError;
+
+use super::importer::Gltf2Importer;
 
 impl Gltf2Importer {
     pub fn from_source<R: Read + Seek, F: Fn(&Path) -> io::Result<R>>(
@@ -135,7 +135,6 @@ impl Gltf2Importer {
                 };
                 image::load_from_memory_with_format(encoded_image, encoded_format)?
             }
-            _ => return Err(gltf::Error::ExternalReferenceInSliceImport),
         };
 
         use image::GenericImageView;
@@ -167,7 +166,7 @@ impl Gltf2Importer {
         base: Option<&Path>,
         loader: &F,
         buffer_data: &[buffer::Data],
-    ) -> Result<(Vec<AiTexture>, HashMap<usize, usize>), AiReadError> {
+    ) -> Result<(Vec<AiTexture>, HashMap<usize, usize>), Gltf2ImportError> {
         let mut textures: Vec<AiTexture> = Vec::new();
         let mut embedded_tex_ids: HashMap<usize, usize> = HashMap::new();
         for image in document.images() {
@@ -201,7 +200,7 @@ impl Gltf2Importer {
 
             let data: gltf::image::Data =
                 Gltf2Importer::from_source(image.source(), base, &loader, buffer_data)
-                    .map_err(|x| AiReadError::FileFormatError(Box::new(x)))?;
+                    .map_err(Gltf2ImportError::FileFormatError)?;
 
             let texels: Vec<AiTexel> = match data.format {
                 gltf::image::Format::R8 => data
@@ -294,12 +293,17 @@ impl Gltf2Importer {
     }
 }
 
-#[test]
-fn test_gltf2_texture_import() {
-    let binding = std::env::current_dir().expect("Failed to get the current executable path");
-    let exe_path = binding.as_path();
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    let gltf_data = r#"{
+    use asset_importer_rs_core::default_file_loader;
+    #[test]
+    fn test_gltf2_texture_import() {
+        let binding = std::env::current_dir().expect("Failed to get the current executable path");
+        let exe_path = binding.as_path();
+
+        let gltf_data = r#"{
             "asset": {
                 "version": "2.0"
             },
@@ -314,14 +318,15 @@ fn test_gltf2_texture_import() {
                 }
             ]
         }"#;
-    let scene = serde_json::from_str(gltf_data).unwrap();
-    let document = Document::from_json_without_validation(scene);
-    let (embedded_textures, _tex_ids) = Gltf2Importer::import_embedded_textures(
-        &document,
-        Some(exe_path),
-        &default_file_loader,
-        &[],
-    )
-    .unwrap();
-    assert_eq!(1, embedded_textures.len());
+        let scene = serde_json::from_str(gltf_data).unwrap();
+        let document = Document::from_json_without_validation(scene);
+        let (embedded_textures, _tex_ids) = Gltf2Importer::import_embedded_textures(
+            &document,
+            Some(exe_path),
+            &default_file_loader,
+            &[],
+        )
+        .unwrap();
+        assert_eq!(1, embedded_textures.len());
+    }
 }

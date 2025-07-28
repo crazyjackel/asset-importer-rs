@@ -12,6 +12,8 @@ use gltf_v1::{
     json::{Buffer, Scene, StringIndex, buffer::BufferType, validation::Checked},
 };
 
+pub use error::GltfExportError;
+
 mod anim;
 mod error;
 mod material;
@@ -41,13 +43,15 @@ impl GltfExporter {
 }
 
 impl AiExport for GltfExporter {
+    type Error = GltfExportError;
+
     fn export_file_dyn(
         &self,
         scene: &AiScene,
         path: &Path,
         properties: &ExportProperties,
         exporter: &DataExporter<'_>,
-    ) -> Result<(), AiExportError> {
+    ) -> Result<(), GltfExportError> {
         //@TODO: GLTF should always have large meshes split on export.
         let mut body_buffer_data: Vec<u8> = Vec::new();
 
@@ -74,9 +78,7 @@ impl AiExport for GltfExporter {
             ..Default::default()
         };
 
-        let material_index_map = self
-            .export_materials(scene, &mut root)
-            .map_err(|e| AiExportError::ConversionError(Box::new(e)))?;
+        let material_index_map = self.export_materials(scene, &mut root)?;
 
         let config_epsilon = properties
             .get(AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON)
@@ -89,9 +91,7 @@ impl AiExport for GltfExporter {
             })
             .unwrap_or(AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON_DEFAULT);
 
-        let mesh_index_map = self
-            .export_nodes(scene, &mut root, config_epsilon)
-            .map_err(|e| AiExportError::ConversionError(Box::new(e)))?;
+        let mesh_index_map = self.export_nodes(scene, &mut root, config_epsilon)?;
 
         self.export_meshes(
             scene,
@@ -99,13 +99,10 @@ impl AiExport for GltfExporter {
             &mut body_buffer_data,
             &mesh_index_map,
             &material_index_map,
-        )
-        .map_err(|e| AiExportError::ConversionError(Box::new(e)))?;
+        )?;
 
         //export animations
-        self.export_animations(scene, &mut root, &mut body_buffer_data)
-            .map_err(|e| AiExportError::ConversionError(Box::new(e)))?;
-
+        self.export_animations(scene, &mut root, &mut body_buffer_data)?;
         //export scene
         let mut scene_name = scene.name.clone();
         if scene_name.is_empty() {
@@ -140,17 +137,14 @@ impl AiExport for GltfExporter {
                     },
                 );
 
-                let mut writer = exporter(bin.as_path())
-                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
+                let mut writer = exporter(bin.as_path()).map_err(GltfExportError::Io)?;
                 writer
                     .write_all(&body_buffer_data)
-                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
+                    .map_err(GltfExportError::Io)?;
 
                 let gltf = path.with_extension("gltf");
-                let writer = exporter(gltf.as_path())
-                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
-                serde_json::to_writer_pretty(writer, &root)
-                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
+                let writer = exporter(gltf.as_path()).map_err(GltfExportError::Io)?;
+                serde_json::to_writer_pretty(writer, &root).map_err(GltfExportError::Json)?;
             }
             Output::Binary => {
                 let length = body_buffer_data.len();
@@ -170,8 +164,7 @@ impl AiExport for GltfExporter {
                     },
                 );
 
-                let json_string = serde_json::to_string(&root)
-                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
+                let json_string = serde_json::to_string(&root).map_err(GltfExportError::Json)?;
 
                 let glb = Glb {
                     header: Header::default(), //Header is calculated by 'to_writer'
@@ -180,10 +173,8 @@ impl AiExport for GltfExporter {
                 };
 
                 let glb_path: std::path::PathBuf = path.with_extension("glb");
-                let writer = exporter(glb_path.as_path())
-                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
-                glb.to_writer(writer)
-                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
+                let writer = exporter(glb_path.as_path()).map_err(GltfExportError::Io)?;
+                glb.to_writer(writer).map_err(GltfExportError::FileFormat)?;
             }
         }
         Ok(())

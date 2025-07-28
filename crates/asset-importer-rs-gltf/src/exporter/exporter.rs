@@ -1,17 +1,17 @@
-use std::{borrow::Cow, collections::HashMap, fs, io::Write, path::Path};
+use std::{borrow::Cow, collections::HashMap, io::Write, path::Path};
 
 use gltf::json::{Buffer, Index, Scene};
 
 use asset_importer_rs_core::{
     AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON, AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON_DEFAULT,
     AI_CONFIG_EXPORT_GLTF_UNLIMITED_SKINNING_BONES_PER_VERTEX,
-    AI_CONFIG_USE_GLTF_PBR_SPECULAR_GLOSSINESS, AiExport, AiExportError, DataExporter,
-    ExportProperties, ExportProperty, GLTF2_NODE_IN_TRS, GLTF2_TARGET_NORMAL_EXP,
+    AI_CONFIG_USE_GLTF_PBR_SPECULAR_GLOSSINESS, AiExport, DataExporter, ExportProperties,
+    ExportProperty, GLTF2_NODE_IN_TRS, GLTF2_TARGET_NORMAL_EXP,
 };
 
 use asset_importer_rs_scene::{AiMetadataEntry, AiScene, AiTextureFormat};
 
-use super::gltf2_importer_metadata::AI_METADATA_SOURCE_COPYRIGHT;
+use crate::{AI_METADATA_SOURCE_COPYRIGHT, exporter::error::Gltf2ExportError};
 
 pub const APPROVED_FORMATS: &[AiTextureFormat] = &[AiTextureFormat::PNG, AiTextureFormat::JPEG];
 
@@ -38,13 +38,15 @@ impl Gltf2Exporter {
 }
 
 impl AiExport for Gltf2Exporter {
+    type Error = Gltf2ExportError;
+
     fn export_file_dyn(
         &self,
         scene: &AiScene,
         path: &Path,
         properties: &ExportProperties,
         exporter: &DataExporter<'_>,
-    ) -> Result<(), AiExportError> {
+    ) -> Result<(), Self::Error> {
         //GLTF Root
         let mut root = gltf::json::Root::default();
         //Buffer Data for Accessors
@@ -169,17 +171,14 @@ impl AiExport for Gltf2Exporter {
 
                 //Export GLTF
                 let gltf = path.with_extension("gltf");
-                let writer = exporter(gltf.as_path())
-                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
-                serde_json::to_writer_pretty(writer, &root)
-                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
+                let writer = exporter(gltf.as_path()).map_err(Gltf2ExportError::FileOpen)?;
+                serde_json::to_writer_pretty(writer, &root).map_err(Gltf2ExportError::Json)?;
 
                 //Export Bin
-                let mut writer = exporter(bin.as_path())
-                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
+                let mut writer = exporter(bin.as_path()).map_err(Gltf2ExportError::FileOpen)?;
                 writer
                     .write_all(&body_buffer_data)
-                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
+                    .map_err(Gltf2ExportError::FileOpen)?;
 
                 //Export Textures
                 for texture in &scene.textures {
@@ -188,12 +187,12 @@ impl AiExport for Gltf2Exporter {
                         texture.filename,
                         texture.ach_format_hint.get_extension()
                     ));
-                    let mut writer = exporter(image.as_path())
-                        .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
+                    let mut writer =
+                        exporter(image.as_path()).map_err(Gltf2ExportError::FileOpen)?;
                     let export = &texture.export(APPROVED_FORMATS).unwrap();
                     writer
                         .write_all(&export.data)
-                        .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
+                        .map_err(Gltf2ExportError::FileOpen)?;
                 }
             }
             Output::Binary => {
@@ -209,8 +208,7 @@ impl AiExport for Gltf2Exporter {
                     uri: Default::default(),
                 });
 
-                let json_string = serde_json::to_string(&root)
-                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
+                let json_string = serde_json::to_string(&root).map_err(Gltf2ExportError::Json)?;
                 let json_offset = json_string.len();
 
                 let glb = gltf::binary::Glb {
@@ -220,17 +218,16 @@ impl AiExport for Gltf2Exporter {
                         // N.B., the size of binary glTF file is limited to range of `u32`.
                         length: (json_offset + length)
                             .try_into()
-                            .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?,
+                            .map_err(Gltf2ExportError::IntConversion)?,
                     },
                     bin: Some(Cow::Owned(bin)),
                     json: Cow::Owned(json_string.into_bytes()),
                 };
 
                 let glb_path: std::path::PathBuf = path.with_extension("glb");
-                let writer = exporter(glb_path.as_path())
-                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
+                let writer = exporter(glb_path.as_path()).map_err(Gltf2ExportError::FileOpen)?;
                 glb.to_writer(writer)
-                    .map_err(|x| AiExportError::FileWriteError(Box::new(x)))?;
+                    .map_err(Gltf2ExportError::FileFormat)?;
             }
         }
         Ok(())

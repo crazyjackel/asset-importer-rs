@@ -1,12 +1,13 @@
 use gltf::{Document, animation::Interpolation, buffer};
 
-use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{
     AiAnimInterpolation, AiAnimation, AiMeshMorphAnim, AiMeshMorphKey, AiNodeAnim, AiQuatKey,
     AiQuaternion, AiReal, AiVector3D, AiVectorKey,
 };
 
-use super::{gltf2_importer::Gltf2Importer, gltf2_importer_mesh::ExtractData};
+use crate::importer::error::Gltf2ImportError;
+
+use super::{importer::Gltf2Importer, mesh::ExtractData};
 
 const MILLISECONDS_TO_SECONDS: f64 = 1000.0;
 
@@ -14,7 +15,7 @@ impl Gltf2Importer {
     pub(crate) fn import_animations(
         document: &Document,
         buffer_data: &[buffer::Data],
-    ) -> Result<Vec<AiAnimation>, AiReadError> {
+    ) -> Result<Vec<AiAnimation>, Gltf2ImportError> {
         let mut animations: Vec<AiAnimation> = Vec::new(); //Final Animations to return
         for animation in document.animations() {
             let mut ai_anim = AiAnimation {
@@ -41,11 +42,11 @@ impl Gltf2Importer {
 
                         let times: Vec<f32> = input
                             .extract_data(buffer_data, None)
-                            .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            .map_err(Gltf2ImportError::MeshError)?;
 
                         let output_translation: Vec<[f32; 3]> = output
                             .extract_data(buffer_data, None)
-                            .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            .map_err(Gltf2ImportError::MeshError)?;
 
                         let translation: Vec<AiVector3D> = output_translation
                             .iter()
@@ -90,13 +91,13 @@ impl Gltf2Importer {
 
                         let times: Vec<f32> = input
                             .extract_data(buffer_data, None)
-                            .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            .map_err(Gltf2ImportError::MeshError)?;
 
                         let rotation_opt: Option<Vec<AiQuaternion>> = match output.data_type() {
                             gltf::accessor::DataType::I8 => {
                                 let output_rotation: Vec<[i8; 4]> = output
                                     .extract_data(buffer_data, None)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                    .map_err(Gltf2ImportError::MeshError)?;
                                 Some(
                                     output_rotation
                                         .iter()
@@ -113,7 +114,7 @@ impl Gltf2Importer {
                             gltf::accessor::DataType::U8 => {
                                 let output_rotation: Vec<[u8; 4]> = output
                                     .extract_data(buffer_data, None)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                    .map_err(Gltf2ImportError::MeshError)?;
                                 Some(
                                     output_rotation
                                         .iter()
@@ -130,7 +131,7 @@ impl Gltf2Importer {
                             gltf::accessor::DataType::I16 => {
                                 let output_rotation: Vec<[i16; 4]> = output
                                     .extract_data(buffer_data, None)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                    .map_err(Gltf2ImportError::MeshError)?;
                                 Some(
                                     output_rotation
                                         .iter()
@@ -147,7 +148,7 @@ impl Gltf2Importer {
                             gltf::accessor::DataType::U16 => {
                                 let output_rotation: Vec<[u16; 4]> = output
                                     .extract_data(buffer_data, None)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                    .map_err(Gltf2ImportError::MeshError)?;
                                 Some(
                                     output_rotation
                                         .iter()
@@ -164,7 +165,7 @@ impl Gltf2Importer {
                             gltf::accessor::DataType::F32 => {
                                 let output_rotation: Vec<[f32; 4]> = output
                                     .extract_data(buffer_data, None)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                    .map_err(Gltf2ImportError::MeshError)?;
                                 Some(
                                     output_rotation
                                         .iter()
@@ -216,11 +217,11 @@ impl Gltf2Importer {
 
                         let times: Vec<f32> = input
                             .extract_data(buffer_data, None)
-                            .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            .map_err(Gltf2ImportError::MeshError)?;
 
                         let output_scale: Vec<[f32; 3]> = output
                             .extract_data(buffer_data, None)
-                            .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            .map_err(Gltf2ImportError::MeshError)?;
 
                         let scale: Vec<AiVector3D> = output_scale
                             .iter()
@@ -266,14 +267,13 @@ impl Gltf2Importer {
 
                         let times: Vec<f32> = input
                             .extract_data(buffer_data, None)
-                            .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            .map_err(Gltf2ImportError::MeshError)?;
 
                         let values: Vec<AiReal> = match output.data_type() {
                             gltf::accessor::DataType::I8 => {
-                                let output_data: Vec<i8> =
-                                    output.extract_data(buffer_data, None).map_err(|err| {
-                                        AiReadError::FileFormatError(Box::new(err))
-                                    })?;
+                                let output_data: Vec<i8> = output
+                                    .extract_data(buffer_data, None)
+                                    .map_err(Gltf2ImportError::MeshError)?;
 
                                 output_data
                                     .iter()
@@ -281,17 +281,16 @@ impl Gltf2Importer {
                                     .collect()
                             }
                             gltf::accessor::DataType::U8 => {
-                                let output_data: Vec<u8> =
-                                    output.extract_data(buffer_data, None).map_err(|err| {
-                                        AiReadError::FileFormatError(Box::new(err))
-                                    })?;
+                                let output_data: Vec<u8> = output
+                                    .extract_data(buffer_data, None)
+                                    .map_err(Gltf2ImportError::MeshError)?;
 
                                 output_data.iter().map(|x| (*x as AiReal / 255.0)).collect()
                             }
                             gltf::accessor::DataType::I16 => {
                                 let output_data: Vec<i16> = output
                                     .extract_data(buffer_data, None)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                    .map_err(Gltf2ImportError::MeshError)?;
 
                                 output_data
                                     .iter()
@@ -301,7 +300,7 @@ impl Gltf2Importer {
                             gltf::accessor::DataType::U16 => {
                                 let output_data: Vec<u16> = output
                                     .extract_data(buffer_data, None)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                    .map_err(Gltf2ImportError::MeshError)?;
 
                                 output_data
                                     .iter()
@@ -311,7 +310,7 @@ impl Gltf2Importer {
                             gltf::accessor::DataType::U32 | gltf::accessor::DataType::F32 => {
                                 let output_data: Vec<f32> = output
                                     .extract_data(buffer_data, None)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                    .map_err(Gltf2ImportError::MeshError)?;
 
                                 output_data.iter().map(|x| (*x as AiReal)).collect()
                             }

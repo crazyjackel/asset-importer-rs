@@ -5,7 +5,7 @@ use gltf_v1::json::{Node, Root, StringIndex};
 
 use crate::{
     GltfExporter,
-    exporter::{error::Error, generate_unique_name},
+    exporter::{error::GltfExportError, generate_unique_name},
 };
 
 impl GltfExporter {
@@ -14,7 +14,7 @@ impl GltfExporter {
         scene: &AiScene,
         root: &mut Root,
         config_epsilon: f32,
-    ) -> Result<HashMap<usize, String>, Error> {
+    ) -> Result<HashMap<usize, String>, GltfExportError> {
         if scene.nodes.arena.is_empty() {
             return Ok(HashMap::new());
         }

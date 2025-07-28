@@ -2,8 +2,7 @@ use std::collections::HashMap;
 
 use gltf_v1::document::Document;
 
-use super::GltfImporter;
-use asset_importer_rs_core::AiReadError;
+use super::{GltfImporter, error::GLTFImportError};
 use asset_importer_rs_scene::{
     AiColor4D, AiMaterial, AiPropertyTypeInfo, AiTextureType,
     matkey::{
@@ -17,7 +16,7 @@ impl GltfImporter {
     pub(crate) fn import_embedded_materials(
         document: &Document,
         embedded_tex_ids: &HashMap<String, usize>,
-    ) -> Result<(Vec<AiMaterial>, HashMap<String, usize>), AiReadError> {
+    ) -> Result<(Vec<AiMaterial>, HashMap<String, usize>), GLTFImportError> {
         let mut materials: Vec<AiMaterial> = Vec::with_capacity(document.materials().len());
         let mut material_index_map: HashMap<String, usize> = HashMap::new();
         for material in document.materials() {

@@ -1,4 +1,4 @@
-use asset_importer_rs_core::{AiExportError, AiReadError, ExportFormatEntry, Exporter, Importer};
+use asset_importer_rs_core::AiExportError;
 #[cfg(feature = "gltf2")]
 use asset_importer_rs_gltf::{Gltf2Exporter, Gltf2Importer, Output as Gltf2Output};
 #[cfg(feature = "gltf")]
@@ -8,17 +8,27 @@ use asset_importer_rs_obj::ObjImporter;
 use asset_importer_rs_scene::AiScene;
 use enumflags2::BitFlags;
 
+pub use crate::error::AiImporterError;
+use crate::exporter::{ExportFormatEntry, Exporter};
+pub use crate::importer::Importer;
+pub use crate::wrapper::{AiExportWrapper, AiImportWrapper};
+
+mod error;
+mod exporter;
+mod importer;
+mod wrapper;
+
 pub struct AssetImporter;
 
 impl AssetImporter {
     pub fn importer() -> Importer {
         Importer::new(vec![
-            #[cfg(feature = "gltf2")]
-            Box::new(Gltf2Importer::new()),
-            #[cfg(feature = "gltf")]
-            Box::new(GltfImporter::new()),
             #[cfg(feature = "obj")]
-            Box::new(ObjImporter::new()),
+            Box::new(AiImportWrapper::new(ObjImporter::new())),
+            #[cfg(feature = "gltf2")]
+            Box::new(AiImportWrapper::new(Gltf2Importer::new())),
+            #[cfg(feature = "gltf")]
+            Box::new(AiImportWrapper::new(GltfImporter::new())),
         ])
     }
 
@@ -26,7 +36,9 @@ impl AssetImporter {
         Exporter::new(vec![
             #[cfg(feature = "gltf2")]
             ExportFormatEntry::new(
-                Box::new(Gltf2Exporter::new(Gltf2Output::Standard)),
+                Box::new(AiExportWrapper::new(Gltf2Exporter::new(
+                    Gltf2Output::Standard,
+                ))),
                 "ggltf2".to_string(),
                 "GL Transmission Format v. 2".to_string(),
                 "gltf".to_string(),
@@ -34,7 +46,9 @@ impl AssetImporter {
             ),
             #[cfg(feature = "gltf2")]
             ExportFormatEntry::new(
-                Box::new(Gltf2Exporter::new(Gltf2Output::Binary)),
+                Box::new(AiExportWrapper::new(Gltf2Exporter::new(
+                    Gltf2Output::Binary,
+                ))),
                 "glb2".to_string(),
                 "GL Transmission Format v. 2 (binary)".to_string(),
                 "glb".to_string(),
@@ -42,7 +56,9 @@ impl AssetImporter {
             ),
             #[cfg(feature = "gltf")]
             ExportFormatEntry::new(
-                Box::new(GltfExporter::new(GltfOutput::Standard)),
+                Box::new(AiExportWrapper::new(GltfExporter::new(
+                    GltfOutput::Standard,
+                ))),
                 "gltf".to_string(),
                 "GL Transmission Format".to_string(),
                 "gltf".to_string(),
@@ -50,7 +66,7 @@ impl AssetImporter {
             ),
             #[cfg(feature = "gltf")]
             ExportFormatEntry::new(
-                Box::new(GltfExporter::new(GltfOutput::Binary)),
+                Box::new(AiExportWrapper::new(GltfExporter::new(GltfOutput::Binary))),
                 "glb".to_string(),
                 "GL Transmission Format (binary)".to_string(),
                 "glb".to_string(),
@@ -59,7 +75,7 @@ impl AssetImporter {
         ])
     }
 
-    pub fn from_file(file_path: &str) -> Result<AiScene, AiReadError> {
+    pub fn from_file(file_path: &str) -> Result<AiScene, AiImporterError> {
         let importer = AssetImporter::importer();
         importer.import_file(file_path)
     }

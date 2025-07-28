@@ -1,14 +1,13 @@
-use std::io::{self, BufReader, Read, Seek};
+use std::io::{self, Read, Seek};
 
-use std::fs::File;
 use std::path::Path;
 
 use gltf::{Document, Gltf, buffer};
 
-use asset_importer_rs_core::{
-    AiImporter, AiImporterDesc, AiImporterFlags, AiImporterInfo, AiReadError,
-};
+use asset_importer_rs_core::{AiImporter, AiImporterDesc, AiImporterFlags, AiImporterInfo};
 use asset_importer_rs_scene::{AiMaterial, AiScene, AiSceneFlag};
+
+use crate::importer::error::Gltf2ImportError;
 
 #[derive(Debug, Default)]
 pub struct Gltf2Importer;
@@ -108,6 +107,8 @@ impl AiImporterInfo for Gltf2Importer {
 }
 
 impl AiImporter for Gltf2Importer {
+    type Error = Gltf2ImportError;
+
     fn can_read_dyn<'data>(
         &self,
         path: &Path,
@@ -144,18 +145,19 @@ impl AiImporter for Gltf2Importer {
         &self,
         path: &Path,
         loader: &dyn Fn(&Path) -> io::Result<Box<dyn asset_importer_rs_core::ReadSeek + 'data>>,
-    ) -> Result<AiScene, AiReadError> {
+    ) -> Result<AiScene, Gltf2ImportError> {
         //Collect File Info
         let base = path.parent().unwrap_or_else(|| Path::new("./"));
-        let reader = loader(path).map_err(|x| AiReadError::FileOpenError(Box::new(x)))?;
+        let reader =
+            loader(path).map_err(|x| Gltf2ImportError::FileOpenError(x, path.to_path_buf()))?;
 
         //Load Gltf Info
         let Gltf { document, blob } =
-            Gltf::from_reader(reader).map_err(|x| AiReadError::FileFormatError(Box::new(x)))?;
+            Gltf::from_reader(reader).map_err(Gltf2ImportError::FileFormatError)?;
 
         //@todo: Buffer Data loads all Buffer Data, it would be better to load on an "as-needed case".
         let buffer_data = Gltf2Importer::import_buffers(&document, Some(base), &loader, blob)
-            .map_err(|x| AiReadError::FileFormatError(Box::new(x)))?;
+            .map_err(Gltf2ImportError::FileFormatError)?;
 
         //import textures
         let (embedded_textures, embedded_tex_ids) =

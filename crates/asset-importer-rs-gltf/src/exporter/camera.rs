@@ -6,10 +6,11 @@ use gltf::json::{
     validation::Checked,
 };
 
-use asset_importer_rs_core::AiExportError;
 use asset_importer_rs_scene::AiScene;
 
-use super::gltf2_exporter::{Gltf2Exporter, generate_unique_name};
+use crate::exporter::error::Gltf2ExportError;
+
+use super::exporter::{Gltf2Exporter, generate_unique_name};
 
 impl Gltf2Exporter {
     pub(crate) fn export_cameras(
@@ -17,7 +18,7 @@ impl Gltf2Exporter {
         scene: &AiScene,
         root: &mut Root,
         unique_names_map: &mut HashMap<String, u32>,
-    ) -> Result<HashMap<String, usize>, AiExportError> {
+    ) -> Result<HashMap<String, usize>, Gltf2ExportError> {
         let mut camera_name_to_index: HashMap<String, usize> = HashMap::new();
         for (index, ai_camera) in scene.cameras.iter().enumerate() {
             let orthographic = if ai_camera.orthographic_width > 0.0 {

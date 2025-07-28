@@ -17,13 +17,14 @@ use gltf::{
     mesh::Mode,
 };
 
-use asset_importer_rs_core::AiExportError;
 use asset_importer_rs_scene::{
     AiColor4D, AiMatrix4x4, AiPrimitiveType, AiQuaternion, AiReal, AiScene, AiVector2D, AiVector3D,
 };
 use serde_json::{Number, Value};
 
-use super::gltf2_exporter::{Gltf2Exporter, generate_unique_name};
+use crate::exporter::error::Gltf2ExportError;
+
+use super::exporter::{Gltf2Exporter, generate_unique_name};
 
 impl Gltf2Exporter {
     pub(crate) fn export_meshes(
@@ -37,7 +38,7 @@ impl Gltf2Exporter {
         //export_anim_sparse: bool,
         export_anim_normals: bool,
         //export_skeleton: bool,
-    ) -> Result<(), AiExportError> {
+    ) -> Result<(), Gltf2ExportError> {
         let create_skin = scene.meshes.iter().any(|x| !x.bones.is_empty());
         let mut inverse_bind_matrices_data: Vec<AiMatrix4x4> = Vec::new();
         let mut skin = if create_skin {

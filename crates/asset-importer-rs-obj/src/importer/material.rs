@@ -26,7 +26,7 @@ impl ObjImporter {
         path: &Path,
         materials: Vec<Material>,
         loader: &DataLoader<'_>,
-    ) -> Result<ImportMaterials, AiReadError> {
+    ) -> Result<ImportMaterials, ObjImportError> {
         let mut ai_textures: Vec<AiTexture> = Vec::new();
         let mut ai_materials: Vec<AiMaterial> = Vec::with_capacity(materials.len());
         let mut textures: HashMap<String, usize> = HashMap::new();
@@ -242,21 +242,16 @@ fn import_texture(
     loader: &DataLoader<'_>,
     textures: &mut HashMap<String, usize>,
     texture: &String,
-) -> Result<(String, Option<AiTexture>), AiReadError> {
+) -> Result<(String, Option<AiTexture>), ObjImportError> {
     let (uri, ai_texture) = if !textures.contains_key(texture) {
         // Load Texture
         let new_texture = texture.replace("\\", "/");
         let file_path = path.with_file_name(new_texture);
-        let mut data = loader(&file_path).map_err(|x| {
-            AiReadError::FileFormatError(Box::new(ObjImportError::FileOpenError(
-                x,
-                file_path.clone(),
-            )))
-        })?;
+        let mut data =
+            loader(&file_path).map_err(|x| ObjImportError::FileOpenError(x, file_path.clone()))?;
         let mut buffer: Vec<u8> = Vec::new();
-        data.read_to_end(&mut buffer).map_err(|x| {
-            AiReadError::FileFormatError(Box::new(ObjImportError::FileReadError(x)))
-        })?;
+        data.read_to_end(&mut buffer)
+            .map_err(|x| ObjImportError::FileReadError(x))?;
 
         //Guess Format
         let format = match file_path.extension().and_then(|ext| ext.to_str()) {
@@ -267,19 +262,19 @@ fn import_texture(
             _ => image::guess_format(&buffer),
         }
         .map_err(|x| {
-            AiReadError::FileFormatError(Box::new(ObjImportError::UnsupportedFileFormat(
+            ObjImportError::UnsupportedFileFormat(
                 x,
                 file_path
                     .extension()
                     .unwrap_or_default()
                     .to_string_lossy()
                     .to_string(),
-            )))
+            )
         })?;
 
         //Load Image
         let texture_image = image::load_from_memory_with_format(&buffer, format)
-            .map_err(|x| AiReadError::FileFormatError(Box::new(ObjImportError::ImageLoadError(x))))?
+            .map_err(ObjImportError::ImageLoadError)?
             .to_rgba8();
 
         //Convert to AiTexture
@@ -639,8 +634,8 @@ mod tests {
 
         assert!(result.is_err());
         match result.unwrap_err() {
-            AiReadError::FileFormatError(_) => {}
-            _ => panic!("Expected FileFormatError"),
+            ObjImportError::FileOpenError(_, _) => {}
+            _ => panic!("Expected FileOpenError"),
         }
     }
 

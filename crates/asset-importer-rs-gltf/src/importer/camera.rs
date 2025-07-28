@@ -1,12 +1,13 @@
 use gltf::{Camera, Document};
 
-use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{AiCamera, AiVector3D};
 
-use super::gltf2_importer::Gltf2Importer;
+use crate::importer::error::Gltf2ImportError;
+
+use super::importer::Gltf2Importer;
 
 impl Gltf2Importer {
-    pub(crate) fn import_cameras(document: &Document) -> Result<Vec<AiCamera>, AiReadError> {
+    pub(crate) fn import_cameras(document: &Document) -> Result<Vec<AiCamera>, Gltf2ImportError> {
         let asset_cameras: Vec<Camera<'_>> = document.cameras().collect();
         let mut cameras: Vec<AiCamera> = Vec::with_capacity(asset_cameras.len());
         for camera in asset_cameras {
@@ -48,9 +49,13 @@ impl Gltf2Importer {
     }
 }
 
-#[test]
-fn test_gltf2_camera_import() {
-    let gltf_data = r#"{
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_gltf2_camera_import() {
+        let gltf_data = r#"{
             "cameras" : [
                 {
                 "type": "perspective",
@@ -75,8 +80,9 @@ fn test_gltf2_camera_import() {
                 "version" : "2.0"
             }
         }"#;
-    let scene = serde_json::from_str(gltf_data).unwrap();
-    let document = Document::from_json_without_validation(scene);
-    let cameras = Gltf2Importer::import_cameras(&document).unwrap();
-    assert_eq!(2, cameras.len());
+        let scene = serde_json::from_str(gltf_data).unwrap();
+        let document = Document::from_json_without_validation(scene);
+        let cameras = Gltf2Importer::import_cameras(&document).unwrap();
+        assert_eq!(2, cameras.len());
+    }
 }

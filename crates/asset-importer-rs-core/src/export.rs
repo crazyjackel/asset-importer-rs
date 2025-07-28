@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    error::Error,
     fs::File,
     io::{self, BufWriter, Write},
     path::Path,
@@ -23,30 +24,34 @@ pub type ExportProperties = HashMap<String, ExportProperty>;
 pub type DataExporter<'a> = dyn Fn(&Path) -> io::Result<Box<dyn Write + 'a>> + 'a;
 
 pub trait AiExport {
+    type Error: Error;
+
     fn export_file_dyn(
         &self,
         scene: &AiScene,
         path: &Path,
         properties: &ExportProperties,
         exporter: &DataExporter<'_>,
-    ) -> Result<(), AiExportError>;
+    ) -> Result<(), Self::Error>;
 }
 
 pub trait AiExportExt {
+    type Error: Error;
+
     fn export_file<P: AsRef<Path>, R: Write, F: Fn(&Path) -> io::Result<R>>(
         &self,
         scene: &AiScene,
         path: P,
         properties: &ExportProperties,
         exporter: F,
-    ) -> Result<(), AiExportError>;
+    ) -> Result<(), Self::Error>;
 
     fn export_file_default<P>(
         &self,
         scene: &AiScene,
         path: P,
         properties: &ExportProperties,
-    ) -> Result<(), AiExportError>
+    ) -> Result<(), Self::Error>
     where
         P: AsRef<Path>,
     {
@@ -55,13 +60,15 @@ pub trait AiExportExt {
 }
 
 impl<T: AiExport + ?Sized> AiExportExt for T {
+    type Error = T::Error;
+
     fn export_file<P: AsRef<Path>, R: Write, F: Fn(&Path) -> io::Result<R>>(
         &self,
         scene: &AiScene,
         path: P,
         properties: &ExportProperties,
         exporter: F,
-    ) -> Result<(), AiExportError> {
+    ) -> Result<(), Self::Error> {
         self.export_file_dyn(scene, path.as_ref(), properties, &|p| {
             exporter(p).map(|w| Box::new(w) as Box<dyn Write>)
         })

@@ -1,10 +1,12 @@
 use enumflags2::BitFlags;
 
-use crate::{AiExport, AiPostProcessSteps};
+use asset_importer_rs_core::{AiExport, AiPostProcessSteps};
+
+use crate::error::AiExporterError;
 
 pub struct ExportFormatEntry {
     /// The exporter for this format.
-    pub exporter: Box<dyn AiExport>,
+    pub exporter: Box<dyn AiExport<Error = AiExporterError>>,
     /// The name of the format.
     pub name: String,
     /// The description of the format.
@@ -17,7 +19,7 @@ pub struct ExportFormatEntry {
 
 impl ExportFormatEntry {
     pub fn new(
-        exporter: Box<dyn AiExport>,
+        exporter: Box<dyn AiExport<Error = AiExporterError>>,
         name: String,
         description: String,
         extension: String,

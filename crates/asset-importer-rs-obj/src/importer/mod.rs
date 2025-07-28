@@ -10,11 +10,13 @@ use asset_importer_rs_scene::{AiNodeTree, AiScene};
 use enumflags2::BitFlags;
 use tobj::{LoadError, LoadOptions, load_mtl_buf, load_obj_buf};
 
-use crate::importer::{error::ObjImportError, material::ImportMaterials, mesh::ImportMeshes};
+use crate::importer::{material::ImportMaterials, mesh::ImportMeshes};
 
 mod error;
 mod material;
 mod mesh;
+
+pub use error::ObjImportError;
 
 #[derive(Debug, Default)]
 pub struct ObjImporter;
@@ -43,6 +45,8 @@ impl AiImporterInfo for ObjImporter {
 }
 
 impl AiImporter for ObjImporter {
+    type Error = ObjImportError;
+
     fn can_read_dyn(&self, path: &Path, loader: &DataLoader<'_>) -> bool {
         match path.extension() {
             None => {
@@ -91,13 +95,9 @@ impl AiImporter for ObjImporter {
         }
         true
     }
-    fn read_file_dyn(&self, path: &Path, loader: &DataLoader<'_>) -> Result<AiScene, AiReadError> {
-        let reader = loader(path).map_err(|x| {
-            AiReadError::FileOpenError(Box::new(ObjImportError::FileOpenError(
-                x,
-                path.to_path_buf(),
-            )))
-        })?;
+    fn read_file_dyn(&self, path: &Path, loader: &DataLoader<'_>) -> Result<AiScene, Self::Error> {
+        let reader =
+            loader(path).map_err(|x| ObjImportError::FileOpenError(x, path.to_path_buf()))?;
         let mut buf_reader = BufReader::new(reader);
         let options = LoadOptions {
             single_index: true,
@@ -111,10 +111,9 @@ impl AiImporter for ObjImporter {
             let mut mtl_buf_reader = BufReader::new(reader_result);
             load_mtl_buf(&mut mtl_buf_reader)
         })
-        .map_err(|x| AiReadError::FileFormatError(Box::new(ObjImportError::ObjLoadError(x))))?;
+        .map_err(|x| ObjImportError::ObjLoadError(x))?;
 
-        let materials = material_result
-            .map_err(|x| AiReadError::FileFormatError(Box::new(ObjImportError::MtlLoadError(x))))?;
+        let materials = material_result.map_err(|x| ObjImportError::MtlLoadError(x))?;
 
         let name = path.file_stem().and_then(|x| x.to_str()).unwrap_or("scene");
         let mut scene = AiScene {

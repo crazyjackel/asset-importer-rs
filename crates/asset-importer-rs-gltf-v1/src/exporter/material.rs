@@ -16,7 +16,7 @@ use gltf_v1::json::{
     validation::Checked,
 };
 
-use crate::exporter::{error::Error, generate_unique_name};
+use crate::exporter::{error::GltfExportError, generate_unique_name};
 
 use super::GltfExporter;
 
@@ -25,7 +25,7 @@ impl GltfExporter {
         &self,
         scene: &AiScene,
         root: &mut Root,
-    ) -> Result<HashMap<usize, String>, Error> {
+    ) -> Result<HashMap<usize, String>, GltfExportError> {
         let unique_names_map: &mut HashMap<String, u32> = &mut HashMap::new();
         let mut textures_by_path: HashMap<String, String> = HashMap::new();
         let mut material_index_map = HashMap::new();
@@ -37,7 +37,8 @@ impl GltfExporter {
                 .get_property_type_info(matkey::AI_MATKEY_NAME, Some(AiTextureType::None), 0)
                 .and_then(|x| match x {
                     AiPropertyTypeInfo::Binary(binary) => {
-                        let str = String::from_utf8(binary.to_vec()).map_err(Error::UTFError);
+                        let str =
+                            String::from_utf8(binary.to_vec()).map_err(GltfExportError::UTFError);
                         Some(str)
                     }
                     _ => None,

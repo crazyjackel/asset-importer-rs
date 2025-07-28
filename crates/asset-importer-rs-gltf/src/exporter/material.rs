@@ -13,7 +13,6 @@ use gltf::{
     material::AlphaMode,
 };
 
-use asset_importer_rs_core::AiExportError;
 use asset_importer_rs_scene::{
     AiColor3D, AiColor4D, AiMaterial, AiPropertyTypeInfo, AiScene, AiShadingMode, AiTextureType,
     matkey,
@@ -26,15 +25,15 @@ use matkey::{
     AI_MATKEY_ROUGHNESS_FACTOR, AI_MATKEY_SHADING_MODEL, AI_MATKEY_SHININESS, AI_MATKEY_TWOSIDED,
 };
 
-use super::{
-    gltf2_exporter::{APPROVED_FORMATS, Gltf2Exporter, Output, generate_unique_name},
-    gltf2_importer_material::{
-        _AI_MATKEY_GLTF_MAPPINGFILTER_MAG_BASE, _AI_MATKEY_GLTF_MAPPINGFILTER_MIN_BASE,
-        _AI_MATKEY_GLTF_MAPPINGID_BASE, _AI_MATKEY_GLTF_MAPPINGNAME_BASE,
-        _AI_MATKEY_GLTF_SCALE_BASE, AI_MATKEY_GLTF_ALPHACUTOFF,
-        AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE,
-    },
+use super::exporter::{APPROVED_FORMATS, Gltf2Exporter, Output, generate_unique_name};
+
+use crate::{
+    _AI_MATKEY_GLTF_MAPPINGFILTER_MAG_BASE, _AI_MATKEY_GLTF_MAPPINGFILTER_MIN_BASE,
+    _AI_MATKEY_GLTF_MAPPINGID_BASE, _AI_MATKEY_GLTF_MAPPINGNAME_BASE, _AI_MATKEY_GLTF_SCALE_BASE,
+    AI_MATKEY_GLTF_ALPHACUTOFF, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE,
+    exporter::error::Gltf2ExportError,
 };
+
 impl Gltf2Exporter {
     pub(crate) fn export_materials(
         &self,
@@ -43,14 +42,14 @@ impl Gltf2Exporter {
         buffer_data: &mut Vec<u8>,
         unique_names_map: &mut HashMap<String, u32>,
         use_gltf_pbr_specular_glossiness: bool,
-    ) -> Result<(), AiExportError> {
+    ) -> Result<(), Gltf2ExportError> {
         let mut texture_name_to_index_map: HashMap<String, u32> = HashMap::new();
         for ai_material in &scene.materials {
             let name = if let Some(AiPropertyTypeInfo::Binary(binary)) = ai_material
                 .get_property_type_info(matkey::AI_MATKEY_NAME, Some(AiTextureType::None), 0)
             {
-                let str = String::from_utf8(binary.to_vec())
-                    .map_err(|err| AiExportError::ConversionError(Box::new(err)))?;
+                let str =
+                    String::from_utf8(binary.to_vec()).map_err(Gltf2ExportError::Conversion)?;
                 Some(generate_unique_name(&str, unique_names_map))
             } else {
                 Some(generate_unique_name("material", unique_names_map))
@@ -542,7 +541,7 @@ fn handle_pbr(
     scene: &AiScene,
     root: &mut Root,
     buffer_data: &mut Vec<u8>,
-    mut unique_names_map: &mut HashMap<String, u32>,
+    unique_names_map: &mut HashMap<String, u32>,
     texture_name_to_index_map: &mut HashMap<String, u32>,
     ai_material: &AiMaterial,
     material: &mut Material,

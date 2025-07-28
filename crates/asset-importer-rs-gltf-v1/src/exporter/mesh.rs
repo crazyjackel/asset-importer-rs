@@ -13,7 +13,7 @@ use gltf_v1::json::{
 
 use crate::{
     GltfExporter,
-    exporter::{error::Error, generate_unique_name},
+    exporter::{error::GltfExportError, generate_unique_name},
 };
 
 impl GltfExporter {
@@ -24,7 +24,7 @@ impl GltfExporter {
         body_buffer_data: &mut Vec<u8>,
         mesh_index_map: &HashMap<usize, String>,
         material_index_map: &HashMap<usize, String>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), GltfExportError> {
         //@TODO: Add support for OPEN3DGC
         //@TODO: Add support for skins
         // let mut create_skin = false;
@@ -45,7 +45,7 @@ impl GltfExporter {
 
             let material_name = material_index_map
                 .get(&(ai_mesh.material_index as usize))
-                .ok_or(Error::MissingMaterial)?;
+                .ok_or(GltfExportError::MissingMaterial)?;
             let mut primitive = Primitive::new(StringIndex::new(material_name.clone()));
 
             // Positions

@@ -18,23 +18,23 @@ use asset_importer_rs_scene::{
     AiPrimitiveType, AiReal, AiVector3D,
 };
 
-use super::{GltfImporter, error::Error};
+use super::{GltfImporter, error::GLTFImportError};
 
 pub(crate) trait ExtractData {
-    fn extract_data<T>(&self, buffers: &IndexMap<String, Data>) -> Result<Vec<T>, Error>
+    fn extract_data<T>(&self, buffers: &IndexMap<String, Data>) -> Result<Vec<T>, GLTFImportError>
     where
         T: Sized + Default + Pod;
 }
 
 impl ExtractData for gltf_v1::Accessor<'_> {
-    fn extract_data<T>(&self, buffers: &IndexMap<String, Data>) -> Result<Vec<T>, Error>
+    fn extract_data<T>(&self, buffers: &IndexMap<String, Data>) -> Result<Vec<T>, GLTFImportError>
     where
         T: Sized + Default + Pod,
     {
         let view = self.view();
         let data = buffers
             .get(view.buffer().index())
-            .ok_or(Error::MissingBufferData)?;
+            .ok_or(GLTFImportError::MissingBufferData)?;
 
         let num_components = self.accessor_type().get_num_components();
         let bytes_per_component = self.component_type().size();
@@ -51,7 +51,7 @@ impl ExtractData for gltf_v1::Accessor<'_> {
         let start_index = self.offset() + view.offset();
         let end_index = start_index + (count - 1) * stride + elem_size; //The Last Element
         if end_index > data.len() {
-            return Err(Error::ExceedsBounds);
+            return Err(GLTFImportError::ExceedsBounds);
         }
         let data_slice = &data[start_index..end_index];
 
@@ -89,7 +89,7 @@ impl GltfImporter {
         document: &Document,
         buffer_data: &IndexMap<String, Data>,
         material_index_map: &HashMap<String, usize>,
-    ) -> Result<ImportMeshes, AiReadError> {
+    ) -> Result<ImportMeshes, GLTFImportError> {
         let mut meshes: Vec<AiMesh> = Vec::new();
         let mut mesh_offsets: HashMap<String, IndexSpan> = HashMap::new();
 
@@ -125,9 +125,7 @@ impl GltfImporter {
                 //handle positions
                 if let Some(positions) = primitive.get(&gltf_v1::json::mesh::Semantic::Positions) {
                     num_all_vertices = positions.count();
-                    let data: Vec<[f32; 3]> = positions
-                        .extract_data(buffer_data)
-                        .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                    let data: Vec<[f32; 3]> = positions.extract_data(buffer_data)?;
                     ai_mesh.vertices = data
                         .iter()
                         .map(|x| AiVector3D::new(x[0] as AiReal, x[1] as AiReal, x[2] as AiReal))
@@ -142,9 +140,7 @@ impl GltfImporter {
                             ai_mesh.name
                         );
                     } else {
-                        let data: Vec<[f32; 3]> = normals
-                            .extract_data(buffer_data)
-                            .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                        let data: Vec<[f32; 3]> = normals.extract_data(buffer_data)?;
                         ai_mesh.normals = data
                             .iter()
                             .map(|x| {
@@ -170,9 +166,7 @@ impl GltfImporter {
                     ai_mesh.colors[index as usize] = match attr_color.accessor_type() {
                         Type::VEC3 => match attr_color.component_type() {
                             ComponentType::UnsignedByte => {
-                                let data: Vec<[u8; 3]> = attr_color
-                                    .extract_data(buffer_data)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                let data: Vec<[u8; 3]> = attr_color.extract_data(buffer_data)?;
                                 Some(
                                     data.iter()
                                         .map(|chunk| {
@@ -187,9 +181,7 @@ impl GltfImporter {
                                 )
                             }
                             ComponentType::UnsignedShort => {
-                                let data: Vec<[u16; 3]> = attr_color
-                                    .extract_data(buffer_data)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                let data: Vec<[u16; 3]> = attr_color.extract_data(buffer_data)?;
                                 Some(
                                     data.iter()
                                         .map(|chunk| {
@@ -204,9 +196,7 @@ impl GltfImporter {
                                 )
                             }
                             ComponentType::Float => {
-                                let data: Vec<[f32; 3]> = attr_color
-                                    .extract_data(buffer_data)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                let data: Vec<[f32; 3]> = attr_color.extract_data(buffer_data)?;
                                 Some(
                                     data.iter()
                                         .map(|chunk| {
@@ -219,9 +209,7 @@ impl GltfImporter {
                         },
                         Type::VEC4 => match attr_color.component_type() {
                             ComponentType::UnsignedByte => {
-                                let data: Vec<[u8; 4]> = attr_color
-                                    .extract_data(buffer_data)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                let data: Vec<[u8; 4]> = attr_color.extract_data(buffer_data)?;
                                 Some(
                                     data.iter()
                                         .map(|chunk| {
@@ -236,9 +224,7 @@ impl GltfImporter {
                                 )
                             }
                             ComponentType::UnsignedShort => {
-                                let data: Vec<[u16; 4]> = attr_color
-                                    .extract_data(buffer_data)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                let data: Vec<[u16; 4]> = attr_color.extract_data(buffer_data)?;
                                 Some(
                                     data.iter()
                                         .map(|chunk| {
@@ -253,9 +239,7 @@ impl GltfImporter {
                                 )
                             }
                             ComponentType::Float => {
-                                let data: Vec<[f32; 4]> = attr_color
-                                    .extract_data(buffer_data)
-                                    .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                                let data: Vec<[f32; 4]> = attr_color.extract_data(buffer_data)?;
                                 Some(
                                     data.iter()
                                         .map(|chunk| {
@@ -285,9 +269,7 @@ impl GltfImporter {
                 for (attr_texcoords, index) in texcoords {
                     ai_mesh.texture_coords[index as usize] = match attr_texcoords.component_type() {
                         ComponentType::Byte | ComponentType::UnsignedByte => {
-                            let data: Vec<[u8; 2]> = attr_texcoords
-                                .extract_data(buffer_data)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            let data: Vec<[u8; 2]> = attr_texcoords.extract_data(buffer_data)?;
                             Some(
                                 data.iter()
                                     .map(|chunk| {
@@ -299,9 +281,7 @@ impl GltfImporter {
                             )
                         }
                         ComponentType::Short | ComponentType::UnsignedShort => {
-                            let data: Vec<[u16; 2]> = attr_texcoords
-                                .extract_data(buffer_data)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            let data: Vec<[u16; 2]> = attr_texcoords.extract_data(buffer_data)?;
                             Some(
                                 data.iter()
                                     .map(|chunk| {
@@ -313,9 +293,7 @@ impl GltfImporter {
                             )
                         }
                         ComponentType::Float => {
-                            let data: Vec<[f32; 2]> = attr_texcoords
-                                .extract_data(buffer_data)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            let data: Vec<[f32; 2]> = attr_texcoords.extract_data(buffer_data)?;
                             Some(
                                 data.iter()
                                     .map(|chunk| {
@@ -333,21 +311,15 @@ impl GltfImporter {
                 if let Some(indices) = primitive.indices() {
                     let index_data: Vec<usize> = match indices.component_type() {
                         ComponentType::UnsignedByte | ComponentType::Byte => {
-                            let index_data: Vec<u8> = indices
-                                .extract_data(buffer_data)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            let index_data: Vec<u8> = indices.extract_data(buffer_data)?;
                             index_data.into_iter().map(|x| x as usize).collect()
                         }
                         ComponentType::UnsignedShort | ComponentType::Short => {
-                            let index_data: Vec<u16> = indices
-                                .extract_data(buffer_data)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            let index_data: Vec<u16> = indices.extract_data(buffer_data)?;
                             index_data.into_iter().map(|x| x as usize).collect()
                         }
                         ComponentType::UnsignedInt | ComponentType::Float => {
-                            let index_data: Vec<usize> = indices
-                                .extract_data(buffer_data)
-                                .map_err(|err| AiReadError::FileFormatError(Box::new(err)))?;
+                            let index_data: Vec<usize> = indices.extract_data(buffer_data)?;
                             index_data
                         }
                     };

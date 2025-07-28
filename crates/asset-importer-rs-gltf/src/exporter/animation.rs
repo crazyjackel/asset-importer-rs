@@ -9,12 +9,13 @@ use gltf::{
     },
 };
 
-use asset_importer_rs_core::AiExportError;
 use asset_importer_rs_scene::{AiQuaternion, AiScene, AiVector3D};
 
+use crate::exporter::error::Gltf2ExportError;
+
 use super::{
-    gltf2_exporter::{Gltf2Exporter, generate_unique_name},
-    gltf2_exporter_mesh::AccessorExporter,
+    exporter::{Gltf2Exporter, generate_unique_name},
+    mesh::AccessorExporter,
 };
 
 impl Gltf2Exporter {
@@ -24,7 +25,7 @@ impl Gltf2Exporter {
         root: &mut Root,
         buffer_data: &mut Vec<u8>,
         unique_names_map: &mut HashMap<String, u32>,
-    ) -> Result<(), AiExportError> {
+    ) -> Result<(), Gltf2ExportError> {
         for anim in &scene.animations {
             let mut channels: Vec<Channel> = Vec::new();
             let mut samplers: Vec<Sampler> = Vec::new();

@@ -23,7 +23,7 @@ mod mesh;
 mod node;
 mod texture;
 
-pub use error::Error;
+pub use error::GLTFImportError;
 
 #[derive(Debug, Default)]
 pub struct GltfImporter;
@@ -52,6 +52,8 @@ impl AiImporterInfo for GltfImporter {
 }
 
 impl AiImporter for GltfImporter {
+    type Error = GLTFImportError;
+
     fn can_read_dyn<'data>(
         &self,
         path: &Path,
@@ -85,18 +87,19 @@ impl AiImporter for GltfImporter {
         &self,
         path: &Path,
         loader: &dyn Fn(&Path) -> io::Result<Box<dyn asset_importer_rs_core::ReadSeek + 'data>>,
-    ) -> Result<AiScene, AiReadError> {
+    ) -> Result<AiScene, Self::Error> {
         //Collect File Info
         let base = path.parent().unwrap_or_else(|| Path::new("./"));
-        let reader = loader(path).map_err(|x| AiReadError::FileOpenError(Box::new(x)))?;
+        let reader =
+            loader(path).map_err(|x| GLTFImportError::FileOpenError(x, path.to_path_buf()))?;
 
         //Load Gltf Info
         let Gltf { document, blob } =
-            Gltf::from_reader(reader).map_err(|x| AiReadError::FileFormatError(Box::new(x)))?;
+            Gltf::from_reader(reader).map_err(GLTFImportError::FileFormatError)?;
 
         //@todo: Buffer Data loads all Buffer Data, it would be better to load on an "as-needed case".
         let buffer_data = gltf_v1::import_buffers(&document, Some(base), blob)
-            .map_err(|x| AiReadError::FileFormatError(Box::new(x)))?;
+            .map_err(GLTFImportError::FileFormatError)?;
 
         //import textures
         let (embedded_textures, embedded_tex_ids) =

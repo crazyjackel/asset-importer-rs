@@ -4,21 +4,24 @@ use std::{
     path::Path,
 };
 
+use asset_importer_rs_core::{AiImporter, AiImporterExt, ReadSeek};
 use asset_importer_rs_scene::AiScene;
 
-use crate::{AiImporter, AiImporterExt, AiReadError, ReadSeek};
+use crate::error::AiImporterError;
+
+type AiImporterDyn = dyn AiImporter<Error = AiImporterError>;
 
 #[derive(Default)]
 pub struct Importer {
-    importers: Vec<Box<dyn AiImporter>>,
+    importers: Vec<Box<AiImporterDyn>>,
 }
 
 impl Importer {
-    pub fn new(importers: Vec<Box<dyn AiImporter>>) -> Self {
+    pub fn new(importers: Vec<Box<AiImporterDyn>>) -> Self {
         Self { importers }
     }
 
-    pub fn import_file(&self, file_path: &str) -> Result<AiScene, AiReadError> {
+    pub fn import_file(&self, file_path: &str) -> Result<AiScene, AiImporterError> {
         let path = Path::new(file_path);
         let extension = path.extension().unwrap_or_default();
         let extension = extension.to_str().unwrap_or_default();
@@ -33,14 +36,16 @@ impl Importer {
             }
         }
 
-        Err(AiReadError::UnsupportedFileExtension(extension.to_string()))
+        Err(AiImporterError::UnsupportedFileExtension(
+            extension.to_string(),
+        ))
     }
 
     pub fn import_from_memory(
         &self,
         file_name: &str,
         data: &HashMap<String, Vec<u8>>,
-    ) -> Result<AiScene, AiReadError> {
+    ) -> Result<AiScene, AiImporterError> {
         let path = Path::new(file_name);
         let extension = path.extension().unwrap_or_default();
         let extension = extension.to_str().unwrap_or_default();
@@ -67,6 +72,8 @@ impl Importer {
             }
         }
 
-        Err(AiReadError::UnsupportedFileExtension(extension.to_string()))
+        Err(AiImporterError::UnsupportedFileExtension(
+            extension.to_string(),
+        ))
     }
 }
