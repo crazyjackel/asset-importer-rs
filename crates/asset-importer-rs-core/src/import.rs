@@ -8,7 +8,7 @@ use std::error::Error;
 
 use asset_importer_rs_scene::AiScene;
 
-use super::{error::AiReadError, importer_desc::AiImporterDesc};
+use super::importer_desc::AiImporterDesc;
 
 /// A trait for types that provide information about an importer
 pub trait AiImporterInfo {

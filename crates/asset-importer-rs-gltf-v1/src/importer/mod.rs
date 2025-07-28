@@ -6,9 +6,7 @@ use std::{
 use enumflags2::BitFlags;
 use gltf_v1::Gltf;
 
-use asset_importer_rs_core::{
-    AiImporter, AiImporterDesc, AiImporterFlags, AiImporterInfo, AiReadError,
-};
+use asset_importer_rs_core::{AiImporter, AiImporterDesc, AiImporterFlags, AiImporterInfo};
 use asset_importer_rs_scene::{AiScene, AiSceneFlag};
 
 use camera::ImportCameras;

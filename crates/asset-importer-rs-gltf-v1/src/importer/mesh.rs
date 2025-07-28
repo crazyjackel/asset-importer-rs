@@ -12,7 +12,6 @@ use gltf_v1::{
     },
 };
 
-use asset_importer_rs_core::AiReadError;
 use asset_importer_rs_scene::{
     AI_MAX_NUMBER_OF_COLORS_SETS, AI_MAX_NUMBER_OF_TEXTURECOORDS, AiColor4D, AiMesh,
     AiPrimitiveType, AiReal, AiVector3D,

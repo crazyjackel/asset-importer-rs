@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use asset_importer_rs_core::{AiReadError, DataLoader};
+use asset_importer_rs_core::DataLoader;
 use asset_importer_rs_scene::{
     AiColor4D, AiMaterial, AiPropertyTypeInfo, AiShadingMode, AiTexel, AiTexture, AiTextureFormat,
     AiTextureType,

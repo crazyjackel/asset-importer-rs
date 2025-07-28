@@ -2,7 +2,8 @@ use std::error::Error as StdError;
 use std::fs::DirEntry;
 use std::{fs, path};
 
-use asset_importer_rs_core::{AiExportExt, AiImporterExt, AiReadError, default_file_loader};
+use asset_importer_rs::AiImporterError;
+use asset_importer_rs_core::{AiExportExt, AiImporterExt, default_file_loader};
 use asset_importer_rs_gltf::{Gltf2Exporter, Gltf2Importer, Output};
 use asset_importer_rs_gltf_v1::GltfExporter;
 use std::collections::HashMap;
@@ -142,7 +143,7 @@ fn external_gltf2_import_sample_assets() {
     }
 
     for error in errors {
-        let is_ai_error = !error.is::<AiReadError>();
+        let is_ai_error = !error.is::<AiImporterError>();
         assert!(is_ai_error);
     }
 }

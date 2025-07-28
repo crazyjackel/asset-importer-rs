@@ -2,8 +2,7 @@ use std::{borrow::Cow, collections::HashMap, path::Path};
 
 use asset_importer_rs_core::{
     AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON, AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON_DEFAULT,
-    AI_METADATA_SOURCE_COPYRIGHT, AiExport, AiExportError, DataExporter, ExportProperties,
-    ExportProperty,
+    AI_METADATA_SOURCE_COPYRIGHT, AiExport, DataExporter, ExportProperties, ExportProperty,
 };
 use asset_importer_rs_scene::{AiMetadataEntry, AiScene};
 use gltf_v1::{

@@ -8,8 +8,6 @@ use std::{
 
 use asset_importer_rs_scene::{AiMatrix4x4, AiReal, AiScene};
 
-use super::error::AiExportError;
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum ExportProperty {
     Int(i32),

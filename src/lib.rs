@@ -1,4 +1,3 @@
-use asset_importer_rs_core::AiExportError;
 #[cfg(feature = "gltf2")]
 use asset_importer_rs_gltf::{Gltf2Exporter, Gltf2Importer, Output as Gltf2Output};
 #[cfg(feature = "gltf")]
@@ -8,6 +7,7 @@ use asset_importer_rs_obj::ObjImporter;
 use asset_importer_rs_scene::AiScene;
 use enumflags2::BitFlags;
 
+use crate::error::AiExporterError;
 pub use crate::error::AiImporterError;
 use crate::exporter::{ExportFormatEntry, Exporter};
 pub use crate::importer::Importer;
@@ -80,7 +80,7 @@ impl AssetImporter {
         importer.import_file(file_path)
     }
 
-    pub fn export_file(scene: &AiScene, file_path: &str) -> Result<(), AiExportError> {
+    pub fn export_file(scene: &AiScene, file_path: &str) -> Result<(), AiExporterError> {
         let exporter = AssetImporter::exporter();
         Ok(())
     }

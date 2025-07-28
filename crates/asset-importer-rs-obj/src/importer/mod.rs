@@ -4,7 +4,7 @@ use std::{
 };
 
 use asset_importer_rs_core::{
-    AiImporter, AiImporterDesc, AiImporterFlags, AiImporterInfo, AiReadError, DataLoader,
+    AiImporter, AiImporterDesc, AiImporterFlags, AiImporterInfo, DataLoader,
 };
 use asset_importer_rs_scene::{AiNodeTree, AiScene};
 use enumflags2::BitFlags;
@@ -111,9 +111,9 @@ impl AiImporter for ObjImporter {
             let mut mtl_buf_reader = BufReader::new(reader_result);
             load_mtl_buf(&mut mtl_buf_reader)
         })
-        .map_err(|x| ObjImportError::ObjLoadError(x))?;
+        .map_err(ObjImportError::ObjLoadError)?;
 
-        let materials = material_result.map_err(|x| ObjImportError::MtlLoadError(x))?;
+        let materials = material_result.map_err(ObjImportError::MtlLoadError)?;
 
         let name = path.file_stem().and_then(|x| x.to_str()).unwrap_or("scene");
         let mut scene = AiScene {
