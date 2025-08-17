@@ -1,4 +1,65 @@
-use enumflags2::bitflags;
+use asset_importer_rs_scene::AiScene;
+use enumflags2::{BitFlags, bitflags};
+
+/// Trait for implementing a post-processing step on an [`AiScene`].
+///
+/// This trait allows you to define custom post-processing steps that can be
+/// conditionally applied to a scene after import, based on a set of enabled
+/// [`AiPostProcessSteps`].
+///
+/// # Example
+///
+/// ```rust
+/// use asset_importer_rs_scene::AiScene;
+/// use asset_importer_rs_core::post_process::{AiPostProcess, AiPostProcessSteps};
+///
+/// struct MyPostProcess;
+///
+/// impl AiPostProcess for MyPostProcess {
+///     type Error = ();
+///
+///     fn is_active(&self, steps: AiPostProcessSteps) -> bool {
+///         steps.contains(AiPostProcessSteps::Triangulate)
+///     }
+///
+///     fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+///         // Perform post-processing on the scene here
+///         Ok(())
+///     }
+/// }
+/// ```
+///
+/// # Methods
+///
+/// - [`is_active`]: Determines if this post-process step should be applied, given the set of active steps.
+/// - [`process`]: Applies the post-process step to the given scene.
+pub trait AiPostProcess {
+    /// The error type returned by the post-process step.
+    type Error;
+
+    /// Prepares this post-process step by updating its internal settings based on the enabled steps,
+    /// and returns whether or not this step will be applied.
+    ///
+    /// # Arguments
+    ///
+    /// * `steps` - The set of enabled post-process steps.
+    ///
+    /// # Returns
+    ///
+    /// * `true` if this step is active and will be applied, `false` otherwise.
+    fn prepare(&mut self, steps: BitFlags<AiPostProcessSteps>) -> bool;
+
+    /// Applies the post-process step to the given scene.
+    ///
+    /// # Arguments
+    ///
+    /// * `scene` - Mutable reference to the [`AiScene`] to process.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` if the process succeeds, or an error of type [`Self::Error`] if it fails.
+    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error>;
+}
 
 #[bitflags]
 #[repr(u32)]

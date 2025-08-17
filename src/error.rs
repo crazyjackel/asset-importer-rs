@@ -1,5 +1,6 @@
 use std::{error::Error, fmt::Display};
 
+#[non_exhaustive]
 #[derive(Debug)]
 pub enum AiImporterError {
     UnsupportedFileExtension(String),
@@ -9,6 +10,8 @@ pub enum AiImporterError {
     GltfImportError(asset_importer_rs_gltf_v1::GLTFImportError),
     #[cfg(feature = "gltf2")]
     Gltf2ImportError(asset_importer_rs_gltf::Gltf2ImportError),
+    #[cfg(feature = "post-process")]
+    PostProcessError(asset_importer_rs_post_process::AiPostProcessError),
 }
 
 impl Display for AiImporterError {
@@ -23,18 +26,23 @@ impl Display for AiImporterError {
             AiImporterError::GltfImportError(error) => write!(f, "GltfImportError: {}", error),
             #[cfg(feature = "gltf2")]
             AiImporterError::Gltf2ImportError(error) => write!(f, "Gltf2ImportError: {}", error),
+            #[cfg(feature = "post-process")]
+            AiImporterError::PostProcessError(error) => write!(f, "PostProcessError: {}", error),
         }
     }
 }
 
 impl Error for AiImporterError {}
 
+#[non_exhaustive]
 #[derive(Debug)]
 pub enum AiExporterError {
     #[cfg(feature = "gltf")]
     GltfExportError(asset_importer_rs_gltf_v1::GltfExportError),
     #[cfg(feature = "gltf2")]
     Gltf2ExportError(asset_importer_rs_gltf::Gltf2ExportError),
+    #[cfg(feature = "post-process")]
+    PostProcessError(asset_importer_rs_post_process::AiPostProcessError),
 }
 
 impl Display for AiExporterError {
@@ -44,6 +52,8 @@ impl Display for AiExporterError {
             AiExporterError::GltfExportError(error) => write!(f, "GltfExportError: {}", error),
             #[cfg(feature = "gltf2")]
             AiExporterError::Gltf2ExportError(error) => write!(f, "Gltf2ExportError: {}", error),
+            #[cfg(feature = "post-process")]
+            AiExporterError::PostProcessError(error) => write!(f, "PostProcessError: {}", error),
         }
     }
 }

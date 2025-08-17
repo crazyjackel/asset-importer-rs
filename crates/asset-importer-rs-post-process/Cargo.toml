@@ -1,0 +1,99 @@
+[package]
+name = "asset-importer-rs-post-process"
+version = {workspace = true}
+authors = {workspace = true}
+edition = {workspace = true}
+description = "Post-processing module for asset-importer-rs"
+license = {workspace = true}
+repository = {workspace = true}
+documentation = "https://docs.rs/asset-importer-rs-post-process"
+
+[dependencies]
+asset-importer-rs-core = {workspace = true}
+asset-importer-rs-scene = {workspace = true}
+enumflags2 = {workspace = true}
+
+[features]
+default = [
+    "calc-tangent-spaces",
+    "join-identical-vertices",
+    "triangulate",
+    "gen-normals",
+    "gen-smooth-normals",
+    "validate-data-structure",
+    "remove-redundant-materials",
+    "find-degenerates",
+    "find-invalid-data",
+    "optimize-meshes",
+    "optimize-graph",
+]
+
+# Enable all post-processing steps
+all = [
+    "calc-tangent-spaces",
+    "join-identical-vertices",
+    "make-left-handed",
+    "triangulate",
+    "remove-component",
+    "gen-normals",
+    "gen-smooth-normals",
+    "split-large-meshes",
+    "pre-transform-vertices",
+    "limit-bone-weights",
+    "validate-data-structure",
+    "improve-cache-locality",
+    "remove-redundant-materials",
+    "fix-infacing-normals",
+    "populate-armature-data",
+    "sort-by-p-type",
+    "find-degenerates",
+    "find-invalid-data",
+    "gen-uv-coords",
+    "transform-uv-coords",
+    "find-instances",
+    "optimize-meshes",
+    "optimize-graph",
+    "flip-uvs",
+    "flip-winding-order",
+    "split-by-bone-count",
+    "debone",
+    "global-scale",
+    "embed-textures",
+    "force-gen-normals",
+    "drop-normals",
+    "gen-bounding-boxes",
+]
+
+# Individual post-processing step features
+calc-tangent-spaces = []
+join-identical-vertices = []
+make-left-handed = []
+triangulate = []
+remove-component = []
+gen-normals = []
+gen-smooth-normals = []
+split-large-meshes = []
+pre-transform-vertices = []
+limit-bone-weights = []
+validate-data-structure = []
+improve-cache-locality = []
+remove-redundant-materials = []
+fix-infacing-normals = []
+populate-armature-data = []
+sort-by-p-type = []
+find-degenerates = []
+find-invalid-data = []
+gen-uv-coords = []
+transform-uv-coords = []
+find-instances = []
+optimize-meshes = []
+optimize-graph = []
+flip-uvs = []
+flip-winding-order = []
+split-by-bone-count = []
+debone = []
+global-scale = []
+embed-textures = []
+force-gen-normals = []
+drop-normals = []
+gen-bounding-boxes = []
