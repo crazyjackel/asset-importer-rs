@@ -6,6 +6,7 @@ use asset_importer_rs_core::{AiExportExt, AiImporterExt, AiPostProcessSteps, def
 use asset_importer_rs_gltf::{Gltf2Exporter, Output};
 use asset_importer_rs_gltf_v1::{GltfExporter, Output as GltfOutput};
 use asset_importer_rs_obj::ObjImporter;
+#[cfg(feature = "post-process")]
 use asset_importer_rs_post_process::AiPostProcesser;
 
 #[test]
@@ -32,6 +33,7 @@ fn import_obj_file_export_gltf() {
 }
 
 #[test]
+#[cfg(feature = "post-process")]
 fn import_obj_file_export_gltf2_with_post_process() {
     let binding = std::env::current_dir().expect("Failed to get the current executable path");
     let exe_path = binding
