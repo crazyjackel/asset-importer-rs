@@ -12,13 +12,14 @@ use enumflags2::{BitFlags, bitflags};
 /// ```rust
 /// use asset_importer_rs_scene::AiScene;
 /// use asset_importer_rs_core::post_process::{AiPostProcess, AiPostProcessSteps};
+/// use enumflags2::BitFlags;
 ///
 /// struct MyPostProcess;
 ///
 /// impl AiPostProcess for MyPostProcess {
 ///     type Error = ();
 ///
-///     fn is_active(&self, steps: AiPostProcessSteps) -> bool {
+///     fn prepare(&mut self, steps: BitFlags<AiPostProcessSteps>) -> bool {
 ///         steps.contains(AiPostProcessSteps::Triangulate)
 ///     }
 ///
@@ -31,7 +32,7 @@ use enumflags2::{BitFlags, bitflags};
 ///
 /// # Methods
 ///
-/// - [`is_active`]: Determines if this post-process step should be applied, given the set of active steps.
+/// - [`prepare`]: Prepares this post-process step and returns whether it will be applied.
 /// - [`process`]: Applies the post-process step to the given scene.
 pub trait AiPostProcess {
     /// The error type returned by the post-process step.

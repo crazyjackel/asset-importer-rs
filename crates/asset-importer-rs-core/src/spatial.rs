@@ -8,8 +8,41 @@ pub const INITIAL_PLANE_NORMAL: AiVector3D = AiVector3D {
     z: 0.5736,
 };
 
+/// Trait for implementing spatial lookup functionality to find positions within a given radius.
+///
+/// This trait provides a common interface for spatial data structures that can efficiently
+/// locate positions within a specified radius of a query point.
+///
+/// # Example
+///
+/// ```rust
+/// use asset_importer_rs_core::spatial::{Spatial, SpatialLookup};
+/// use asset_importer_rs_scene::AiVector3D;
+///
+/// let positions = vec![
+///     AiVector3D::new(0.0, 0.0, 0.0),
+///     AiVector3D::new(1.0, 0.0, 0.0),
+///     AiVector3D::new(0.0, 1.0, 0.0),
+/// ];
+///
+/// let spatial = Spatial::new(&positions);
+/// let nearby = spatial.find_position(AiVector3D::new(0.5, 0.5, 0.0), 1.0);
+/// ```
+///
+/// # Methods
+///
+/// - [`find_position`]: Finds all positions within a specified radius of a query point.
 pub trait SpatialLookup {
     /// Find the positions within a radius of the given position.
+    ///
+    /// # Arguments
+    ///
+    /// * `position` - The query position to search around.
+    /// * `radius` - The search radius within which to find positions.
+    ///
+    /// # Returns
+    ///
+    /// * A vector of indices corresponding to positions within the specified radius.
     fn find_position(&self, position: AiVector3D, radius: AiReal) -> Vec<usize>;
 }
 
