@@ -143,6 +143,14 @@ impl From<[AiReal; 3]> for AiVector3D {
 }
 
 impl AiVector3D {
+    pub fn zero() -> AiVector3D {
+        AiVector3D {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+        }
+    }
+
     pub fn new(x: AiReal, y: AiReal, z: AiReal) -> AiVector3D {
         AiVector3D { x, y, z }
     }
@@ -287,6 +295,7 @@ impl ops::Mul<&AiVector3D> for AiVector3D {
         self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
 }
+
 impl ops::Mul<AiVector3D> for &AiVector3D {
     type Output = AiReal;
 
@@ -294,6 +303,7 @@ impl ops::Mul<AiVector3D> for &AiVector3D {
         self.x * rhs.x + self.y * rhs.y + self.z * rhs.z
     }
 }
+
 impl ops::Mul<&AiVector3D> for &AiVector3D {
     type Output = AiReal;
 
@@ -305,18 +315,67 @@ impl ops::Mul<&AiVector3D> for &AiVector3D {
 impl ops::Mul<AiReal> for AiVector3D {
     type Output = AiVector3D;
 
-    fn mul(mut self, rhs: AiReal) -> Self::Output {
-        self.x *= rhs;
-        self.y *= rhs;
-        self.z *= rhs;
-        self
+    fn mul(self, rhs: AiReal) -> Self::Output {
+        AiVector3D {
+            x: self.x * rhs,
+            y: self.y * rhs,
+            z: self.z * rhs,
+        }
     }
 }
 
-impl ops::Sub<AiVector3D> for AiVector3D {
+impl ops::Mul<AiReal> for &AiVector3D {
     type Output = AiVector3D;
 
-    fn sub(self, rhs: AiVector3D) -> Self::Output {
+    fn mul(self, rhs: AiReal) -> Self::Output {
+        AiVector3D {
+            x: self.x * rhs,
+            y: self.y * rhs,
+            z: self.z * rhs,
+        }
+    }
+}
+
+impl ops::Mul<AiReal> for &mut AiVector3D {
+    type Output = AiVector3D;
+
+    fn mul(self, rhs: AiReal) -> Self::Output {
+        AiVector3D {
+            x: self.x * rhs,
+            y: self.y * rhs,
+            z: self.z * rhs,
+        }
+    }
+}
+
+impl ops::Sub for AiVector3D {
+    type Output = AiVector3D;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        AiVector3D {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+        }
+    }
+}
+
+impl ops::Sub for &AiVector3D {
+    type Output = AiVector3D;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        AiVector3D {
+            x: self.x - rhs.x,
+            y: self.y - rhs.y,
+            z: self.z - rhs.z,
+        }
+    }
+}
+
+impl ops::Sub for &mut AiVector3D {
+    type Output = AiVector3D;
+
+    fn sub(self, rhs: Self) -> Self::Output {
         AiVector3D {
             x: self.x - rhs.x,
             y: self.y - rhs.y,

@@ -1,9 +1,12 @@
+use asset_importer_rs_core::AiPostProcessSteps;
 #[cfg(feature = "gltf2")]
 use asset_importer_rs_gltf::{Gltf2Exporter, Gltf2Importer, Output as Gltf2Output};
 #[cfg(feature = "gltf")]
 use asset_importer_rs_gltf_v1::{GltfExporter, GltfImporter, Output as GltfOutput};
 #[cfg(feature = "obj")]
 use asset_importer_rs_obj::ObjImporter;
+#[cfg(feature = "post-process")]
+use asset_importer_rs_post_process::AiPostProcesser;
 use asset_importer_rs_scene::AiScene;
 use enumflags2::BitFlags;
 
@@ -80,7 +83,35 @@ impl AssetImporter {
         importer.import_file(file_path)
     }
 
+    #[cfg(feature = "post-process")]
+    pub fn from_file_with_post_process(
+        file_path: &str,
+        flags: BitFlags<AiPostProcessSteps>,
+    ) -> Result<AiScene, AiImporterError> {
+        let importer = AssetImporter::importer();
+        let mut scene = importer.import_file(file_path)?;
+        let mut post_process = AiPostProcesser::post_process();
+        post_process
+            .process(&mut scene, flags)
+            .map_err(AiImporterError::PostProcessError)?;
+        Ok(scene)
+    }
+
     pub fn export_file(scene: &AiScene, file_path: &str) -> Result<(), AiExporterError> {
+        let exporter = AssetImporter::exporter();
+        Ok(())
+    }
+
+    #[cfg(feature = "post-process")]
+    pub fn export_file_with_post_process(
+        scene: &mut AiScene,
+        file_path: &str,
+        flags: BitFlags<AiPostProcessSteps>,
+    ) -> Result<(), AiExporterError> {
+        let mut post_process = AiPostProcesser::post_process();
+        post_process
+            .process(scene, flags)
+            .map_err(AiExporterError::PostProcessError)?;
         let exporter = AssetImporter::exporter();
         Ok(())
     }

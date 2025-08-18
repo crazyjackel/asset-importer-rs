@@ -21,9 +21,55 @@ pub type ExportProperties = HashMap<String, ExportProperty>;
 /// A type alias for a function that creates a writer for a path
 pub type DataExporter<'a> = dyn Fn(&Path) -> io::Result<Box<dyn Write + 'a>> + 'a;
 
+/// Trait for implementing scene export functionality.
+///
+/// This trait provides the core interface for exporting [`AiScene`] data to various file formats.
+/// It uses dynamic dispatch for the data exporter to allow flexible output handling.
+///
+/// # Example
+///
+/// ```rust
+/// use asset_importer_rs_core::export::{AiExport, ExportProperties};
+/// use asset_importer_rs_scene::AiScene;
+/// use std::path::Path;
+///
+/// struct MyExporter;
+///
+/// impl AiExport for MyExporter {
+///     type Error = std::io::Error;
+///
+///     fn export_file_dyn(
+///         &self,
+///         scene: &AiScene,
+///         path: &Path,
+///         properties: &ExportProperties,
+///         exporter: &dyn Fn(&Path) -> std::io::Result<Box<dyn std::io::Write>>,
+///     ) -> Result<(), Self::Error> {
+///         // Export the scene to the specified path
+///         Ok(())
+///     }
+/// }
+/// ```
+///
+/// # Methods
+///
+/// - [`export_file_dyn`]: Exports a scene to a file using dynamic dispatch for the data exporter.
 pub trait AiExport {
+    /// The error type returned by export operations.
     type Error: Error;
 
+    /// Exports a scene to a file using dynamic dispatch for the data exporter.
+    ///
+    /// # Arguments
+    ///
+    /// * `scene` - The scene to export.
+    /// * `path` - The target file path.
+    /// * `properties` - Export configuration properties.
+    /// * `exporter` - Function to create a writer for the target path.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` if the export succeeds, or an error of type [`Self::Error`] if it fails.
     fn export_file_dyn(
         &self,
         scene: &AiScene,
@@ -33,9 +79,56 @@ pub trait AiExport {
     ) -> Result<(), Self::Error>;
 }
 
+/// Extension trait providing convenient methods for scene export.
+///
+/// This trait provides additional methods that make it easier to export scenes with
+/// different types of writers and exporters.
+///
+/// # Example
+///
+/// ```rust
+/// use asset_importer_rs_core::export::{AiExportExt, ExportProperties};
+/// use asset_importer_rs_scene::AiScene;
+/// use std::path::Path;
+///
+/// struct MyExporter;
+///
+/// impl AiExportExt for MyExporter {
+///     type Error = std::io::Error;
+///
+///     fn export_file<P: AsRef<Path>, R: std::io::Write, F: Fn(&Path) -> std::io::Result<R>>(
+///         &self,
+///         scene: &AiScene,
+///         path: P,
+///         properties: &ExportProperties,
+///         exporter: F,
+///     ) -> Result<(), Self::Error> {
+///         // Export implementation
+///         Ok(())
+///     }
+/// }
+/// ```
+///
+/// # Methods
+///
+/// - [`export_file`]: Exports a scene with a generic writer and exporter function.
+/// - [`export_file_default`]: Exports a scene using the default file exporter.
 pub trait AiExportExt {
+    /// The error type returned by export operations.
     type Error: Error;
 
+    /// Exports a scene with a generic writer and exporter function.
+    ///
+    /// # Arguments
+    ///
+    /// * `scene` - The scene to export.
+    /// * `path` - The target file path.
+    /// * `properties` - Export configuration properties.
+    /// * `exporter` - Function to create a writer for the target path.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` if the export succeeds, or an error of type [`Self::Error`] if it fails.
     fn export_file<P: AsRef<Path>, R: Write, F: Fn(&Path) -> io::Result<R>>(
         &self,
         scene: &AiScene,
@@ -44,6 +137,17 @@ pub trait AiExportExt {
         exporter: F,
     ) -> Result<(), Self::Error>;
 
+    /// Exports a scene using the default file exporter.
+    ///
+    /// # Arguments
+    ///
+    /// * `scene` - The scene to export.
+    /// * `path` - The target file path.
+    /// * `properties` - Export configuration properties.
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` if the export succeeds, or an error of type [`Self::Error`] if it fails.
     fn export_file_default<P>(
         &self,
         scene: &AiScene,
