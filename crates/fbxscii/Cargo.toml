@@ -1,0 +1,13 @@
+[package]
+name = "fbxscii"
+version = "0.1.0"
+edition = {workspace = true}
+description = "ASCII FBX Parser"
+license = {workspace = true}
+authors = {workspace = true}
+repository = {workspace = true}
+documentation = "https://docs.rs/fbxscii"
+
+[dependencies]
+
+[features]

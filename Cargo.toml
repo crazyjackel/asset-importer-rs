@@ -20,6 +20,7 @@ members = [
     "crates/asset-importer-rs-gltf-v1",
     "crates/asset-importer-rs-obj",
     "crates/asset-importer-rs-post-process",
+    "crates/fbxscii",
 ]
 
 [workspace.package]
