@@ -188,7 +188,7 @@ impl AiPostProcesser {
             #[cfg(feature = "fix-infacing-normals")]
             Box::new(AiPostProcesserWrapper::new(FixInfacingNormals)),
             #[cfg(feature = "flip-uvs")]
-            Box::new(AiPostProcesserWrapper::new(FlipUVs)),
+            Box::new(AiPostProcesserWrapper::new(FlipUVs::default())),
             #[cfg(feature = "flip-winding-order")]
             Box::new(AiPostProcesserWrapper::new(FlipWindingOrder)),
             #[cfg(feature = "force-gen-normals")]

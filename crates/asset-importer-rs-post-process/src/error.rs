@@ -1,5 +1,7 @@
 use std::{error::Error, fmt::Display};
 
+#[cfg(feature = "flip-uvs")]
+use crate::steps::flip_uvs::FlipUVsError;
 #[cfg(feature = "gen-normals")]
 use crate::steps::gen_normals::GenNormalsError;
 #[cfg(feature = "gen-smooth-normals")]
@@ -33,6 +35,13 @@ impl Error for AiPostProcessError {}
 impl From<String> for AiPostProcessError {
     fn from(error: String) -> Self {
         AiPostProcessError::PostProcessError(error)
+    }
+}
+
+#[cfg(feature = "flip-uvs")]
+impl From<FlipUVsError> for AiPostProcessError {
+    fn from(error: FlipUVsError) -> Self {
+        AiPostProcessError::PostProcessError(error.to_string())
     }
 }
 
