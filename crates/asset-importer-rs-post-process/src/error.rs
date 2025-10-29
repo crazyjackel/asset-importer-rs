@@ -14,6 +14,9 @@ pub enum AiPostProcessError {
     GenNormalsError(GenNormalsError),
     #[cfg(feature = "gen-smooth-normals")]
     GenSmoothNormalsError(GenSmoothNormalsError),
+    #[cfg(feature = "flip-uvs")]
+    FlipUVsError(FlipUVsError),
+
     PostProcessError(String),
 }
 
@@ -26,6 +29,10 @@ impl Display for AiPostProcessError {
             #[cfg(feature = "gen-smooth-normals")]
             AiPostProcessError::GenSmoothNormalsError(error) => {
                 write!(f, "GenSmoothNormalsError: {}", error)
+            }
+            #[cfg(feature = "flip-uvs")]
+            AiPostProcessError::FlipUVsError(error) => {
+                write!(f, "FlipUVsError: {}", error)
             }
         }
     }

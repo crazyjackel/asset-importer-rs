@@ -13,6 +13,7 @@ pub use asset_importer_rs_scene::AiScene;
 pub use error::AiPostProcessError;
 
 use asset_importer_rs_core::AiPostProcess;
+use bytemuck;
 use enumflags2::BitFlags;
 
 // Re-export steps based on features

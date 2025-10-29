@@ -34,14 +34,11 @@ impl GltfExporter {
             let mut material = Material::default();
 
             let name_option = ai_material
-                .get_property_type_info(matkey::AI_MATKEY_NAME, Some(AiTextureType::None), 0)
-                .and_then(|x| match x {
-                    AiPropertyTypeInfo::Binary(binary) => {
-                        let str =
-                            String::from_utf8(binary.to_vec()).map_err(GltfExportError::UTFError);
-                        Some(str)
-                    }
-                    _ => None,
+                .get_property(matkey::AI_MATKEY_NAME, Some(AiTextureType::None), 0)
+                .and_then(|prop| {
+                    let str =
+                        String::from_utf8(prop.data.to_vec()).map_err(GltfExportError::UTFError);
+                    Some(str)
                 });
             let name = if let Some(name) = name_option {
                 generate_unique_name(&name?, unique_names_map)
@@ -200,14 +197,14 @@ fn export_material_texture(
                     min_filter: Checked::Valid(SamplerMinFilter::Linear),
                     wrap_s: material_export
                         .material
-                        .get_property_type_info(
+                        .get_property(
                             _AI_MATKEY_MAPPINGMODE_U_BASE,
                             Some(material_export.texture_type),
                             0,
                         )
-                        .and_then(|x| match x {
-                            AiPropertyTypeInfo::Binary(items) if items.len() == 1 => {
-                                match items[0].try_into() {
+                        .and_then(|prop| {
+                            if prop.data.len() == 1 {
+                                match prop.data[0].try_into() {
                                     Ok(AiTextureMapMode::Clamp) => {
                                         Some(Checked::Valid(SamplerWrap::ClampToEdge))
                                     }
@@ -217,20 +214,21 @@ fn export_material_texture(
                                     Ok(_) => None,
                                     Err(_) => None,
                                 }
+                            } else {
+                                None
                             }
-                            _ => None,
                         })
                         .unwrap_or(Checked::Valid(SamplerWrap::Repeat)),
                     wrap_t: material_export
                         .material
-                        .get_property_type_info(
+                        .get_property(
                             _AI_MATKEY_MAPPINGMODE_V_BASE,
                             Some(material_export.texture_type),
                             0,
                         )
-                        .and_then(|x| match x {
-                            AiPropertyTypeInfo::Binary(items) if items.len() == 1 => {
-                                match items[0].try_into() {
+                        .and_then(|prop| {
+                            if prop.data.len() == 1 {
+                                match prop.data[0].try_into() {
                                     Ok(AiTextureMapMode::Clamp) => {
                                         Some(Checked::Valid(SamplerWrap::ClampToEdge))
                                     }
@@ -240,8 +238,9 @@ fn export_material_texture(
                                     Ok(_) => None,
                                     Err(_) => None,
                                 }
+                            } else {
+                                None
                             }
-                            _ => None,
                         })
                         .unwrap_or(Checked::Valid(SamplerWrap::Repeat)),
                     name: None,

@@ -27,8 +27,9 @@ impl GltfImporter {
                 ai_material.add_property(
                     AI_MATKEY_NAME,
                     Some(AiTextureType::None),
-                    AiPropertyTypeInfo::Binary(name.bytes().collect()),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    name.bytes().collect(),
                 );
             }
 
@@ -43,18 +44,18 @@ impl GltfImporter {
                     ai_material.add_property(
                         _AI_MATKEY_TEXTURE_BASE,
                         Some(AiTextureType::Ambient),
-                        AiPropertyTypeInfo::Binary(uri.bytes().collect()),
+                        AiPropertyTypeInfo::Binary,
                         0,
+                        uri.bytes().collect(),
                     );
                 }
                 gltf_v1::material::TexProperty::Color(color) => {
                     ai_material.add_property(
                         AI_MATKEY_COLOR_AMBIENT,
                         Some(AiTextureType::None),
-                        AiPropertyTypeInfo::Binary(
-                            bytemuck::bytes_of(&AiColor4D::from(color)).to_vec(),
-                        ),
+                        AiPropertyTypeInfo::Binary,
                         0,
+                        bytemuck::bytes_of(&AiColor4D::from(color)).to_vec(),
                     );
                 }
             }
@@ -70,18 +71,18 @@ impl GltfImporter {
                     ai_material.add_property(
                         _AI_MATKEY_TEXTURE_BASE,
                         Some(AiTextureType::Diffuse),
-                        AiPropertyTypeInfo::Binary(uri.bytes().collect()),
+                        AiPropertyTypeInfo::Binary,
                         0,
+                        uri.bytes().collect(),
                     );
                 }
                 gltf_v1::material::TexProperty::Color(color) => {
                     ai_material.add_property(
                         AI_MATKEY_COLOR_DIFFUSE,
                         Some(AiTextureType::None),
-                        AiPropertyTypeInfo::Binary(
-                            bytemuck::bytes_of(&AiColor4D::from(color)).to_vec(),
-                        ),
+                        AiPropertyTypeInfo::Binary,
                         0,
+                        bytemuck::bytes_of(&AiColor4D::from(color)).to_vec(),
                     );
                 }
             }
@@ -97,18 +98,18 @@ impl GltfImporter {
                     ai_material.add_property(
                         _AI_MATKEY_TEXTURE_BASE,
                         Some(AiTextureType::Specular),
-                        AiPropertyTypeInfo::Binary(uri.bytes().collect()),
+                        AiPropertyTypeInfo::Binary,
                         0,
+                        uri.bytes().collect(),
                     );
                 }
                 gltf_v1::material::TexProperty::Color(color) => {
                     ai_material.add_property(
                         AI_MATKEY_COLOR_SPECULAR,
                         Some(AiTextureType::None),
-                        AiPropertyTypeInfo::Binary(
-                            bytemuck::bytes_of(&AiColor4D::from(color)).to_vec(),
-                        ),
+                        AiPropertyTypeInfo::Binary,
                         0,
+                        bytemuck::bytes_of(&AiColor4D::from(color)).to_vec(),
                     );
                 }
             }
@@ -124,18 +125,18 @@ impl GltfImporter {
                     ai_material.add_property(
                         _AI_MATKEY_TEXTURE_BASE,
                         Some(AiTextureType::Emissive),
-                        AiPropertyTypeInfo::Binary(uri.bytes().collect()),
+                        AiPropertyTypeInfo::Binary,
                         0,
+                        uri.bytes().collect(),
                     );
                 }
                 gltf_v1::material::TexProperty::Color(color) => {
                     ai_material.add_property(
                         AI_MATKEY_COLOR_EMISSIVE,
                         Some(AiTextureType::None),
-                        AiPropertyTypeInfo::Binary(
-                            bytemuck::bytes_of(&AiColor4D::from(color)).to_vec(),
-                        ),
+                        AiPropertyTypeInfo::Binary,
                         0,
+                        bytemuck::bytes_of(&AiColor4D::from(color)).to_vec(),
                     );
                 }
             }
@@ -144,8 +145,9 @@ impl GltfImporter {
             ai_material.add_property(
                 AI_MATKEY_TWOSIDED,
                 Some(AiTextureType::None),
-                AiPropertyTypeInfo::Binary(vec![material.double_sided() as u8]),
+                AiPropertyTypeInfo::Binary,
                 0,
+                vec![material.double_sided() as u8],
             );
 
             //Handle Opacity
@@ -153,8 +155,9 @@ impl GltfImporter {
                 ai_material.add_property(
                     AI_MATKEY_OPACITY,
                     Some(AiTextureType::None),
-                    AiPropertyTypeInfo::Binary(material.transparency().to_le_bytes().to_vec()),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    material.transparency().to_le_bytes().to_vec(),
                 );
             }
 
@@ -163,8 +166,9 @@ impl GltfImporter {
                 ai_material.add_property(
                     AI_MATKEY_SHININESS,
                     Some(AiTextureType::None),
-                    AiPropertyTypeInfo::Binary(material.shininess().to_le_bytes().to_vec()),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    material.shininess().to_le_bytes().to_vec(),
                 );
             }
 
