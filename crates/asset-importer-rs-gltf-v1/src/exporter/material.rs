@@ -302,26 +302,27 @@ mod tests {
         material.add_property(
             matkey::AI_MATKEY_NAME,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary("TestMaterial".as_bytes().to_vec()),
+            AiPropertyTypeInfo::Binary,
             0,
+            "TestMaterial".as_bytes().to_vec(),
         );
 
         // Add diffuse color
         material.add_property(
             AI_MATKEY_COLOR_DIFFUSE,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(
-                bytemuck::bytes_of(&AiColor4D::from([1.0, 0.5, 0.25, 1.0])).to_vec(),
-            ),
+            AiPropertyTypeInfo::Binary,
             0,
+            bytemuck::bytes_of(&AiColor4D::from([1.0, 0.5, 0.25, 1.0])).to_vec(),
         );
 
         // Add two-sided property
         material.add_property(
             AI_MATKEY_TWOSIDED,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(vec![1]),
+            AiPropertyTypeInfo::Binary,
             0,
+            vec![1],
         );
 
         material
@@ -376,23 +377,26 @@ mod tests {
         material.add_property(
             _AI_MATKEY_TEXTURE_BASE,
             Some(AiTextureType::Diffuse),
-            AiPropertyTypeInfo::Binary("test_texture.png".as_bytes().to_vec()),
+            AiPropertyTypeInfo::Binary,
             0,
+            "test_texture.png".as_bytes().to_vec(),
         );
 
         // Add texture mapping modes
         material.add_property(
             _AI_MATKEY_MAPPINGMODE_U_BASE,
             Some(AiTextureType::Diffuse),
-            AiPropertyTypeInfo::Binary(vec![AiTextureMapMode::Clamp as u8]),
+            AiPropertyTypeInfo::Binary,
             0,
+            vec![AiTextureMapMode::Clamp as u8],
         );
 
         material.add_property(
             _AI_MATKEY_MAPPINGMODE_V_BASE,
             Some(AiTextureType::Diffuse),
-            AiPropertyTypeInfo::Binary(vec![AiTextureMapMode::Mirror as u8]),
+            AiPropertyTypeInfo::Binary,
             0,
+            vec![AiTextureMapMode::Mirror as u8],
         );
 
         scene.materials.push(material);
@@ -444,8 +448,9 @@ mod tests {
         material.add_property(
             _AI_MATKEY_TEXTURE_BASE,
             Some(AiTextureType::Diffuse),
-            AiPropertyTypeInfo::Binary("*0".as_bytes().to_vec()),
+            AiPropertyTypeInfo::Binary,
             0,
+            "*0".as_bytes().to_vec(),
         );
 
         scene.materials.push(material);

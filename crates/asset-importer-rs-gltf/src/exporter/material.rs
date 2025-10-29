@@ -229,11 +229,17 @@ fn get_material_texture_normal(
     .map(|x| {
         let scale = ai_material
             .get_property(_AI_MATKEY_GLTF_SCALE_BASE, Some(texture_type), index)
-            .and_then(|prop| match prop {
-                AiPropertyTypeInfo::Binary if prop.data.len() == 4 => Some(f32::from_le_bytes([
-                    binary[0], binary[1], binary[2], binary[3],
-                ])),
-                _ => None,
+            .and_then(|prop| {
+                if prop.data.len() == 4 {
+                    Some(f32::from_le_bytes([
+                        prop.data[0],
+                        prop.data[1],
+                        prop.data[2],
+                        prop.data[3],
+                    ]))
+                } else {
+                    None
+                }
             })
             .unwrap_or(1.0);
         NormalTexture {
@@ -272,14 +278,18 @@ fn get_material_texture_occlusion(
         let texture_strength_key = format!("{}.strength", _AI_MATKEY_TEXTURE_BASE);
         let strength = ai_material
             .get_property(&texture_strength_key, Some(texture_type), index)
-            .and_then(|info| if binary.len() == 4{
+            .and_then(|prop| {
+                if prop.data.len() == 4 {
                     Some(f32::from_le_bytes([
-                        binary[0], binary[1], binary[2], binary[3],
-                    ]))             
-            }
-        else {
-            None
-        })
+                        prop.data[0],
+                        prop.data[1],
+                        prop.data[2],
+                        prop.data[3],
+                    ]))
+                } else {
+                    None
+                }
+            })
             .unwrap_or(1.0);
         OcclusionTexture {
             index: x.index,
@@ -305,20 +315,23 @@ fn get_material_texture(
     //Get Texture Coordinate
     let tex_coord = ai_material
         .get_property(matkey::_AI_MATKEY_UVWSRC_BASE, Some(texture_type), index)
-        .and_then(|prop|  if prop.data.len() == 4 { Some(u32::from_le_bytes([
-                prop.data[0], prop.data[1], prop.data[2], prop.data[3],
-            ]))}
-            else{
+        .and_then(|prop| {
+            if prop.data.len() == 4 {
+                Some(u32::from_le_bytes([
+                    prop.data[0],
+                    prop.data[1],
+                    prop.data[2],
+                    prop.data[3],
+                ]))
+            } else {
                 None
             }
-        )
+        })
         .unwrap_or(0);
 
     let result = ai_material
         .get_property(matkey::_AI_MATKEY_TEXTURE_BASE, Some(texture_type), index)
-        .and_then(|prop|
-            String::from_utf8(prop.data.to_vec()).ok()
-        )
+        .and_then(|prop| String::from_utf8(prop.data.to_vec()).ok())
         .and_then(|texture_name| {
             if let Some(texture_index) = texture_name_to_index_map.get(&texture_name) {
                 Some(*texture_index)
@@ -371,21 +384,22 @@ fn get_material_texture(
 
                     //handle sampler
                     let sampler = ai_material
-                        .get_property(
-                            _AI_MATKEY_GLTF_MAPPINGID_BASE,
-                            Some(texture_type),
-                            index,
-                        )
-                        .and_then(|prop|
-                           if prop.data.len() == 4 { Some(
-                                u32::from_le_bytes([prop.data[0], prop.data[1], prop.data[2], prop.data[3]])
-                                    .to_string(),    )
-                        }
-                        else {
-                            None
-                        }
-                          
-                        )
+                        .get_property(_AI_MATKEY_GLTF_MAPPINGID_BASE, Some(texture_type), index)
+                        .and_then(|prop| {
+                            if prop.data.len() == 4 {
+                                Some(
+                                    u32::from_le_bytes([
+                                        prop.data[0],
+                                        prop.data[1],
+                                        prop.data[2],
+                                        prop.data[3],
+                                    ])
+                                    .to_string(),
+                                )
+                            } else {
+                                None
+                            }
+                        })
                         .map(|name| {
                             if let Some((index, _)) = root
                                 .samplers
@@ -402,10 +416,9 @@ fn get_material_texture(
                                             Some(texture_type),
                                             0,
                                         )
-                                        .and_then(|prop| 
-                                                if prop.data.len() == 1
-                                            {
-                                                match items[0] {
+                                        .and_then(|prop| {
+                                            if prop.data.len() == 1 {
+                                                match prop.data[0] {
                                                     2 => Some(Checked::Valid(
                                                         gltf::texture::MagFilter::Linear,
                                                     )),
@@ -414,21 +427,19 @@ fn get_material_texture(
                                                     )),
                                                     _ => None,
                                                 }
-                                            }
-                                            else{
+                                            } else {
                                                 None
                                             }
-                                        ),
+                                        }),
                                     min_filter: ai_material
                                         .get_property(
                                             _AI_MATKEY_GLTF_MAPPINGFILTER_MIN_BASE,
                                             Some(texture_type),
                                             0,
                                         )
-                                        .and_then(|prop| 
-                                                if prop.data.len() == 1
-                                            {
-                                                match items[0] {
+                                        .and_then(|prop| {
+                                            if prop.data.len() == 1 {
+                                                match prop.data[0] {
                                                     2 => Some(Checked::Valid(
                                                         gltf::texture::MinFilter::Linear,
                                                     )),
@@ -437,31 +448,28 @@ fn get_material_texture(
                                                     )),
                                                     _ => None,
                                                 }
-                                            }
-                                            else{
+                                            } else {
                                                 None
                                             }
-                                           
-                                        ),
+                                        }),
                                     name: ai_material
                                         .get_property(
                                             _AI_MATKEY_GLTF_MAPPINGNAME_BASE,
                                             Some(texture_type),
                                             0,
                                         )
-                                        .and_then(|prop| 
-                                                String::from_utf8(items.to_vec()).ok()
-                                        ),
+                                        .and_then(|prop| {
+                                            String::from_utf8(prop.data.to_vec()).ok()
+                                        }),
                                     wrap_s: ai_material
                                         .get_property(
                                             _AI_MATKEY_MAPPINGMODE_U_BASE,
                                             Some(texture_type),
                                             0,
                                         )
-                                        .and_then(|prop|
-                                                if items.len() == 1
-                                            {
-                                                match items[0] {
+                                        .and_then(|prop| {
+                                            if prop.data.len() == 1 {
+                                                match prop.data[0] {
                                                     1 => Some(Checked::Valid(
                                                         gltf::texture::WrappingMode::ClampToEdge,
                                                     )),
@@ -473,10 +481,10 @@ fn get_material_texture(
                                                     )),
                                                     _ => None,
                                                 }
+                                            } else {
+                                                None
                                             }
-                                            else{None}
-                                            
-                                        )
+                                        })
                                         .unwrap_or(Checked::Valid(
                                             gltf::texture::WrappingMode::ClampToEdge,
                                         )),
@@ -486,11 +494,9 @@ fn get_material_texture(
                                             Some(texture_type),
                                             0,
                                         )
-                                        .and_then(|prop|
-                                            
-                                                if prop.data.len() == 1
-                                            {
-                                                match items[0] {
+                                        .and_then(|prop| {
+                                            if prop.data.len() == 1 {
+                                                match prop.data[0] {
                                                     1 => Some(Checked::Valid(
                                                         gltf::texture::WrappingMode::ClampToEdge,
                                                     )),
@@ -502,12 +508,10 @@ fn get_material_texture(
                                                     )),
                                                     _ => None,
                                                 }
-                                            }
-                                            else{
+                                            } else {
                                                 None
                                             }
-                                            
-                                        )
+                                        })
                                         .unwrap_or(Checked::Valid(
                                             gltf::texture::WrappingMode::ClampToEdge,
                                         )),
@@ -610,64 +614,69 @@ fn handle_pbr(
 
     material.pbr_metallic_roughness.base_color_factor = ai_material
         .get_property(AI_MATKEY_BASE_COLOR, Some(AiTextureType::None), 0)
-        .and_then(|prop|  try_from_bytes::<AiColor4D>(binary)
+        .and_then(|prop| {
+            try_from_bytes::<AiColor4D>(&prop.data)
                 .ok()
-                .map(|x| gltf::json::material::PbrBaseColorFactor(Into::<[f32; 4]>::into(*x))),
-        )
+                .map(|x| gltf::json::material::PbrBaseColorFactor(Into::<[f32; 4]>::into(*x)))
+        })
         .or(ai_material
             .get_property(AI_MATKEY_COLOR_DIFFUSE, Some(AiTextureType::None), 0)
-            .and_then(|prop|
-                 try_from_bytes::<AiColor4D>(binary)
+            .and_then(|prop| {
+                try_from_bytes::<AiColor4D>(&prop.data)
                     .ok()
-                    .map(|x| gltf::json::material::PbrBaseColorFactor(Into::<[f32; 4]>::into(*x))),
-            ))
+                    .map(|x| gltf::json::material::PbrBaseColorFactor(Into::<[f32; 4]>::into(*x)))
+            }))
         .unwrap_or_default();
 
     material.pbr_metallic_roughness.metallic_factor = ai_material
         .get_property(AI_MATKEY_METALLIC_FACTOR, Some(AiTextureType::None), 0)
-        .and_then(|prop| 
-            if prop.data.len() == 4{
+        .and_then(|prop| {
+            if prop.data.len() == 4 {
                 Some(StrengthFactor(f32::from_le_bytes([
-                    binary[0], binary[1], binary[2], binary[3],
+                    prop.data[0],
+                    prop.data[1],
+                    prop.data[2],
+                    prop.data[3],
                 ])))
-        }
-        else{
-        None})
+            } else {
+                None
+            }
+        })
         .unwrap_or(StrengthFactor(0.0));
 
     material.pbr_metallic_roughness.roughness_factor = ai_material
         .get_property(AI_MATKEY_ROUGHNESS_FACTOR, Some(AiTextureType::None), 0)
-        .and_then(|prop| 
+        .and_then(|prop| {
             if prop.data.len() == 4 {
                 Some(StrengthFactor(f32::from_le_bytes([
-                    binary[0], binary[1], binary[2], binary[3],
+                    prop.data[0],
+                    prop.data[1],
+                    prop.data[2],
+                    prop.data[3],
                 ])))
+            } else {
+                None
             }
-            else{
-            None}
-           
-        )
+        })
         .or_else(|| {
             if let Some(shininess) = ai_material
                 .get_property(AI_MATKEY_SHININESS, Some(AiTextureType::None), 0)
-                .and_then(|prop|  if prop.data.len() == 4 {
+                .and_then(|prop| {
+                    if prop.data.len() == 4 {
                         Some(StrengthFactor(f32::from_le_bytes([
-                            binary[0], binary[1], binary[2], binary[3],
+                            prop.data[0],
+                            prop.data[1],
+                            prop.data[2],
+                            prop.data[3],
                         ])))
-                    }
-                    else{
+                    } else {
                         None
-                    })
-        
-                    
+                    }
                 })
             {
                 if let Some(specular) = ai_material
                     .get_property(AI_MATKEY_COLOR_SPECULAR, Some(AiTextureType::None), 0)
-                    .and_then(|prop| match prop.property_type {
-                        AiPropertyTypeInfo::Binary => try_from_bytes::<AiColor3D>(&prop.data).ok(),
-                        _ => None,
-                    })
+                    .and_then(|prop| try_from_bytes::<AiColor3D>(&prop.data).ok())
                 {
                     let specular_intensity =
                         specular.r * 0.2125 + specular.g * 0.2125 + specular.b * 0.2125;

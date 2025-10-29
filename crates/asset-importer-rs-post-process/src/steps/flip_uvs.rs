@@ -3,7 +3,7 @@ use asset_importer_rs_scene::{
     AiMaterial, AiMesh, AiPropertyTypeInfo, AiScene, AiUvTransform, matkey,
 };
 use bytemuck;
-use enumflags2::{BitFlags, bitflags};
+use enumflags2::BitFlags;
 
 #[derive(Debug, PartialEq)]
 pub enum FlipUVsError {
@@ -48,24 +48,21 @@ impl FlipUVs {
         if let Some(second_flip) = self.second_flip {
             flips.push(second_flip)
         }
-
-        for prop in material.iter_mut() {
-            if prop.key == matkey::_AI_MATKEY_UVTRANSFORM_BASE {
-                if let Some(transform) = ai_uv_transform {
-                    for flip in flips.iter() {
-                        match flip {
-                            UvFlipVariant::X => {
-                                transform.translation.x *= -1.0;
-                                transform.rotation *= -1.0;
-                            }
-                            UvFlipVariant::Y => {
-                                transform.translation.y *= -1.0;
-                                transform.rotation *= -1.0;
-                            }
-                            _ => {
-                                transform.rotation *= -1.0;
-                            }
-                        }
+        if let Some(prop) = material.get_property_mut(matkey::_AI_MATKEY_UVTRANSFORM_BASE, None, 0)
+        {
+            let transform = bytemuck::from_bytes_mut::<AiUvTransform>(&mut prop.data);
+            for flip in flips.iter() {
+                match flip {
+                    UvFlipVariant::X => {
+                        transform.translation.x *= -1.0;
+                        transform.rotation *= -1.0;
+                    }
+                    UvFlipVariant::Y => {
+                        transform.translation.y *= -1.0;
+                        transform.rotation *= -1.0;
+                    }
+                    _ => {
+                        transform.rotation *= -1.0;
                     }
                 }
             }
@@ -169,12 +166,14 @@ mod tests {
 
         let mut custom_transform = AiUvTransform::default();
         custom_transform.translation.y = 1.0;
+        custom_transform.rotation = 1.0;
 
         material.add_property(
             matkey::_AI_MATKEY_UVTRANSFORM_BASE,
             Some(AiTextureType::Emissive),
-            AiPropertyTypeInfo::Binary(bytemuck::bytes_of(&custom_transform).to_vec()),
+            AiPropertyTypeInfo::Binary,
             0,
+            bytemuck::bytes_of(&custom_transform).to_vec(),
         );
         let materials = vec![material];
 
@@ -196,9 +195,15 @@ mod tests {
         assert!(result.is_ok());
 
         let tex_coords = scene.meshes[0].texture_coords[0].as_ref().unwrap();
+        let property = scene.materials[0]
+            .get_property(matkey::_AI_MATKEY_UVTRANSFORM_BASE, None, 0)
+            .unwrap();
+        let ai_uv_transform = bytemuck::from_bytes::<AiUvTransform>(&property.data);
         assert_eq!(
             *tex_coords,
             vec![[0.0, 1.0, 0.0].into(), [0.0, 0.0, 0.0].into()]
-        )
+        );
+        assert_eq!(ai_uv_transform.translation.y, -1.0);
+        assert_eq!(ai_uv_transform.rotation, -1.0);
     }
 }
