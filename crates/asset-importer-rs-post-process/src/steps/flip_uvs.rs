@@ -1,6 +1,6 @@
 use asset_importer_rs_core::{AiPostProcess, AiPostProcessSteps};
 use asset_importer_rs_scene::{
-    AiMaterial, AiMesh, AiPropertyTypeInfo, AiScene, AiUvTransform, matkey,
+    AiMaterial, AiMesh, AiPropertyTypeInfo, AiReal, AiScene, AiUvTransform, AiVector3D, matkey,
 };
 use bytemuck;
 use enumflags2::BitFlags;
@@ -30,6 +30,31 @@ pub enum UvFlipVariant {
     Y,
     Z,
 }
+impl UvFlipVariant {
+    pub fn apply_flip_material(&self, uv_transform: &mut AiUvTransform) {
+        match self {
+            UvFlipVariant::X => {
+                uv_transform.translation.x *= -1.0;
+                uv_transform.rotation *= -1.0;
+            }
+            UvFlipVariant::Y => {
+                uv_transform.translation.y *= -1.0;
+                uv_transform.rotation *= -1.0;
+            }
+            UvFlipVariant::Z => {
+                uv_transform.translation.z *= -1.0;
+                uv_transform.rotation *= -1.0;
+            }
+        }
+    }
+    pub fn apply_flip_uv(&self, uv: &mut AiVector3D) {
+        match self {
+            UvFlipVariant::X => uv.x = -uv.x + 1.0 as AiReal,
+            UvFlipVariant::Y => uv.y = -uv.y + 1.0 as AiReal,
+            UvFlipVariant::Z => uv.z = -uv.z + 1.0 as AiReal,
+        }
+    }
+}
 impl Default for UvFlipVariant {
     fn default() -> Self {
         Self::Y
@@ -39,32 +64,21 @@ impl Default for UvFlipVariant {
 /// Flip UVs
 #[derive(Default)]
 pub struct FlipUVs {
-    first_flip: UvFlipVariant,
-    second_flip: Option<UvFlipVariant>,
+    flip_direction: UvFlipVariant,
+    additional_flip_direction: Option<UvFlipVariant>,
 }
 impl FlipUVs {
     fn process_material(&self, material: &mut AiMaterial) -> Result<(), FlipUVsError> {
-        let mut flips = vec![self.first_flip];
-        if let Some(second_flip) = self.second_flip {
+        let mut flips = vec![self.flip_direction];
+        if let Some(second_flip) = self.additional_flip_direction {
             flips.push(second_flip)
         }
         if let Some(prop) = material.get_property_mut(matkey::_AI_MATKEY_UVTRANSFORM_BASE, None, 0)
         {
             let transform = bytemuck::from_bytes_mut::<AiUvTransform>(&mut prop.data);
-            for flip in flips.iter() {
-                match flip {
-                    UvFlipVariant::X => {
-                        transform.translation.x *= -1.0;
-                        transform.rotation *= -1.0;
-                    }
-                    UvFlipVariant::Y => {
-                        transform.translation.y *= -1.0;
-                        transform.rotation *= -1.0;
-                    }
-                    _ => {
-                        transform.rotation *= -1.0;
-                    }
-                }
+            self.flip_direction.apply_flip_material(transform);
+            if let Some(additional_flip) = self.additional_flip_direction {
+                additional_flip.apply_flip_material(transform);
             }
         }
 
@@ -72,46 +86,26 @@ impl FlipUVs {
     }
 
     fn process_mesh(&self, mesh: &mut AiMesh) -> Result<(), FlipUVsError> {
-        let mut flips = vec![self.first_flip];
-        if let Some(second_flip) = self.second_flip {
-            flips.push(second_flip)
-        }
-
         let uv_channel_names = &mesh.texture_coordinate_names;
 
-        let occupied_uv_channels = mesh
-            .texture_coords
-            .iter_mut()
-            .enumerate()
-            .filter_map(|(index, channel_o)| {
-                if channel_o.is_some() {
-                    return Some((index, channel_o.as_mut().unwrap()));
-                } else {
-                    return None;
-                }
-            })
-            .collect::<Vec<_>>();
-
-        for (channel_index, channel) in occupied_uv_channels.into_iter() {
-            for uv in channel.iter_mut() {
-                if uv.z != 0.0 && uv.square_length() > 3.0 {
-                    return Err(FlipUVsError::UvsNotClippedError(
-                        uv_channel_names[channel_index].clone(),
-                        channel_index,
-                    ));
-                }
-                if uv.z == 0.0 && uv.square_length() > 2.0 {
-                    return Err(FlipUVsError::UvsNotClippedError(
-                        uv_channel_names[channel_index].clone(),
-                        channel_index,
-                    ));
-                }
-
-                for flip in flips.iter() {
-                    match flip {
-                        UvFlipVariant::X => uv.x = -uv.x + 1.0f32,
-                        UvFlipVariant::Y => uv.y = -uv.y + 1.0f32,
-                        UvFlipVariant::Z => uv.z = -uv.z + 1.0f32,
+        for (channel_index, uv_channel) in mesh.texture_coords.iter_mut().enumerate() {
+            if let Some(channel) = uv_channel.as_mut() {
+                for uv in channel.iter_mut() {
+                    if uv.z != 0.0 && uv.square_length() > 3.0 {
+                        return Err(FlipUVsError::UvsNotClippedError(
+                            uv_channel_names[channel_index].clone(),
+                            channel_index,
+                        ));
+                    }
+                    if uv.z == 0.0 && uv.square_length() > 2.0 {
+                        return Err(FlipUVsError::UvsNotClippedError(
+                            uv_channel_names[channel_index].clone(),
+                            channel_index,
+                        ));
+                    }
+                    self.flip_direction.apply_flip_uv(uv);
+                    if let Some(additional_flip) = self.additional_flip_direction {
+                        additional_flip.apply_flip_uv(uv);
                     }
                 }
             }

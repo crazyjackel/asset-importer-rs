@@ -308,7 +308,7 @@ fn handle_texture_transform<'a, T: ImportTexture<'a>>(
     texture_type: AiTextureType,
     texture_index: u32,
 ) {
-    use asset_importer_rs_scene::{AiReal, AiUvTransform, AiVector2D};
+    use asset_importer_rs_scene::{AiReal, AiUvTransform, AiVector2D, AiVector3D};
 
     if let Some(transform) = texture_info.texture_transform() {
         let scale = transform.scale();
@@ -323,9 +323,10 @@ fn handle_texture_transform<'a, T: ImportTexture<'a>>(
                 x: scale[0] as AiReal,
                 y: scale[1] as AiReal,
             },
-            translation: AiVector2D {
+            translation: AiVector3D {
                 x: offset_x as AiReal,
                 y: offset_y as AiReal,
+                z: 0.0 as AiReal,
             },
             rotation: rotation as AiReal,
         };

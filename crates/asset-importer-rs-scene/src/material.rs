@@ -5,7 +5,9 @@ use enumflags2::bitflags;
 use image::hooks::register_decoding_hook;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
-use super::{AiColor3D, AiColor4D, type_def::base_types::AiReal, vector::AiVector2D};
+use super::{
+    AiColor3D, AiColor4D, type_def::base_types::AiReal, vector::AiVector2D, vector::AiVector3D,
+};
 
 //@todo Add an Enum to Matkey that can be used to convert to and from binary based on format
 pub mod matkey {
@@ -286,7 +288,7 @@ enum AiBlendMode {
 #[repr(C)]
 #[derive(Debug, PartialEq, Pod, Zeroable, Clone, Copy)]
 pub struct AiUvTransform {
-    pub translation: AiVector2D,
+    pub translation: AiVector3D,
     pub scaling: AiVector2D,
     pub rotation: AiReal,
 }
@@ -294,7 +296,7 @@ pub struct AiUvTransform {
 impl Default for AiUvTransform {
     fn default() -> Self {
         Self {
-            translation: AiVector2D::new(0.0, 0.0),
+            translation: AiVector3D::new(0.0, 0.0, 0.0),
             scaling: AiVector2D::new(1.0, 1.0),
             rotation: 0.0,
         }
@@ -310,32 +312,6 @@ pub enum AiPropertyTypeInfo {
     StringArray,
     IntegerArray,
     Buffer,
-}
-
-impl AiPropertyTypeInfo {
-    pub fn variant_eq(&self, other: &Self) -> bool {
-        matches!(
-            (self, other),
-            (AiPropertyTypeInfo::Binary, AiPropertyTypeInfo::Binary)
-                | (
-                    AiPropertyTypeInfo::FloatArray,
-                    AiPropertyTypeInfo::FloatArray
-                )
-                | (
-                    AiPropertyTypeInfo::DoubleArray,
-                    AiPropertyTypeInfo::DoubleArray
-                )
-                | (
-                    AiPropertyTypeInfo::StringArray,
-                    AiPropertyTypeInfo::StringArray
-                )
-                | (
-                    AiPropertyTypeInfo::IntegerArray,
-                    AiPropertyTypeInfo::IntegerArray
-                )
-                | (AiPropertyTypeInfo::Buffer, AiPropertyTypeInfo::Buffer)
-        )
-    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -582,21 +558,73 @@ impl AiMaterial {
     ) -> Option<Vec<AiReal>> {
         let property = self.get_property(key, semantic_type, index)?;
         let data = &property.data;
-        let chunks_iterator = data.rchunks_exact(4);
-        let remainder = chunks_iterator.remainder();
-        if remainder.len() != 0 {
-            return None;
-        }
-        let ai_real_vec = chunks_iterator
-            .map(|chunk| AiReal::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]))
-            .collect::<Vec<AiReal>>();
+        match property.property_type {
+            AiPropertyTypeInfo::FloatArray => {
+                let chunks_iterator = data.rchunks_exact(4);
+                let remainder = chunks_iterator.remainder();
+                if remainder.len() != 0 {
+                    return None;
+                }
+                let ai_real_vec = chunks_iterator
+                    .map(|chunk| {
+                        f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal
+                    })
+                    .collect::<Vec<AiReal>>();
 
-        Some(ai_real_vec)
+                Some(ai_real_vec)
+            }
+            AiPropertyTypeInfo::DoubleArray => {
+                let chunks_iterator = data.rchunks_exact(8);
+                let remainder = chunks_iterator.remainder();
+                if remainder.len() != 0 {
+                    return None;
+                }
+                let ai_real_vec = chunks_iterator
+                    .map(|chunk| {
+                        f64::from_le_bytes([
+                            chunk[0], chunk[1], chunk[2], chunk[3], chunk[4], chunk[5], chunk[6],
+                            chunk[7],
+                        ]) as AiReal
+                    })
+                    .collect::<Vec<AiReal>>();
+
+                Some(ai_real_vec)
+            }
+            AiPropertyTypeInfo::IntegerArray => {
+                let chunks_iterator = data.rchunks_exact(4);
+                let remainder = chunks_iterator.remainder();
+                if remainder.len() != 0 {
+                    return None;
+                }
+                let ai_real_vec = chunks_iterator
+                    .map(|chunk| {
+                        u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal
+                    })
+                    .collect::<Vec<AiReal>>();
+
+                Some(ai_real_vec)
+            }
+            AiPropertyTypeInfo::StringArray => {
+                todo!();
+            }
+            AiPropertyTypeInfo::Binary | AiPropertyTypeInfo::Buffer => {
+                let chunks_iterator = data.rchunks_exact(4);
+                let remainder = chunks_iterator.remainder();
+                if remainder.len() != 0 {
+                    return None;
+                }
+                let ai_real_vec = chunks_iterator
+                    .map(|chunk| {
+                        f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal
+                    })
+                    .collect::<Vec<AiReal>>();
+
+                Some(ai_real_vec)
+            }
+        }
     }
 }
-
 mod tests {
-
     /// Tests the code of get_real_vector's String | Buffer Match
     /// Check that strings made up of joined floats can be parsed successfully
     #[test]
