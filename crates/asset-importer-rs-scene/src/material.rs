@@ -288,7 +288,7 @@ enum AiBlendMode {
 #[repr(C)]
 #[derive(Debug, PartialEq, Pod, Zeroable, Clone, Copy)]
 pub struct AiUvTransform {
-    pub translation: AiVector3D,
+    pub translation: AiVector2D,
     pub scaling: AiVector2D,
     pub rotation: AiReal,
 }
@@ -296,7 +296,7 @@ pub struct AiUvTransform {
 impl Default for AiUvTransform {
     fn default() -> Self {
         Self {
-            translation: AiVector3D::new(0.0, 0.0, 0.0),
+            translation: AiVector2D::new(0.0, 0.0),
             scaling: AiVector2D::new(1.0, 1.0),
             rotation: 0.0,
         }

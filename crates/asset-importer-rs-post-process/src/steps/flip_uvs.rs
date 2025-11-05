@@ -1,6 +1,7 @@
 use asset_importer_rs_core::{AiPostProcess, AiPostProcessSteps};
 use asset_importer_rs_scene::{
-    AiMaterial, AiMesh, AiPropertyTypeInfo, AiReal, AiScene, AiUvTransform, AiVector3D, matkey,
+    AI_MATH_PI, AiMaterial, AiMesh, AiPropertyTypeInfo, AiReal, AiScene, AiUvTransform, AiVector3D,
+    matkey,
 };
 use bytemuck;
 use enumflags2::BitFlags;
@@ -35,16 +36,13 @@ impl UvFlipVariant {
         match self {
             UvFlipVariant::X => {
                 uv_transform.translation.x *= -1.0;
-                uv_transform.rotation *= -1.0;
+                uv_transform.rotation *= AI_MATH_PI - uv_transform.rotation;
             }
             UvFlipVariant::Y => {
                 uv_transform.translation.y *= -1.0;
                 uv_transform.rotation *= -1.0;
             }
-            UvFlipVariant::Z => {
-                uv_transform.translation.z *= -1.0;
-                uv_transform.rotation *= -1.0;
-            }
+            UvFlipVariant::Z => (),
         }
     }
     pub fn apply_flip_uv(&self, uv: &mut AiVector3D) {
@@ -69,10 +67,6 @@ pub struct FlipUVs {
 }
 impl FlipUVs {
     fn process_material(&self, material: &mut AiMaterial) -> Result<(), FlipUVsError> {
-        let mut flips = vec![self.flip_direction];
-        if let Some(second_flip) = self.additional_flip_direction {
-            flips.push(second_flip)
-        }
         if let Some(prop) = material.get_property_mut(matkey::_AI_MATKEY_UVTRANSFORM_BASE, None, 0)
         {
             let transform = bytemuck::from_bytes_mut::<AiUvTransform>(&mut prop.data);

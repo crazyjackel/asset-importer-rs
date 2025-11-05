@@ -323,10 +323,9 @@ fn handle_texture_transform<'a, T: ImportTexture<'a>>(
                 x: scale[0] as AiReal,
                 y: scale[1] as AiReal,
             },
-            translation: AiVector3D {
+            translation: AiVector2D {
                 x: offset_x as AiReal,
                 y: offset_y as AiReal,
-                z: 0.0 as AiReal,
             },
             rotation: rotation as AiReal,
         };
