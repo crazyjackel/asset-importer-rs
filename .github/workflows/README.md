@@ -9,9 +9,15 @@ Runs standard Rust quality checks:
 - Documentation tests
 - Clippy linting
 - Code formatting (rustfmt)
-- Semantic versioning checks
 
 **Triggers:** Push and pull requests to `main` branch
+
+### `semver.yml` - Semantic Versioning Checks
+Runs semantic versioning checks:
+- Validates that version changes follow semantic versioning rules
+- Ensures API compatibility between versions
+
+**Triggers:** Push to tags only
 
 ### `benchmark.yml` - Benchmarks
 Runs performance benchmarks:
