@@ -1,0 +1,32 @@
+name: GLTF V1 JSON Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Cargo.toml'
+      - 'crates/gltf-v1-json/**'
+      - 'crates/gltf-v1-derive/**'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test GLTF V1 JSON
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v -p gltf-v1-json
+      - name: test
+        run: cargo test -v -p gltf-v1-json
+

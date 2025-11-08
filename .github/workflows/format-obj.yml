@@ -1,0 +1,57 @@
+name: OBJ Format Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'Cargo.toml'
+      - 'crates/asset-importer-rs-obj/**'
+      - 'crates/asset-importer-rs-core/**'
+      - 'crates/asset-importer-rs-scene/**'
+      - 'tests/obj_integration.rs'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Test OBJ Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v -p asset-importer-rs-obj
+      - name: test crate
+        run: cargo test -v -p asset-importer-rs-obj
+
+  test_integration:
+    name: Test OBJ Integration
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        features: ['minimal', 'default', 'extras']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v --no-default-features --features "$FEATURES"
+        env:
+          FEATURES: ${{ matrix.features }}
+      - name: test integration
+        run: cargo test -v --no-default-features --features "$FEATURES" --test obj_integration -- --nocapture
+        env:
+          FEATURES: ${{ matrix.features }}

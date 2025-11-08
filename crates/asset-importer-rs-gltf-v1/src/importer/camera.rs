@@ -23,7 +23,6 @@ impl GltfImporter {
                 .name()
                 .map(|x| x.to_string())
                 .unwrap_or(format!("{}", index));
-            camera_map.insert(name.clone(), index);
             if camera_map.contains_key(&name) {
                 return Err(GLTFImportError::DuplicateName);
             }
@@ -71,7 +70,7 @@ fn test_gltf_camera_import() {
     let gltf_data = r#"{
             "cameras" : {
                 "perpsective" :
-                    {
+                {
                     "type": "perspective",
                     "perspective": {
                         "aspectRatio": 1.0,
@@ -81,13 +80,13 @@ fn test_gltf_camera_import() {
                     }
                 },
                 "orthographic": {
-                "type": "orthographic",
-                "orthographic": {
-                    "xmag": 1.0,
-                    "ymag": 1.0,
-                    "zfar": 100,
-                    "znear": 0.01
-                }
+                    "type": "orthographic",
+                    "orthographic": {
+                        "xmag": 1.0,
+                        "ymag": 1.0,
+                        "zfar": 100,
+                        "znear": 0.01
+                    }
                 }
             }   
         }"#;

@@ -55,7 +55,7 @@ impl AiCamera {
     /// # Example
     /// ```rust
     ///
-    /// use asset_importer_rs::structs::{AiCamera, AiVector3D};
+    /// use asset_importer_rs_scene::{AiCamera, AiVector3D};
     /// let camera = AiCamera {
     ///     position: AiVector3D::new(0.0, 0.0, 5.0),
     ///     look_vec: AiVector3D::new(0.0, 0.0, -1.0),
