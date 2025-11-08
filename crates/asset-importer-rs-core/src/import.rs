@@ -18,8 +18,7 @@ use super::importer_desc::AiImporterDesc;
 /// # Example
 ///
 /// ```rust
-/// use asset_importer_rs_core::import::AiImporterInfo;
-/// use asset_importer_rs_core::importer_desc::AiImporterDesc;
+/// use asset_importer_rs_core::{AiImporterInfo, AiImporterDesc};
 ///
 /// struct MyImporter;
 ///
@@ -51,13 +50,16 @@ pub trait AiImporterInfo {
 /// # Example
 ///
 /// ```rust
-/// use asset_importer_rs_core::import::ReadSeek;
+/// use asset_importer_rs_core::ReadSeek;
 /// use std::fs::File;
 /// use std::io::{Read, Seek};
 ///
 /// // File implements both Read and Seek, so it automatically implements ReadSeek
-/// let file = File::open("example.txt")?;
-/// let _: &dyn ReadSeek = &file;
+/// fn example() -> std::io::Result<()> {
+///     let file = File::open("example.txt")?;
+///     let _: &dyn ReadSeek = &file;
+///     Ok(())
+/// }
 /// ```
 pub trait ReadSeek: Read + Seek {}
 impl<T: Read + Seek + ?Sized> ReadSeek for T {}
@@ -73,14 +75,14 @@ pub type DataLoader<'a> = dyn Fn(&Path) -> io::Result<Box<dyn ReadSeek + 'a>> + 
 /// # Example
 ///
 /// ```rust
-/// use asset_importer_rs_core::import::{AiImporter, AiImporterInfo, DataLoader};
+/// use asset_importer_rs_core::{AiImporter, AiImporterInfo, AiImporterDesc, DataLoader};
 /// use asset_importer_rs_scene::AiScene;
 /// use std::path::Path;
 ///
 /// struct MyImporter;
 ///
 /// impl AiImporterInfo for MyImporter {
-///     fn info(&self) -> asset_importer_rs_core::importer_desc::AiImporterDesc {
+///     fn info(&self) -> AiImporterDesc {
 ///         todo!()
 ///     }
 /// }
@@ -141,14 +143,14 @@ pub trait AiImporter: AiImporterInfo {
 /// # Example
 ///
 /// ```rust
-/// use asset_importer_rs_core::import::{AiImporterExt, AiImporterInfo};
+/// use asset_importer_rs_core::{AiImporterExt, AiImporterInfo, AiImporterDesc};
 /// use asset_importer_rs_scene::AiScene;
 /// use std::path::Path;
 ///
 /// struct MyImporter;
 ///
 /// impl AiImporterInfo for MyImporter {
-///     fn info(&self) -> asset_importer_rs_core::importer_desc::AiImporterDesc {
+///     fn info(&self) -> AiImporterDesc {
 ///         todo!()
 ///     }
 /// }

@@ -1,0 +1,79 @@
+name: GLTF 2.0 Tests
+
+on: 
+    push:
+      branches: [ main ]
+    pull_request:
+      branches: [ main ]
+      paths:
+        - 'Cargo.toml'
+        - 'tests/gltf2_exporter_integration_tests.rs'
+        - 'tests/gltf2_importer_integration_tests.rs'
+        - 'tests/gltf2_importer_sample_asset_test.rs'
+        - 'tests/gltf2_integration.rs'
+        - 'crates/asset-importer-rs-gltf/**'
+        - 'crates/asset-importer-rs-core/**'
+        - 'crates/asset-importer-rs-scene/**'
+  
+env:
+    CARGO_TERM_COLOR: always
+    
+jobs:
+  test:
+    name: Test GLTF 2.0 Format
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        use_default_features: [true, false]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: |
+          if [ "${{ matrix.use_default_features }}" == "true" ]; then
+            cargo build -v -p asset-importer-rs-gltf
+          else
+            cargo build -v --no-default-features -p asset-importer-rs-gltf
+          fi
+      - name: test crate
+        run: |
+          if [ "${{ matrix.use_default_features }}" == "true" ]; then
+            cargo test -v -p asset-importer-rs-gltf
+          else
+            cargo test -v --no-default-features -p asset-importer-rs-gltf
+          fi
+  test_integration:
+    name: Test GLTF 2.0 Integration
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        features: ['default', 'minimal']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Checkout glTF Sample Assets
+        uses: actions/checkout@v4
+        with:
+          repository: KhronosGroup/glTF-Sample-Assets
+          path: glTF-Sample-Assets
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v --no-default-features --features "$FEATURES"
+        env:
+          FEATURES: ${{ matrix.features }}
+      - name: test
+        run: >
+          cargo test -v --no-default-features --features "$FEATURES" external_gltf2_import_sample_assets -- --nocapture
+        env:
+          FEATURES: ${{ matrix.features }}
