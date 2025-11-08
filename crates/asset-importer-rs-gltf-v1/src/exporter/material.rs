@@ -464,6 +464,6 @@ mod tests {
         let image = root.images.values().next().unwrap();
 
         // Check if the image URI is a data URI
-        assert!(image.uri.starts_with("data:image/png;baseW64,"));
+        assert!(image.uri.starts_with("data:image/png;base64,"));
     }
 }

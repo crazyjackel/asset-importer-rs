@@ -16,7 +16,7 @@ pub const INITIAL_PLANE_NORMAL: AiVector3D = AiVector3D {
 /// # Example
 ///
 /// ```rust
-/// use asset_importer_rs_core::spatial::{Spatial, SpatialLookup};
+/// use asset_importer_rs_core::{Spatial, SpatialLookup};
 /// use asset_importer_rs_scene::AiVector3D;
 ///
 /// let positions = vec![

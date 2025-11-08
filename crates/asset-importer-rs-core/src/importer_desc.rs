@@ -8,7 +8,7 @@ use enumflags2::{BitFlags, bitflags};
 /// # Example
 ///
 /// ```rust
-/// use asset_importer_rs_core::importer_desc::AiImporterFlags;
+/// use asset_importer_rs_core::AiImporterFlags;
 /// use enumflags2::BitFlags;
 ///
 /// let flags = AiImporterFlags::SupportTextFlavor | AiImporterFlags::SupportBinaryFlavor;
@@ -38,7 +38,7 @@ pub enum AiImporterFlags {
 /// # Example
 ///
 /// ```rust
-/// use asset_importer_rs_core::importer_desc::{AiImporterDesc, AiImporterFlags};
+/// use asset_importer_rs_core::{AiImporterDesc, AiImporterFlags};
 /// use enumflags2::BitFlags;
 ///
 /// let desc = AiImporterDesc {
