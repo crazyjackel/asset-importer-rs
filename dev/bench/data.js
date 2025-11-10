@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1762640130715,
+  "lastUpdate": 1762738708406,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -323,6 +323,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 47388735,
             "range": "± 349731",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "51e3a6606d2aa84826ae306401c3ee1e18b5d461",
+          "message": "Merge pull request #23 from Directflare/uv_flipping\n\nUV flipping initial version and refactoring AiMaterialProperty to include vector of bytes with associated property data instead of ADT.",
+          "timestamp": "2025-11-09T20:35:56-05:00",
+          "tree_id": "19c5d8b71b23a608503e043c5e061c5e345a698b",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/51e3a6606d2aa84826ae306401c3ee1e18b5d461"
+        },
+        "date": 1762738708078,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 96249579,
+            "range": "± 200779",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 47335829,
+            "range": "± 86506",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 199248277,
+            "range": "± 1843184",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 46889949,
+            "range": "± 119873",
             "unit": "ns/iter"
           }
         ]
