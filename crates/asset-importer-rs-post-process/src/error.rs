@@ -48,7 +48,7 @@ impl From<String> for AiPostProcessError {
 #[cfg(feature = "flip-uvs")]
 impl From<FlipUVsError> for AiPostProcessError {
     fn from(error: FlipUVsError) -> Self {
-        AiPostProcessError::PostProcessError(error.to_string())
+        AiPostProcessError::FlipUVsError(error)
     }
 }
 

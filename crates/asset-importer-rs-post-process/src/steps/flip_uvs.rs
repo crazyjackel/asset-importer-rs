@@ -29,7 +29,6 @@ impl std::error::Error for FlipUVsError {}
 pub enum UvFlipVariant {
     X,
     Y,
-    Z,
 }
 impl UvFlipVariant {
     pub fn apply_flip_material(&self, uv_transform: &mut AiUvTransform) {
@@ -42,14 +41,12 @@ impl UvFlipVariant {
                 uv_transform.translation.y *= -1.0;
                 uv_transform.rotation *= -1.0;
             }
-            UvFlipVariant::Z => (),
         }
     }
     pub fn apply_flip_uv(&self, uv: &mut AiVector3D) {
         match self {
             UvFlipVariant::X => uv.x = -uv.x + 1.0 as AiReal,
             UvFlipVariant::Y => uv.y = -uv.y + 1.0 as AiReal,
-            UvFlipVariant::Z => uv.z = -uv.z + 1.0 as AiReal,
         }
     }
 }
