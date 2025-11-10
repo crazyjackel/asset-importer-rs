@@ -88,8 +88,9 @@ impl Gltf2Importer {
                 ai_material.add_property(
                     matkey::AI_MATKEY_NAME,
                     Some(AiTextureType::None),
-                    AiPropertyTypeInfo::Binary(name.bytes().collect()),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    name.bytes().collect(),
                 );
             }
 
@@ -146,16 +147,18 @@ fn import_texture_property<'a, T: ImportTexture<'a>>(
         ai_material.add_property(
             matkey::_AI_MATKEY_TEXTURE_BASE,
             Some(texture_type),
-            AiPropertyTypeInfo::Binary(uri.bytes().collect()),
+            AiPropertyTypeInfo::Binary,
             texture_index,
+            uri.bytes().collect(),
         );
 
         let uv_index = texture_info.tex_coord();
         ai_material.add_property(
             matkey::_AI_MATKEY_UVWSRC_BASE,
             Some(texture_type),
-            AiPropertyTypeInfo::Binary(uv_index.to_le_bytes().to_vec()),
+            AiPropertyTypeInfo::Binary,
             texture_index,
+            uv_index.to_le_bytes().to_vec(),
         );
 
         //Handle Texture Transform
@@ -167,45 +170,51 @@ fn import_texture_property<'a, T: ImportTexture<'a>>(
             ai_material.add_property(
                 _AI_MATKEY_GLTF_MAPPINGNAME_BASE,
                 Some(texture_type),
-                AiPropertyTypeInfo::Binary(name.bytes().collect()),
+                AiPropertyTypeInfo::Binary,
                 texture_index,
+                name.bytes().collect(),
             );
             ai_material.add_property(
                 _AI_MATKEY_GLTF_MAPPINGID_BASE,
                 Some(texture_type),
-                AiPropertyTypeInfo::Binary((id as u32).to_le_bytes().to_vec()),
+                AiPropertyTypeInfo::Binary,
                 texture_index,
+                (id as u32).to_le_bytes().to_vec(),
             );
 
             let map_mode = convert_map_mode(sampler.wrap_s());
             ai_material.add_property(
                 _AI_MATKEY_MAPPINGMODE_U_BASE,
                 Some(texture_type),
-                AiPropertyTypeInfo::Binary(vec![(map_mode as u8)]),
+                AiPropertyTypeInfo::Binary,
                 texture_index,
+                vec![map_mode as u8],
             );
             let map_mode = convert_map_mode(sampler.wrap_t());
             ai_material.add_property(
                 _AI_MATKEY_MAPPINGMODE_V_BASE,
                 Some(texture_type),
-                AiPropertyTypeInfo::Binary(vec![(map_mode as u8)]),
+                AiPropertyTypeInfo::Binary,
                 texture_index,
+                vec![map_mode as u8],
             );
 
             if let Some(mag_filter) = sampler.mag_filter() {
                 ai_material.add_property(
                     _AI_MATKEY_GLTF_MAPPINGFILTER_MAG_BASE,
                     Some(texture_type),
-                    AiPropertyTypeInfo::Binary(vec![(mag_filter as u8)]),
+                    AiPropertyTypeInfo::Binary,
                     texture_index,
+                    vec![mag_filter as u8],
                 );
             }
             if let Some(min_filter) = sampler.min_filter() {
                 ai_material.add_property(
                     _AI_MATKEY_GLTF_MAPPINGFILTER_MIN_BASE,
                     Some(texture_type),
-                    AiPropertyTypeInfo::Binary(vec![(min_filter as u8)]),
+                    AiPropertyTypeInfo::Binary,
                     texture_index,
+                    vec![min_filter as u8],
                 );
             }
         } else {
@@ -213,16 +222,18 @@ fn import_texture_property<'a, T: ImportTexture<'a>>(
             ai_material.add_property(
                 _AI_MATKEY_MAPPINGMODE_U_BASE,
                 Some(texture_type),
-                AiPropertyTypeInfo::Binary(vec![(map_mode as u8)]),
+                AiPropertyTypeInfo::Binary,
                 texture_index,
+                vec![map_mode as u8],
             );
 
             let map_mode = convert_map_mode(sampler.wrap_t());
             ai_material.add_property(
                 _AI_MATKEY_MAPPINGMODE_V_BASE,
                 Some(texture_type),
-                AiPropertyTypeInfo::Binary(vec![(map_mode as u8)]),
+                AiPropertyTypeInfo::Binary,
                 texture_index,
+                vec![map_mode as u8],
             );
         }
     }
@@ -249,8 +260,9 @@ fn import_texture_property_occlusion(
         ai_material.add_property(
             &texture_strength_key,
             Some(texture_type),
-            AiPropertyTypeInfo::Binary(strength.to_le_bytes().to_vec()),
+            AiPropertyTypeInfo::Binary,
             texture_index,
+            strength.to_le_bytes().to_vec(),
         );
     }
 }
@@ -274,8 +286,9 @@ fn import_texture_property_normals(
         ai_material.add_property(
             _AI_MATKEY_GLTF_SCALE_BASE,
             Some(texture_type),
-            AiPropertyTypeInfo::Binary(scale.to_le_bytes().to_vec()),
+            AiPropertyTypeInfo::Binary,
             texture_index,
+            scale.to_le_bytes().to_vec(),
         );
     }
 }
@@ -295,7 +308,7 @@ fn handle_texture_transform<'a, T: ImportTexture<'a>>(
     texture_type: AiTextureType,
     texture_index: u32,
 ) {
-    use asset_importer_rs_scene::{AiReal, AiUvTransform, AiVector2D};
+    use asset_importer_rs_scene::{AiReal, AiUvTransform, AiVector2D, AiVector3D};
 
     if let Some(transform) = texture_info.texture_transform() {
         let scale = transform.scale();
@@ -319,8 +332,9 @@ fn handle_texture_transform<'a, T: ImportTexture<'a>>(
         ai_material.add_property(
             matkey::_AI_MATKEY_UVTRANSFORM_BASE,
             Some(texture_type),
-            AiPropertyTypeInfo::Binary(bytemuck::bytes_of(&transform).to_vec()),
+            AiPropertyTypeInfo::Binary,
             texture_index,
+            bytemuck::bytes_of(&transform).to_vec(),
         );
     }
 }
@@ -336,20 +350,16 @@ fn handle_pbr_roughness(
     ai_material.add_property(
         matkey::AI_MATKEY_COLOR_DIFFUSE,
         Some(AiTextureType::None),
-        AiPropertyTypeInfo::Binary(
-            bytemuck::bytes_of(&AiColor4D::from(pbr_metallic_roughness.base_color_factor()))
-                .to_vec(),
-        ),
+        AiPropertyTypeInfo::Binary,
         0,
+        bytemuck::bytes_of(&AiColor4D::from(pbr_metallic_roughness.base_color_factor())).to_vec(),
     );
     ai_material.add_property(
         matkey::AI_MATKEY_BASE_COLOR,
         Some(AiTextureType::None),
-        AiPropertyTypeInfo::Binary(
-            bytemuck::bytes_of(&AiColor4D::from(pbr_metallic_roughness.base_color_factor()))
-                .to_vec(),
-        ),
+        AiPropertyTypeInfo::Binary,
         0,
+        bytemuck::bytes_of(&AiColor4D::from(pbr_metallic_roughness.base_color_factor())).to_vec(),
     );
 
     //Handle Base Color Texture
@@ -396,44 +406,40 @@ fn handle_pbr_roughness(
     ai_material.add_property(
         matkey::AI_MATKEY_METALLIC_FACTOR,
         Some(AiTextureType::None),
-        AiPropertyTypeInfo::Binary(
-            pbr_metallic_roughness
-                .metallic_factor()
-                .to_le_bytes()
-                .to_vec(),
-        ),
+        AiPropertyTypeInfo::Binary,
         0,
+        pbr_metallic_roughness
+            .metallic_factor()
+            .to_le_bytes()
+            .to_vec(),
     );
     ai_material.add_property(
         matkey::AI_MATKEY_ROUGHNESS_FACTOR,
         Some(AiTextureType::None),
-        AiPropertyTypeInfo::Binary(
-            pbr_metallic_roughness
-                .roughness_factor()
-                .to_le_bytes()
-                .to_vec(),
-        ),
+        AiPropertyTypeInfo::Binary,
         0,
+        pbr_metallic_roughness
+            .roughness_factor()
+            .to_le_bytes()
+            .to_vec(),
     );
     ai_material.add_property(
         matkey::AI_MATKEY_SHININESS,
         Some(AiTextureType::None),
-        AiPropertyTypeInfo::Binary(
-            ((1.0 - pbr_metallic_roughness.roughness_factor()) * 1000.0)
-                .to_le_bytes()
-                .to_vec(),
-        ),
+        AiPropertyTypeInfo::Binary,
         0,
+        ((1.0 - pbr_metallic_roughness.roughness_factor()) * 1000.0)
+            .to_le_bytes()
+            .to_vec(),
     );
     ai_material.add_property(
         matkey::AI_MATKEY_OPACITY,
         Some(AiTextureType::None),
-        AiPropertyTypeInfo::Binary(
-            pbr_metallic_roughness.base_color_factor()[3]
-                .to_le_bytes()
-                .to_vec(),
-        ),
+        AiPropertyTypeInfo::Binary,
         0,
+        pbr_metallic_roughness.base_color_factor()[3]
+            .to_le_bytes()
+            .to_vec(),
     );
 }
 
@@ -467,16 +473,16 @@ fn handle_base(
     ai_material.add_property(
         matkey::AI_MATKEY_TWOSIDED,
         Some(AiTextureType::None),
-        AiPropertyTypeInfo::Binary(vec![material.double_sided() as u8]),
+        AiPropertyTypeInfo::Binary,
         0,
+        vec![material.double_sided() as u8],
     );
     ai_material.add_property(
         matkey::AI_MATKEY_COLOR_EMISSIVE,
         Some(AiTextureType::None),
-        AiPropertyTypeInfo::Binary(
-            bytemuck::bytes_of(&AiColor3D::from(material.emissive_factor())).to_vec(),
-        ),
+        AiPropertyTypeInfo::Binary,
         0,
+        bytemuck::bytes_of(&AiColor3D::from(material.emissive_factor())).to_vec(),
     );
 
     //This should always succeed
@@ -484,8 +490,9 @@ fn handle_base(
         ai_material.add_property(
             AI_MATKEY_GLTF_ALPHAMODE,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(alpha_mode.bytes().collect()),
+            AiPropertyTypeInfo::Binary,
             0,
+            alpha_mode.bytes().collect(),
         );
     }
 
@@ -493,8 +500,9 @@ fn handle_base(
         ai_material.add_property(
             AI_MATKEY_GLTF_ALPHACUTOFF,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(alpha_cutoff.to_le_bytes().to_vec()),
+            AiPropertyTypeInfo::Binary,
             0,
+            alpha_cutoff.to_le_bytes().to_vec(),
         );
     }
 }
@@ -521,16 +529,16 @@ fn handle_specular(
         ai_material.add_property(
             AI_MATKEY_COLOR_SPECULAR,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(
-                bytemuck::bytes_of(&AiColor3D::from(specular.specular_color_factor())).to_vec(),
-            ),
+            AiPropertyTypeInfo::Binary,
             0,
+            bytemuck::bytes_of(&AiColor3D::from(specular.specular_color_factor())).to_vec(),
         );
         ai_material.add_property(
             AI_MATKEY_SPECULAR_FACTOR,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(specular.specular_factor().to_le_bytes().to_vec()),
+            AiPropertyTypeInfo::Binary,
             0,
+            specular.specular_factor().to_le_bytes().to_vec(),
         );
         import_texture_property(
             &specular.specular_texture(),
@@ -561,31 +569,31 @@ fn handle_specular(
         ai_material.add_property(
             matkey::AI_MATKEY_COLOR_DIFFUSE,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(
-                bytemuck::bytes_of(&AiColor4D::from(specular.diffuse_factor())).to_vec(),
-            ),
+            AiPropertyTypeInfo::Binary,
             0,
+            bytemuck::bytes_of(&AiColor4D::from(specular.diffuse_factor())).to_vec(),
         );
         ai_material.add_property(
             matkey::AI_MATKEY_COLOR_SPECULAR,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(
-                bytemuck::bytes_of(&AiColor3D::from(specular.specular_factor())).to_vec(),
-            ),
+            AiPropertyTypeInfo::Binary,
             0,
+            bytemuck::bytes_of(&AiColor3D::from(specular.specular_factor())).to_vec(),
         );
         let shininess = specular.glossiness_factor() * 1000.0;
         ai_material.add_property(
             matkey::AI_MATKEY_SHININESS,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(shininess.to_le_bytes().to_vec()),
+            AiPropertyTypeInfo::Binary,
             0,
+            shininess.to_le_bytes().to_vec(),
         );
         ai_material.add_property(
             matkey::AI_MATKEY_GLOSSINESS_FACTOR,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(specular.glossiness_factor().to_le_bytes().to_vec()),
+            AiPropertyTypeInfo::Binary,
             0,
+            specular.glossiness_factor().to_le_bytes().to_vec(),
         );
 
         import_texture_property(
@@ -616,8 +624,9 @@ fn handle_unlit(
     _ai_material.add_property(
         matkey::AI_MATKEY_SHADING_MODEL,
         Some(AiTextureType::None),
-        AiPropertyTypeInfo::Binary(vec![AiShadingMode::PBR as u8]),
+        AiPropertyTypeInfo::Binary,
         0,
+        vec![AiShadingMode::PBR as u8],
     );
 }
 #[cfg(feature = "KHR_materials_unlit")]
@@ -632,14 +641,16 @@ fn handle_unlit(
     ai_material.add_property(
         "$mat.gltf.unlit",
         Some(AiTextureType::None),
-        AiPropertyTypeInfo::Binary(vec![material.unlit() as u8]),
+        AiPropertyTypeInfo::Binary,
         0,
+        vec![material.unlit() as u8],
     );
     ai_material.add_property(
         AI_MATKEY_SHADING_MODEL,
         Some(AiTextureType::None),
-        AiPropertyTypeInfo::Binary(vec![AiShadingMode::Unlit as u8]),
+        AiPropertyTypeInfo::Binary,
         0,
+        vec![AiShadingMode::Unlit as u8],
     );
 }
 
@@ -662,8 +673,9 @@ fn handle_transmission(
         ai_material.add_property(
             AI_MATKEY_TRANSMISSION_FACTOR,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(transmission.transmission_factor().to_le_bytes().to_vec()),
+            AiPropertyTypeInfo::Binary,
             0,
+            transmission.transmission_factor().to_le_bytes().to_vec(),
         );
         import_texture_property(
             &transmission.transmission_texture(),
@@ -697,8 +709,9 @@ fn handle_volume(
         ai_material.add_property(
             AI_MATKEY_VOLUME_THICKNESS_FACTOR,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(volume.thickness_factor().to_le_bytes().to_vec()),
+            AiPropertyTypeInfo::Binary,
             0,
+            volume.thickness_factor().to_le_bytes().to_vec(),
         );
         import_texture_property(
             &volume.thickness_texture(),
@@ -710,16 +723,16 @@ fn handle_volume(
         ai_material.add_property(
             AI_MATKEY_VOLUME_ATTENUATION_DISTANCE,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(volume.attenuation_distance().to_le_bytes().to_vec()),
+            AiPropertyTypeInfo::Binary,
             0,
+            volume.attenuation_distance().to_le_bytes().to_vec(),
         );
         ai_material.add_property(
             AI_MATKEY_VOLUME_ATTENUATION_COLOR,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(
-                bytemuck::bytes_of(&AiColor3D::from(volume.attenuation_color())).to_vec(),
-            ),
+            AiPropertyTypeInfo::Binary,
             0,
+            bytemuck::bytes_of(&AiColor3D::from(volume.attenuation_color())).to_vec(),
         );
     }
 }
@@ -743,8 +756,9 @@ fn handle_ior(
         ai_material.add_property(
             AI_MATKEY_REFRACTI,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(ior.to_le_bytes().to_vec()),
+            AiPropertyTypeInfo::Binary,
             0,
+            ior.to_le_bytes().to_vec(),
         );
     }
 }
@@ -767,8 +781,9 @@ fn handle_emissive_strength(
         ai_material.add_property(
             AI_MATKEY_EMISSIVE_INTENSITY,
             Some(AiTextureType::None),
-            AiPropertyTypeInfo::Binary(emissive_strength.to_le_bytes().to_vec()),
+            AiPropertyTypeInfo::Binary,
             0,
+            emissive_strength.to_le_bytes().to_vec(),
         );
     }
 }

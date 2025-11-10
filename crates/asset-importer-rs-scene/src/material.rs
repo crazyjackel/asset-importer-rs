@@ -1,10 +1,13 @@
-use std::{fmt::Display, string::FromUtf8Error};
+use std::{fmt::Display, io::Read, string::FromUtf8Error};
 
-use bytemuck::{Pod, Zeroable};
+use bytemuck::{AnyBitPattern, Pod, Zeroable};
 use enumflags2::bitflags;
+use image::hooks::register_decoding_hook;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
-use super::{AiColor3D, AiColor4D, type_def::base_types::AiReal, vector::AiVector2D};
+use super::{
+    AiColor3D, AiColor4D, type_def::base_types::AiReal, vector::AiVector2D, vector::AiVector3D,
+};
 
 //@todo Add an Enum to Matkey that can be used to convert to and from binary based on format
 pub mod matkey {
@@ -303,38 +306,12 @@ impl Default for AiUvTransform {
 #[repr(u8)]
 #[derive(Clone, Debug, PartialEq)]
 pub enum AiPropertyTypeInfo {
-    Binary(Vec<u8>),
-    FloatArray(Vec<f32>),
-    DoubleArray(Vec<f64>),
-    StringArray(Vec<String>),
-    IntegerArray(Vec<u32>),
-    Buffer(Vec<u8>),
-}
-
-impl AiPropertyTypeInfo {
-    pub fn variant_eq(&self, other: &Self) -> bool {
-        matches!(
-            (self, other),
-            (AiPropertyTypeInfo::Binary(_), AiPropertyTypeInfo::Binary(_))
-                | (
-                    AiPropertyTypeInfo::FloatArray(_),
-                    AiPropertyTypeInfo::FloatArray(_)
-                )
-                | (
-                    AiPropertyTypeInfo::DoubleArray(_),
-                    AiPropertyTypeInfo::DoubleArray(_)
-                )
-                | (
-                    AiPropertyTypeInfo::StringArray(_),
-                    AiPropertyTypeInfo::StringArray(_)
-                )
-                | (
-                    AiPropertyTypeInfo::IntegerArray(_),
-                    AiPropertyTypeInfo::IntegerArray(_)
-                )
-                | (AiPropertyTypeInfo::Buffer(_), AiPropertyTypeInfo::Buffer(_))
-        )
-    }
+    Binary,
+    FloatArray,
+    DoubleArray,
+    StringArray,
+    IntegerArray,
+    Buffer,
 }
 
 #[derive(Debug, PartialEq)]
@@ -347,6 +324,8 @@ pub struct AiMaterialProperty {
     pub semantic: AiTextureType,
     //Property Type Info, encodes data on how a Property works
     pub property_type: AiPropertyTypeInfo,
+    //Data associated with property
+    pub data: Vec<u8>,
 }
 
 #[derive(Debug, PartialEq, Default)]
@@ -366,9 +345,45 @@ impl AiMaterial {
     pub fn iter(&self) -> core::slice::Iter<AiMaterialProperty> {
         self.properties.iter()
     }
+    pub fn iter_mut(&mut self) -> core::slice::IterMut<AiMaterialProperty> {
+        self.properties.iter_mut()
+    }
 }
 
 impl AiMaterial {
+    pub fn get_property(
+        &self,
+        key: &str,
+        semantic_type: Option<AiTextureType>,
+        index: u32,
+    ) -> Option<&AiMaterialProperty> {
+        for property in &self.properties {
+            if property.key == key
+                && (semantic_type.is_none() || semantic_type.unwrap() == property.semantic)
+                && property.index == index
+            {
+                return Some(&property);
+            }
+        }
+        None
+    }
+
+    pub fn get_property_mut(
+        &mut self,
+        key: &str,
+        semantic_type: Option<AiTextureType>,
+        index: u32,
+    ) -> Option<&mut AiMaterialProperty> {
+        for property in &mut self.properties {
+            if property.key == key
+                && (semantic_type.is_none() || semantic_type.unwrap() == property.semantic)
+                && property.index == index
+            {
+                return Some(property);
+            }
+        }
+        None
+    }
     pub fn get_property_type_info(
         &self,
         key: &str,
@@ -408,6 +423,7 @@ impl AiMaterial {
         semantic_type: Option<AiTextureType>,
         property_type: AiPropertyTypeInfo,
         index: u32,
+        data: Vec<u8>,
     ) -> bool {
         if let Some(property) = self.get_property_type_info_mut(key, semantic_type, index) {
             *property = property_type;
@@ -418,6 +434,7 @@ impl AiMaterial {
                 index,
                 semantic,
                 property_type,
+                data,
             });
         }
         false
@@ -429,11 +446,11 @@ impl AiMaterial {
         semantic_type: Option<AiTextureType>,
         index: u32,
     ) -> Option<AiColor4D> {
-        self.get_property_type_info(key, semantic_type, index)
-            .and_then(|info| match info {
-                AiPropertyTypeInfo::Binary(binary) => {
-                    bytemuck::try_from_bytes::<AiColor4D>(binary).copied().ok()
-                }
+        self.get_property(key, semantic_type, index)
+            .and_then(|prop| match prop.property_type {
+                AiPropertyTypeInfo::Binary => bytemuck::try_from_bytes::<AiColor4D>(&prop.data)
+                    .copied()
+                    .ok(),
                 _ => None,
             })
     }
@@ -443,10 +460,25 @@ impl AiMaterial {
         semantic_type: Option<AiTextureType>,
         index: u32,
     ) -> Option<AiColor3D> {
-        self.get_property_type_info(key, semantic_type, index)
-            .and_then(|info| match info {
-                AiPropertyTypeInfo::Binary(binary) => {
-                    bytemuck::try_from_bytes::<AiColor3D>(binary).copied().ok()
+        self.get_property(key, semantic_type, index)
+            .and_then(|prop| match prop.property_type {
+                AiPropertyTypeInfo::Binary => bytemuck::try_from_bytes::<AiColor3D>(&prop.data)
+                    .copied()
+                    .ok(),
+                _ => None,
+            })
+    }
+
+    pub fn get_property_as<T: AnyBitPattern>(
+        &self,
+        key: &str,
+        semantic_type: Option<AiTextureType>,
+        index: u32,
+    ) -> Option<T> {
+        self.get_property(key, semantic_type, index)
+            .and_then(|prop| match prop.property_type {
+                AiPropertyTypeInfo::Binary => {
+                    bytemuck::try_from_bytes::<T>(&prop.data).copied().ok()
                 }
                 _ => None,
             })
@@ -457,13 +489,21 @@ impl AiMaterial {
         semantic_type: Option<AiTextureType>,
         index: u32,
     ) -> Option<f32> {
-        self.get_property_type_info(key, semantic_type, index)
-            .and_then(|info| match info {
-                AiPropertyTypeInfo::Binary(binary) if binary.len() == 4 => {
-                    Some(f32::from_le_bytes([
-                        binary[0], binary[1], binary[2], binary[3],
-                    ]))
+        self.get_property(key, semantic_type, index)
+            .and_then(|prop| match prop.property_type {
+                AiPropertyTypeInfo::Binary => {
+                    if prop.data.len() == 4 {
+                        return Some(f32::from_le_bytes([
+                            prop.data[0],
+                            prop.data[1],
+                            prop.data[2],
+                            prop.data[3],
+                        ]));
+                    } else {
+                        None
+                    }
                 }
+
                 _ => None,
             })
     }
@@ -474,10 +514,10 @@ impl AiMaterial {
         semantic_type: Option<AiTextureType>,
         index: u32,
     ) -> Option<Result<String, FromUtf8Error>> {
-        self.get_property_type_info(key, semantic_type, index)
-            .and_then(|x| match x {
-                AiPropertyTypeInfo::Binary(binary) => {
-                    let str = String::from_utf8(binary.to_vec());
+        self.get_property(key, semantic_type, index)
+            .and_then(|prop| match prop.property_type {
+                AiPropertyTypeInfo::Binary => {
+                    let str = String::from_utf8(prop.data.to_vec());
                     Some(str)
                 }
                 _ => None,
@@ -490,9 +530,9 @@ impl AiMaterial {
         semantic_type: Option<AiTextureType>,
         index: u32,
     ) -> Option<bool> {
-        self.get_property_type_info(key, semantic_type, index)
-            .and_then(|info| match info {
-                AiPropertyTypeInfo::Binary(binary) if binary.len() == 1 => Some(binary[0] != 0),
+        self.get_property(key, semantic_type, index)
+            .and_then(|prop| match prop.property_type {
+                AiPropertyTypeInfo::Binary if prop.data.len() == 1 => Some(prop.data[0] != 0),
                 _ => None,
             })
     }
@@ -503,9 +543,9 @@ impl AiMaterial {
         semantic_type: Option<AiTextureType>,
         index: u32,
     ) -> Option<u8> {
-        self.get_property_type_info(key, semantic_type, index)
-            .and_then(|info| match info {
-                AiPropertyTypeInfo::Binary(binary) if binary.len() == 1 => Some(binary[0]),
+        self.get_property(key, semantic_type, index)
+            .and_then(|prop| match prop.property_type {
+                AiPropertyTypeInfo::Binary if prop.data.len() == 1 => Some(prop.data[0]),
                 _ => None,
             })
     }
@@ -516,33 +556,75 @@ impl AiMaterial {
         semantic_type: Option<AiTextureType>,
         index: u32,
     ) -> Option<Vec<AiReal>> {
-        let property = self.get_property_type_info(key, semantic_type, index)?;
-        match property {
-            AiPropertyTypeInfo::FloatArray(vec) => Some(vec.iter().map(|x| *x as AiReal).collect()),
-            AiPropertyTypeInfo::DoubleArray(vec) => {
-                Some(vec.iter().map(|x| *x as AiReal).collect())
+        let property = self.get_property(key, semantic_type, index)?;
+        let data = &property.data;
+        match property.property_type {
+            AiPropertyTypeInfo::FloatArray => {
+                let chunks_iterator = data.rchunks_exact(4);
+                let remainder = chunks_iterator.remainder();
+                if remainder.len() != 0 {
+                    return None;
+                }
+                let ai_real_vec = chunks_iterator
+                    .map(|chunk| {
+                        f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal
+                    })
+                    .collect::<Vec<AiReal>>();
+
+                Some(ai_real_vec)
             }
-            AiPropertyTypeInfo::IntegerArray(vec) => {
-                Some(vec.iter().map(|x| *x as AiReal).collect())
+            AiPropertyTypeInfo::DoubleArray => {
+                let chunks_iterator = data.rchunks_exact(8);
+                let remainder = chunks_iterator.remainder();
+                if remainder.len() != 0 {
+                    return None;
+                }
+                let ai_real_vec = chunks_iterator
+                    .map(|chunk| {
+                        f64::from_le_bytes([
+                            chunk[0], chunk[1], chunk[2], chunk[3], chunk[4], chunk[5], chunk[6],
+                            chunk[7],
+                        ]) as AiReal
+                    })
+                    .collect::<Vec<AiReal>>();
+
+                Some(ai_real_vec)
             }
-            AiPropertyTypeInfo::StringArray(vec) => vec
-                .iter()
-                .map(|s| s.parse::<AiReal>())
-                .collect::<Result<Vec<AiReal>, _>>()
-                .ok(),
-            AiPropertyTypeInfo::Binary(vec) | AiPropertyTypeInfo::Buffer(vec) => {
-                String::from_utf8_lossy(vec.as_slice())
-                    .split_ascii_whitespace()
-                    .map(|s| s.parse::<AiReal>())
-                    .collect::<Result<Vec<AiReal>, _>>()
-                    .ok()
+            AiPropertyTypeInfo::IntegerArray => {
+                let chunks_iterator = data.rchunks_exact(4);
+                let remainder = chunks_iterator.remainder();
+                if remainder.len() != 0 {
+                    return None;
+                }
+                let ai_real_vec = chunks_iterator
+                    .map(|chunk| {
+                        u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal
+                    })
+                    .collect::<Vec<AiReal>>();
+
+                Some(ai_real_vec)
+            }
+            AiPropertyTypeInfo::StringArray => {
+                todo!();
+            }
+            AiPropertyTypeInfo::Binary | AiPropertyTypeInfo::Buffer => {
+                let chunks_iterator = data.rchunks_exact(4);
+                let remainder = chunks_iterator.remainder();
+                if remainder.len() != 0 {
+                    return None;
+                }
+                let ai_real_vec = chunks_iterator
+                    .map(|chunk| {
+                        f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as AiReal
+                    })
+                    .collect::<Vec<AiReal>>();
+
+                Some(ai_real_vec)
             }
         }
     }
 }
-
 mod tests {
-
     /// Tests the code of get_real_vector's String | Buffer Match
     /// Check that strings made up of joined floats can be parsed successfully
     #[test]

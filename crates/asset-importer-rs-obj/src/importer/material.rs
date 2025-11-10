@@ -55,8 +55,9 @@ impl ObjImporter {
             ai_material.add_property(
                 AI_MATKEY_NAME,
                 Some(AiTextureType::None),
-                AiPropertyTypeInfo::Binary(material.name.bytes().collect()),
+                AiPropertyTypeInfo::Binary,
                 0,
+                material.name.bytes().collect(),
             );
 
             //Handle Ambient
@@ -64,10 +65,9 @@ impl ObjImporter {
                 ai_material.add_property(
                     AI_MATKEY_COLOR_AMBIENT,
                     Some(AiTextureType::None),
-                    AiPropertyTypeInfo::Binary(
-                        bytemuck::bytes_of(&AiColor4D::from(color)).to_vec(),
-                    ),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    bytemuck::bytes_of(&AiColor4D::from(color)).to_vec(),
                 );
             }
 
@@ -80,8 +80,9 @@ impl ObjImporter {
                 ai_material.add_property(
                     _AI_MATKEY_TEXTURE_BASE,
                     Some(AiTextureType::Ambient),
-                    AiPropertyTypeInfo::Binary(uri.bytes().collect()),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    uri.bytes().collect(),
                 );
             }
 
@@ -90,10 +91,9 @@ impl ObjImporter {
                 ai_material.add_property(
                     AI_MATKEY_COLOR_DIFFUSE,
                     Some(AiTextureType::None),
-                    AiPropertyTypeInfo::Binary(
-                        bytemuck::bytes_of(&AiColor4D::from(color)).to_vec(),
-                    ),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    bytemuck::bytes_of(&AiColor4D::from(color)).to_vec(),
                 );
             }
 
@@ -105,8 +105,9 @@ impl ObjImporter {
                 ai_material.add_property(
                     _AI_MATKEY_TEXTURE_BASE,
                     Some(AiTextureType::Diffuse),
-                    AiPropertyTypeInfo::Binary(uri.bytes().collect()),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    uri.bytes().collect(),
                 );
             }
 
@@ -115,10 +116,9 @@ impl ObjImporter {
                 ai_material.add_property(
                     AI_MATKEY_COLOR_SPECULAR,
                     Some(AiTextureType::None),
-                    AiPropertyTypeInfo::Binary(
-                        bytemuck::bytes_of(&AiColor4D::from(color)).to_vec(),
-                    ),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    bytemuck::bytes_of(&AiColor4D::from(color)).to_vec(),
                 );
             }
 
@@ -130,8 +130,9 @@ impl ObjImporter {
                 ai_material.add_property(
                     _AI_MATKEY_TEXTURE_BASE,
                     Some(AiTextureType::Specular),
-                    AiPropertyTypeInfo::Binary(uri.bytes().collect()),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    uri.bytes().collect(),
                 );
             }
 
@@ -141,8 +142,9 @@ impl ObjImporter {
                 ai_material.add_property(
                     AI_MATKEY_OPACITY,
                     Some(AiTextureType::None),
-                    AiPropertyTypeInfo::Binary(opacity.to_le_bytes().to_vec()),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    opacity.to_be_bytes().to_vec(),
                 );
             }
 
@@ -155,8 +157,9 @@ impl ObjImporter {
                 ai_material.add_property(
                     _AI_MATKEY_TEXTURE_BASE,
                     Some(AiTextureType::Opacity),
-                    AiPropertyTypeInfo::Binary(uri.bytes().collect()),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    uri.bytes().collect(),
                 );
             }
 
@@ -171,8 +174,9 @@ impl ObjImporter {
                 ai_material.add_property(
                     _AI_MATKEY_TEXTURE_BASE,
                     Some(AiTextureType::Height),
-                    AiPropertyTypeInfo::Binary(uri.bytes().collect()),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    uri.bytes().collect(),
                 );
             }
 
@@ -186,14 +190,16 @@ impl ObjImporter {
             ai_material.add_property(
                 AI_MATKEY_SHADING_MODEL,
                 Some(AiTextureType::None),
-                AiPropertyTypeInfo::Binary(vec![shading_mode as u8]),
+                AiPropertyTypeInfo::Binary,
                 0,
+                vec![shading_mode as u8],
             );
             ai_material.add_property(
                 AI_MATKEY_OBJ_ILLUM,
                 Some(AiTextureType::None),
-                AiPropertyTypeInfo::Binary(vec![material.illumination_model.unwrap_or(0)]),
+                AiPropertyTypeInfo::Binary,
                 0,
+                vec![material.illumination_model.unwrap_or(0)],
             );
 
             //Handle Shininess
@@ -201,8 +207,9 @@ impl ObjImporter {
                 ai_material.add_property(
                     AI_MATKEY_SHININESS,
                     Some(AiTextureType::None),
-                    AiPropertyTypeInfo::Binary(shininess.to_le_bytes().to_vec()),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    shininess.to_le_bytes().to_vec(),
                 );
             }
 
@@ -215,8 +222,9 @@ impl ObjImporter {
                 ai_material.add_property(
                     _AI_MATKEY_TEXTURE_BASE,
                     Some(AiTextureType::Specular),
-                    AiPropertyTypeInfo::Binary(uri.bytes().collect()),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    uri.bytes().collect(),
                 );
             }
 
@@ -226,8 +234,9 @@ impl ObjImporter {
                 ai_material.add_property(
                     AI_MATKEY_REFRACTI,
                     Some(AiTextureType::None),
-                    AiPropertyTypeInfo::Binary(ior.to_le_bytes().to_vec()),
+                    AiPropertyTypeInfo::Binary,
                     0,
+                    ior.to_le_bytes().to_vec(),
                 );
             }
 
@@ -533,12 +542,12 @@ mod tests {
                 .collect();
 
             assert_eq!(shading_props.len(), 1);
-            if let AiPropertyTypeInfo::Binary(data) = &shading_props[0].property_type {
-                assert_eq!(data.len(), 1);
-                assert_eq!(data[0], expected_shading_mode as u8);
-            } else {
-                panic!("Shading model property should be binary");
-            }
+            assert_eq!(
+                shading_props[0].data.len(),
+                1,
+                "Shading model property should be 1 byte"
+            );
+            assert_eq!(shading_props[0].data[0], expected_shading_mode as u8);
         }
     }
 
@@ -695,8 +704,10 @@ mod tests {
                     .iter()
                     .filter(|p| p.key == AI_MATKEY_NAME)
                     .collect();
-                if let AiPropertyTypeInfo::Binary(data) = &name_props[0].property_type {
-                    String::from_utf8_lossy(data).to_string()
+
+                let name_prop0_data = &name_props[0].data;
+                if !name_prop0_data.is_empty() {
+                    String::from_utf8_lossy(&name_prop0_data).to_string()
                 } else {
                     String::new()
                 }
