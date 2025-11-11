@@ -11,6 +11,11 @@
   <img src="https://img.shields.io/badge/Rust-1.70+-orange?style=for-the-badge" alt="Rust Version">
 </p>
 
+<p align="center">
+  <a href="https://deepwiki.com/crazyjackel/asset-importer-rs">
+    <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
+  </a>
+</p>
 <!-- TABLE OF CONTENTS -->
 <h2 id="table-of-contents"> :book: Table of Contents</h2>
 
