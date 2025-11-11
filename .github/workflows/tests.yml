@@ -483,9 +483,19 @@ jobs:
             echo "No coverage files found, creating empty report"
             touch merged-coverage/coverage.info
           fi
+      - name: Install lcov-cobertura
+        run: |
+          python3 -m pip install lcov-cobertura
+      - name: Convert lcov to Cobertura XML
+        run: |
+          if [ -s merged-coverage/coverage.info ]; then
+            lcov-cobertura merged-coverage/coverage.info -o coverage.xml
+          else
+            echo '<?xml version="1.0" ?><coverage></coverage>' > coverage.xml
+          fi
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_COVERAGE_REPORT_PATHS: merged-coverage/coverage.info
+          SONAR_COVERAGE_REPORT_PATHS: coverage.xml
 
