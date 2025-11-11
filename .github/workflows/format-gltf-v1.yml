@@ -30,6 +30,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
         uses: Swatinem/rust-cache@v2
         with:
@@ -44,10 +45,16 @@ jobs:
       - name: test crate
         run: |
           if [ "${{ matrix.use_default_features }}" == "true" ]; then
-            cargo test -v -p asset-importer-rs-gltf-v1
+            cargo llvm-cov -v -p asset-importer-rs-gltf-v1 --lcov --output-path lcov-gltf-v1-${{ matrix.use_default_features }}.info
           else
-            cargo test -v --no-default-features -p asset-importer-rs-gltf-v1
+            cargo llvm-cov -v --no-default-features -p asset-importer-rs-gltf-v1 --lcov --output-path lcov-gltf-v1-${{ matrix.use_default_features }}.info
           fi
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-gltf-v1-${{ matrix.use_default_features }}
+          path: lcov-gltf-v1-${{ matrix.use_default_features }}.info
+          retention-days: 1
 
   test_integration:
     name: Test GLTF V1 Integration
@@ -60,6 +67,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
         uses: Swatinem/rust-cache@v2
         with:
@@ -69,6 +77,12 @@ jobs:
         env:
           FEATURES: ${{ matrix.features }}
       - name: test integration
-        run: cargo test -v --no-default-features --features "$FEATURES" --test gltf_integration -- --nocapture
+        run: cargo llvm-cov -v --no-default-features --features "$FEATURES" --test gltf_integration --lcov --output-path lcov-gltf-v1-integration-${{ matrix.features }}.info -- --nocapture
         env:
           FEATURES: ${{ matrix.features }}
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-gltf-v1-integration-${{ matrix.features }}
+          path: lcov-gltf-v1-integration-${{ matrix.features }}.info
+          retention-days: 1

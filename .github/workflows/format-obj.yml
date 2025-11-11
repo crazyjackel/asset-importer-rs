@@ -23,6 +23,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
         uses: Swatinem/rust-cache@v2
         with:
@@ -30,7 +31,13 @@ jobs:
       - name: build
         run: cargo build -v -p asset-importer-rs-obj
       - name: test crate
-        run: cargo test -v -p asset-importer-rs-obj
+        run: cargo llvm-cov -v -p asset-importer-rs-obj --lcov --output-path lcov-obj.info
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-obj
+          path: lcov-obj.info
+          retention-days: 1
 
   test_integration:
     name: Test OBJ Integration
@@ -43,6 +50,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
         uses: Swatinem/rust-cache@v2
         with:
@@ -52,6 +60,12 @@ jobs:
         env:
           FEATURES: ${{ matrix.features }}
       - name: test integration
-        run: cargo test -v --no-default-features --features "$FEATURES" --test obj_integration -- --nocapture
+        run: cargo llvm-cov -v --no-default-features --features "$FEATURES" --test obj_integration --lcov --output-path lcov-obj-integration-${{ matrix.features }}.info -- --nocapture
         env:
           FEATURES: ${{ matrix.features }}
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-obj-integration-${{ matrix.features }}
+          path: lcov-obj-integration-${{ matrix.features }}.info
+          retention-days: 1

@@ -21,6 +21,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
         uses: Swatinem/rust-cache@v2
         with:
@@ -28,5 +29,11 @@ jobs:
       - name: build
         run: cargo build -v -p gltf-v1
       - name: test
-        run: cargo test -v -p gltf-v1
+        run: cargo llvm-cov -v -p gltf-v1 --lcov --output-path lcov-gltf-v1.info
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-gltf-v1
+          path: lcov-gltf-v1.info
+          retention-days: 1
 

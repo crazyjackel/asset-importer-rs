@@ -2,6 +2,8 @@
 use super::light::Lights;
 use gltf_v1_derive::Validate;
 use serde_derive::{Deserialize, Serialize};
+#[cfg(feature = "extensions")]
+use serde_json::{Map, Value};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, Validate)]
 pub struct Root {

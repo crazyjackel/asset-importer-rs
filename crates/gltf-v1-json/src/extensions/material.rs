@@ -6,6 +6,9 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::validation::Checked;
 
+#[cfg(feature = "extensions")]
+use serde_json::{Map, Value};
+
 #[derive(Clone, Debug, PartialEq, Eq, Copy, Default)]
 pub enum Technique {
     Blinn,

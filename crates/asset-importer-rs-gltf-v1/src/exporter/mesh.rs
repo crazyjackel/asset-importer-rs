@@ -235,13 +235,14 @@ pub(crate) fn export_vector_2d(
     let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 2 * 4);
     for vector in vector_data {
         for i in 0..2_usize {
-            if vector[i] < min[i] {
-                min[i] = vector[i];
+            let value = vector[i] as f32;
+            if value < min[i] {
+                min[i] = value;
             }
-            if vector[i] > max[i] {
-                max[i] = vector[i];
+            if value > max[i] {
+                max[i] = value;
             }
-            data.extend_from_slice(&vector[i].to_le_bytes());
+            data.extend_from_slice(&value.to_le_bytes());
         }
     }
     export_data(
@@ -280,13 +281,14 @@ pub(crate) fn export_vector_3d(
     let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 3 * 4);
     for vector in vector_data {
         for i in 0..3_usize {
-            if vector[i] < min[i] {
-                min[i] = vector[i];
+            let value = vector[i] as f32;
+            if value < min[i] {
+                min[i] = value;
             }
-            if vector[i] > max[i] {
-                max[i] = vector[i];
+            if value > max[i] {
+                max[i] = value;
             }
-            data.extend_from_slice(&vector[i].to_le_bytes());
+            data.extend_from_slice(&value.to_le_bytes());
         }
     }
     export_data(
@@ -325,13 +327,14 @@ pub(crate) fn export_vector_4d(
     let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4 * 4);
     for vector in vector_data {
         for i in 0..4_usize {
-            if vector[i] < min[i] {
-                min[i] = vector[i];
+            let value = vector[i] as f32;
+            if value < min[i] {
+                min[i] = value;
             }
-            if vector[i] > max[i] {
-                max[i] = vector[i];
+            if value > max[i] {
+                max[i] = value;
             }
-            data.extend_from_slice(&vector[i].to_le_bytes());
+            data.extend_from_slice(&value.to_le_bytes());
         }
     }
     export_data(
