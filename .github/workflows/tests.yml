@@ -81,7 +81,7 @@ jobs:
     name: Test Core Crate
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.core == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.core == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -106,7 +106,7 @@ jobs:
     name: Test Scene Crate
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.scene == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.scene == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -131,7 +131,7 @@ jobs:
     name: Test Post-Process Crate
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.post-process == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.post-process == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -156,7 +156,7 @@ jobs:
     name: Test GLTF 2.0 Format
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.gltf == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.gltf == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -195,7 +195,7 @@ jobs:
     name: Test GLTF 2.0 Integration
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.gltf == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.gltf == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -234,7 +234,7 @@ jobs:
     name: Test GLTF V1 Format
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.gltf-v1 == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.gltf-v1 == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -273,7 +273,7 @@ jobs:
     name: Test GLTF V1 Integration
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.gltf-v1 == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.gltf-v1 == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -306,7 +306,7 @@ jobs:
     name: Test OBJ Format
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.obj == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.obj == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -331,7 +331,7 @@ jobs:
     name: Test OBJ Integration
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.obj == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.obj == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -364,7 +364,7 @@ jobs:
     name: Test GLTF V1 Library
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.gltf-v1-lib == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.gltf-v1-lib == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -389,7 +389,7 @@ jobs:
     name: Test GLTF V1 JSON
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.gltf-v1-json == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.gltf-v1-json == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -414,7 +414,7 @@ jobs:
     name: Test GLTF V1 Derive
     runs-on: ubuntu-latest
     needs: changes
-    if: needs.changes.outputs.gltf-v1-derive == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.gltf-v1-derive == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
