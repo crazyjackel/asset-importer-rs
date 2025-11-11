@@ -96,7 +96,7 @@ jobs:
       - name: test
         run: cargo llvm-cov -v -p asset-importer-rs-core --lcov --output-path lcov-core.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-core
           path: lcov-core.info
@@ -121,7 +121,7 @@ jobs:
       - name: test
         run: cargo llvm-cov -v -p asset-importer-rs-scene --lcov --output-path lcov-scene.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-scene
           path: lcov-scene.info
@@ -146,7 +146,7 @@ jobs:
       - name: test
         run: cargo llvm-cov -v -p asset-importer-rs-post-process --lcov --output-path lcov-post-process.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-post-process
           path: lcov-post-process.info
@@ -185,7 +185,7 @@ jobs:
             cargo llvm-cov -v --no-default-features -p asset-importer-rs-gltf --lcov --output-path lcov-gltf-${{ matrix.use_default_features }}.info
           fi
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-gltf-${{ matrix.use_default_features }}
           path: lcov-gltf-${{ matrix.use_default_features }}.info
@@ -224,7 +224,7 @@ jobs:
         env:
           FEATURES: ${{ matrix.features }}
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-gltf-integration-${{ matrix.features }}
           path: lcov-gltf-integration-${{ matrix.features }}.info
@@ -263,7 +263,7 @@ jobs:
             cargo llvm-cov -v --no-default-features -p asset-importer-rs-gltf-v1 --lcov --output-path lcov-gltf-v1-${{ matrix.use_default_features }}.info
           fi
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-gltf-v1-${{ matrix.use_default_features }}
           path: lcov-gltf-v1-${{ matrix.use_default_features }}.info
@@ -296,7 +296,7 @@ jobs:
         env:
           FEATURES: ${{ matrix.features }}
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-gltf-v1-integration-${{ matrix.features }}
           path: lcov-gltf-v1-integration-${{ matrix.features }}.info
@@ -321,7 +321,7 @@ jobs:
       - name: test crate
         run: cargo llvm-cov -v -p asset-importer-rs-obj --lcov --output-path lcov-obj.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-obj
           path: lcov-obj.info
@@ -354,7 +354,7 @@ jobs:
         env:
           FEATURES: ${{ matrix.features }}
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-obj-integration-${{ matrix.features }}
           path: lcov-obj-integration-${{ matrix.features }}.info
@@ -379,7 +379,7 @@ jobs:
       - name: test
         run: cargo llvm-cov -v -p gltf-v1 --lcov --output-path lcov-gltf-v1.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-gltf-v1
           path: lcov-gltf-v1.info
@@ -404,7 +404,7 @@ jobs:
       - name: test
         run: cargo llvm-cov -v -p gltf-v1-json --lcov --output-path lcov-gltf-v1-json.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-gltf-v1-json
           path: lcov-gltf-v1-json.info
@@ -429,7 +429,7 @@ jobs:
       - name: test
         run: cargo llvm-cov -v -p gltf-v1-derive --lcov --output-path lcov-gltf-v1-derive.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-gltf-v1-derive
           path: lcov-gltf-v1-derive.info
