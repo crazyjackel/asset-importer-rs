@@ -25,7 +25,7 @@ jobs:
       gltf-v1-derive: ${{ steps.filter.outputs.gltf-v1-derive }}
     steps:
       - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v2
+      - uses: dorny/paths-filter@v3.0.2
         id: filter
         with:
           filters: |
