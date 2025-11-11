@@ -465,6 +465,11 @@ jobs:
           pattern: coverage-*
           path: coverage-artifacts/
           merge-multiple: false
+      - name: Flatten coverage files
+        run: |
+          mkdir -p coverage
+          find coverage-artifacts -name "*.info" -type f -exec mv {} coverage/ \;
+          find coverage-artifacts -type d -empty -delete
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
