@@ -24,7 +24,7 @@ jobs:
       gltf-v1-json: ${{ steps.filter.outputs.gltf-v1-json }}
       gltf-v1-derive: ${{ steps.filter.outputs.gltf-v1-derive }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: dorny/paths-filter@v3.0.2
         id: filter
         with:
@@ -84,7 +84,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.core == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -109,7 +109,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.scene == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -134,7 +134,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.post-process == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -163,7 +163,7 @@ jobs:
         use_default_features: [true, false]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -202,9 +202,9 @@ jobs:
         features: ['default', 'minimal']
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Checkout glTF Sample Assets
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: KhronosGroup/glTF-Sample-Assets
           path: glTF-Sample-Assets
@@ -241,7 +241,7 @@ jobs:
         use_default_features: [true, false]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -280,7 +280,7 @@ jobs:
         features: ['minimal', 'default', 'extras']
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -309,7 +309,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.obj == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -338,7 +338,7 @@ jobs:
         features: ['minimal', 'default', 'extras']
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -367,7 +367,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.gltf-v1-lib == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -392,7 +392,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.gltf-v1-json == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -417,7 +417,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.gltf-v1-derive == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - uses: dtolnay/rust-toolchain@stable
       - uses: taiki-e/install-action@cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -454,7 +454,7 @@ jobs:
       - test-gltf-v1-derive
     if: always()
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - uses: dtolnay/rust-toolchain@stable
