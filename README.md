@@ -16,6 +16,32 @@
     <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
   </a>
 </p>
+<p align="center">
+  <a href="https://sonarcloud.io/summary/new_code?id=crazyjackel_asset-importer-rs">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=crazyjackel_asset-importer-rs&metric=bugs" alt="Bugs">
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=crazyjackel_asset-importer-rs">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=crazyjackel_asset-importer-rs&metric=code_smells" alt="Code Smells">
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=crazyjackel_asset-importer-rs">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=crazyjackel_asset-importer-rs&metric=coverage" alt="Coverage">
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=crazyjackel_asset-importer-rs">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=crazyjackel_asset-importer-rs&metric=duplicated_lines_density" alt="Duplicated Lines (%)">
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=crazyjackel_asset-importer-rs">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=crazyjackel_asset-importer-rs&metric=ncloc" alt="Lines of Code">
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=crazyjackel_asset-importer-rs">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=crazyjackel_asset-importer-rs&metric=reliability_rating" alt="Reliability Rating">
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=crazyjackel_asset-importer-rs">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=crazyjackel_asset-importer-rs&metric=security_rating" alt="Security Rating">
+  </a>
+  <a href="https://sonarcloud.io/summary/new_code?id=crazyjackel_asset-importer-rs">
+    <img src="https://sonarcloud.io/api/project_badges/measure?project=crazyjackel_asset-importer-rs&metric=vulnerabilities" alt="Vulnerabilities">
+  </a>
+</p>
 <!-- TABLE OF CONTENTS -->
 <h2 id="table-of-contents"> :book: Table of Contents</h2>
 
