@@ -435,3 +435,75 @@ jobs:
           path: lcov-gltf-v1-derive.info
           retention-days: 1
 
+  merge-coverage:
+    name: Merge Coverage Reports
+    runs-on: ubuntu-latest
+    needs:
+      - test-core
+      - test-scene
+      - test-post-process
+      - test-gltf
+      - test-gltf-integration
+      - test-gltf-v1
+      - test-gltf-v1-integration
+      - test-obj
+      - test-obj-integration
+      - test-gltf-v1-lib
+      - test-gltf-v1-json
+      - test-gltf-v1-derive
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*
+          path: coverage-artifacts/
+          merge-multiple: false
+      - name: Install lcov
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lcov
+      - name: Merge coverage reports
+        run: |
+          mkdir -p merged-coverage
+          find coverage-artifacts -name "*.info" -type f > coverage-files.txt
+          if [ -s coverage-files.txt ]; then
+            lcov -a $(head -n1 coverage-files.txt) -o merged-coverage/coverage.info
+            tail -n +2 coverage-files.txt | while read file; do
+              lcov -a merged-coverage/coverage.info -a "$file" -o merged-coverage/coverage-temp.info
+              mv merged-coverage/coverage-temp.info merged-coverage/coverage.info
+            done
+          else
+            echo "No coverage files found, creating empty report"
+            touch merged-coverage/coverage.info
+          fi
+      - name: Upload merged coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-merged
+          path: merged-coverage/coverage.info
+          retention-days: 1
+
+  sonarqube:
+    name: SonarQube
+    runs-on: ubuntu-latest
+    needs: merge-coverage
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Download merged coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-merged
+          path: coverage/
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_COVERAGE_REPORT_PATHS: coverage/coverage.info
+
