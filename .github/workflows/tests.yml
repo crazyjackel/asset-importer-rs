@@ -465,43 +465,8 @@ jobs:
           pattern: coverage-*
           path: coverage-artifacts/
           merge-multiple: false
-      - name: Install lcov
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y lcov
-      - name: Merge coverage reports
-        run: |
-          mkdir -p merged-coverage
-          find coverage-artifacts -name "*.info" -type f > coverage-files.txt
-          if [ -s coverage-files.txt ]; then
-            lcov -a $(head -n1 coverage-files.txt) -o merged-coverage/coverage.info
-            tail -n +2 coverage-files.txt | while read file; do
-              lcov -a merged-coverage/coverage.info -a "$file" -o merged-coverage/coverage-temp.info
-              mv merged-coverage/coverage-temp.info merged-coverage/coverage.info
-            done
-          else
-            echo "No coverage files found, creating empty report"
-            touch merged-coverage/coverage.info
-          fi
-      - name: Install lcov-cobertura
-        run: |
-          python3 -m pip install lcov-cobertura
-      - name: Convert lcov to Cobertura XML
-        run: |
-          if [ -s merged-coverage/coverage.info ]; then
-            python3 -m lcov_cobertura merged-coverage/coverage.info -o coverage.xml
-          else
-            echo '<?xml version="1.0" ?><coverage></coverage>' > coverage.xml
-          fi
-      - name: Upload coverage XML artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-xml
-          path: coverage.xml
-          retention-days: 1
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_COVERAGE_REPORT_PATHS: coverage.xml
 
