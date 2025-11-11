@@ -489,10 +489,16 @@ jobs:
       - name: Convert lcov to Cobertura XML
         run: |
           if [ -s merged-coverage/coverage.info ]; then
-            lcov-cobertura merged-coverage/coverage.info -o coverage.xml
+            python3 -m lcov_cobertura merged-coverage/coverage.info -o coverage.xml
           else
             echo '<?xml version="1.0" ?><coverage></coverage>' > coverage.xml
           fi
+      - name: Upload coverage XML artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
+          retention-days: 1
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
