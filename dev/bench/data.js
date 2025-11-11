@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1762882849365,
+  "lastUpdate": 1762903070982,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -419,6 +419,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 46216942,
             "range": "± 391029",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d7f226aa3c2240e5d539626556f44dd36d7eac87",
+          "message": "Merge pull request #26 from crazyjackel/jlevitt/pipeline_coverage_improvements\n\nPipeline Coverage Improvements",
+          "timestamp": "2025-11-11T18:15:22-05:00",
+          "tree_id": "2349d99cba3efcf20c225382167077957750ec56",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/d7f226aa3c2240e5d539626556f44dd36d7eac87"
+        },
+        "date": 1762903070208,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 103009000,
+            "range": "± 643222",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 51411524,
+            "range": "± 301843",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 210591880,
+            "range": "± 1512069",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 50842931,
+            "range": "± 292225",
             "unit": "ns/iter"
           }
         ]
