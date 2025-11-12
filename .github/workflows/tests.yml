@@ -220,7 +220,7 @@ jobs:
           FEATURES: ${{ matrix.features }}
       - name: test
         run: >
-          cargo llvm-cov -v --no-default-features --features "$FEATURES" external_gltf2_import_sample_assets --lcov --output-path lcov-gltf-integration-${{ matrix.features }}.info -- --nocapture
+          cargo llvm-cov -v --no-default-features --features "$FEATURES" --test gltf2_integration --lcov --output-path lcov-gltf-integration-${{ matrix.features }}.info -- external_gltf2_import_sample_assets --nocapture
         env:
           FEATURES: ${{ matrix.features }}
       - name: Upload coverage artifact
@@ -468,8 +468,12 @@ jobs:
       - name: Flatten coverage files
         run: |
           mkdir -p coverage
-          find coverage-artifacts -name "*.info" -type f -exec mv {} coverage/ \;
-          find coverage-artifacts -type d -empty -delete
+          if [ -d coverage-artifacts ] && [ "$(find coverage-artifacts -name "*.info" -type f | wc -l)" -gt 0 ]; then
+            find coverage-artifacts -name "*.info" -type f -exec mv {} coverage/ \;
+            find coverage-artifacts -type d -empty -delete
+          else
+            echo "No coverage artifacts found, creating empty coverage directory"
+          fi
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
