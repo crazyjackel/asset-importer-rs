@@ -1,4 +1,4 @@
-use asset_importer_rs_scene::{AiColor4D, AiMesh, AiNode, AiPrimitiveType, AiVector3D};
+use asset_importer_rs_scene::{AiColor4D, AiMesh, AiNode, AiPrimitiveType, AiReal, AiVector3D};
 use tobj::Model;
 
 use crate::importer::ObjImporter;
@@ -45,9 +45,9 @@ impl ObjImporter {
             for i in 0..chunk_length {
                 let offset = 3 * i;
                 ai_mesh.vertices.push(AiVector3D::new(
-                    mesh.positions[offset],
-                    mesh.positions[offset + 1],
-                    mesh.positions[offset + 2],
+                    mesh.positions[offset] as AiReal,
+                    mesh.positions[offset + 1] as AiReal,
+                    mesh.positions[offset + 2] as AiReal,
                 ));
             }
 
@@ -57,9 +57,9 @@ impl ObjImporter {
             for i in 0..chunk_length {
                 let offset = 3 * i;
                 ai_mesh.normals.push(AiVector3D::new(
-                    mesh.normals[offset],
-                    mesh.normals[offset + 1],
-                    mesh.normals[offset + 2],
+                    mesh.normals[offset] as AiReal,
+                    mesh.normals[offset + 1] as AiReal,
+                    mesh.normals[offset + 2] as AiReal,
                 ));
             }
 
@@ -86,9 +86,9 @@ impl ObjImporter {
                 for i in 0..textures {
                     let offset = 2 * i;
                     texture_channel_one.push(AiVector3D::new(
-                        mesh.texcoords[offset],
-                        mesh.texcoords[offset + 1],
-                        0.0,
+                        mesh.texcoords[offset] as AiReal,
+                        mesh.texcoords[offset + 1] as AiReal,
+                        0.0 as AiReal,
                     ));
                 }
                 ai_mesh.texture_coords[0] = Some(texture_channel_one);

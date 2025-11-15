@@ -29,7 +29,7 @@ pub type DataExporter<'a> = dyn Fn(&Path) -> io::Result<Box<dyn Write + 'a>> + '
 /// # Example
 ///
 /// ```rust
-/// use asset_importer_rs_core::export::{AiExport, ExportProperties};
+/// use asset_importer_rs_core::{AiExport, ExportProperties};
 /// use asset_importer_rs_scene::AiScene;
 /// use std::path::Path;
 ///
@@ -40,10 +40,10 @@ pub type DataExporter<'a> = dyn Fn(&Path) -> io::Result<Box<dyn Write + 'a>> + '
 ///
 ///     fn export_file_dyn(
 ///         &self,
-///         scene: &AiScene,
-///         path: &Path,
-///         properties: &ExportProperties,
-///         exporter: &dyn Fn(&Path) -> std::io::Result<Box<dyn std::io::Write>>,
+///         _scene: &AiScene,
+///         _path: &Path,
+///         _properties: &ExportProperties,
+///         _exporter: &asset_importer_rs_core::DataExporter<'_>,
 ///     ) -> Result<(), Self::Error> {
 ///         // Export the scene to the specified path
 ///         Ok(())
@@ -87,26 +87,30 @@ pub trait AiExport {
 /// # Example
 ///
 /// ```rust
-/// use asset_importer_rs_core::export::{AiExportExt, ExportProperties};
+/// use asset_importer_rs_core::{AiExport, AiExportExt, ExportProperties};
 /// use asset_importer_rs_scene::AiScene;
-/// use std::path::Path;
 ///
 /// struct MyExporter;
 ///
-/// impl AiExportExt for MyExporter {
+/// impl AiExport for MyExporter {
 ///     type Error = std::io::Error;
 ///
-///     fn export_file<P: AsRef<Path>, R: std::io::Write, F: Fn(&Path) -> std::io::Result<R>>(
+///     fn export_file_dyn(
 ///         &self,
-///         scene: &AiScene,
-///         path: P,
-///         properties: &ExportProperties,
-///         exporter: F,
+///         _scene: &AiScene,
+///         _path: &std::path::Path,
+///         _properties: &ExportProperties,
+///         _exporter: &asset_importer_rs_core::DataExporter<'_>,
 ///     ) -> Result<(), Self::Error> {
-///         // Export implementation
 ///         Ok(())
 ///     }
 /// }
+///
+/// // AiExportExt is automatically implemented for types that implement AiExport
+/// let exporter = MyExporter;
+/// let scene = AiScene::default();
+/// let mut properties = ExportProperties::new();
+/// // exporter.export_file_default(&scene, "output.txt", &properties)?;
 /// ```
 ///
 /// # Methods

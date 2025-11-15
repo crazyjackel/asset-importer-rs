@@ -10,7 +10,6 @@ repository = "https://github.com/crazyjackel/asset-importer-rs"
 [workspace]
 resolver = "2"
 members = [
-    "crates/asset-importer-rs-core",
     "crates/gltf-v1",
     "crates/gltf-v1-derive",
     "crates/gltf-v1-json",

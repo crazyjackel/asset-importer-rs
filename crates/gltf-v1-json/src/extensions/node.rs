@@ -5,6 +5,8 @@ use crate::StringIndex;
 #[allow(unused_imports)] // different features use different imports
 use gltf_v1_derive::Validate;
 use serde_derive::{Deserialize, Serialize};
+#[cfg(feature = "extensions")]
+use serde_json::{Map, Value};
 
 #[cfg(feature = "KHR_materials_common")]
 #[derive(Clone, Debug, Deserialize, Serialize, Validate)]

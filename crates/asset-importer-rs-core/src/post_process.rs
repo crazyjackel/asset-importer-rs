@@ -11,7 +11,7 @@ use enumflags2::{BitFlags, bitflags};
 ///
 /// ```rust
 /// use asset_importer_rs_scene::AiScene;
-/// use asset_importer_rs_core::post_process::{AiPostProcess, AiPostProcessSteps};
+/// use asset_importer_rs_core::{AiPostProcess, AiPostProcessSteps};
 /// use enumflags2::BitFlags;
 ///
 /// struct MyPostProcess;

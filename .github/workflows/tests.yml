@@ -1,0 +1,481 @@
+name: Crate Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      core: ${{ steps.filter.outputs.core }}
+      scene: ${{ steps.filter.outputs.scene }}
+      post-process: ${{ steps.filter.outputs.post-process }}
+      gltf: ${{ steps.filter.outputs.gltf }}
+      gltf-v1: ${{ steps.filter.outputs.gltf-v1 }}
+      obj: ${{ steps.filter.outputs.obj }}
+      gltf-v1-lib: ${{ steps.filter.outputs.gltf-v1-lib }}
+      gltf-v1-json: ${{ steps.filter.outputs.gltf-v1-json }}
+      gltf-v1-derive: ${{ steps.filter.outputs.gltf-v1-derive }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3.0.2
+        id: filter
+        with:
+          filters: |
+            core:
+              - 'Cargo.toml'
+              - 'crates/asset-importer-rs-core/**'
+              - 'crates/asset-importer-rs-scene/**'
+            scene:
+              - 'Cargo.toml'
+              - 'crates/asset-importer-rs-scene/**'
+            post-process:
+              - 'Cargo.toml'
+              - 'crates/asset-importer-rs-post-process/**'
+              - 'crates/asset-importer-rs-core/**'
+              - 'crates/asset-importer-rs-scene/**'
+            gltf:
+              - 'Cargo.toml'
+              - 'tests/gltf2_exporter_integration_tests.rs'
+              - 'tests/gltf2_importer_integration_tests.rs'
+              - 'tests/gltf2_importer_sample_asset_test.rs'
+              - 'tests/gltf2_integration.rs'
+              - 'crates/asset-importer-rs-gltf/**'
+              - 'crates/asset-importer-rs-core/**'
+              - 'crates/asset-importer-rs-scene/**'
+            gltf-v1:
+              - 'Cargo.toml'
+              - 'crates/asset-importer-rs-gltf-v1/**'
+              - 'crates/asset-importer-rs-core/**'
+              - 'crates/asset-importer-rs-scene/**'
+              - 'crates/gltf-v1/**'
+              - 'crates/gltf-v1-json/**'
+              - 'crates/gltf-v1-derive/**'
+              - 'tests/gltf_integration.rs'
+            obj:
+              - 'Cargo.toml'
+              - 'crates/asset-importer-rs-obj/**'
+              - 'crates/asset-importer-rs-core/**'
+              - 'crates/asset-importer-rs-scene/**'
+              - 'tests/obj_integration.rs'
+            gltf-v1-lib:
+              - 'Cargo.toml'
+              - 'crates/gltf-v1/**'
+              - 'crates/gltf-v1-json/**'
+            gltf-v1-json:
+              - 'Cargo.toml'
+              - 'crates/gltf-v1-json/**'
+              - 'crates/gltf-v1-derive/**'
+            gltf-v1-derive:
+              - 'Cargo.toml'
+              - 'crates/gltf-v1-derive/**'
+
+  test-core:
+    name: Test Core Crate
+    runs-on: ubuntu-latest
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.core == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v -p asset-importer-rs-core
+      - name: test
+        run: cargo llvm-cov -v -p asset-importer-rs-core --lcov --output-path lcov-core.info
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-core
+          path: lcov-core.info
+          retention-days: 1
+
+  test-scene:
+    name: Test Scene Crate
+    runs-on: ubuntu-latest
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.scene == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v -p asset-importer-rs-scene
+      - name: test
+        run: cargo llvm-cov -v -p asset-importer-rs-scene --lcov --output-path lcov-scene.info
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-scene
+          path: lcov-scene.info
+          retention-days: 1
+
+  test-post-process:
+    name: Test Post-Process Crate
+    runs-on: ubuntu-latest
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.post-process == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v -p asset-importer-rs-post-process
+      - name: test
+        run: cargo llvm-cov -v -p asset-importer-rs-post-process --lcov --output-path lcov-post-process.info
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-post-process
+          path: lcov-post-process.info
+          retention-days: 1
+
+  test-gltf:
+    name: Test GLTF 2.0 Format
+    runs-on: ubuntu-latest
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.gltf == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        use_default_features: [true, false]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: |
+          if [ "${{ matrix.use_default_features }}" == "true" ]; then
+            cargo build -v -p asset-importer-rs-gltf
+          else
+            cargo build -v --no-default-features -p asset-importer-rs-gltf
+          fi
+      - name: test crate
+        run: |
+          if [ "${{ matrix.use_default_features }}" == "true" ]; then
+            cargo llvm-cov -v -p asset-importer-rs-gltf --lcov --output-path lcov-gltf-${{ matrix.use_default_features }}.info
+          else
+            cargo llvm-cov -v --no-default-features -p asset-importer-rs-gltf --lcov --output-path lcov-gltf-${{ matrix.use_default_features }}.info
+          fi
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-gltf-${{ matrix.use_default_features }}
+          path: lcov-gltf-${{ matrix.use_default_features }}.info
+          retention-days: 1
+
+  test-gltf-integration:
+    name: Test GLTF 2.0 Integration
+    runs-on: ubuntu-latest
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.gltf == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        features: ['default', 'minimal']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Checkout glTF Sample Assets
+        uses: actions/checkout@v4
+        with:
+          repository: KhronosGroup/glTF-Sample-Assets
+          path: glTF-Sample-Assets
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v --no-default-features --features "$FEATURES"
+        env:
+          FEATURES: ${{ matrix.features }}
+      - name: test
+        run: >
+          cargo llvm-cov -v --no-default-features --features "$FEATURES" --test gltf2_integration --lcov --output-path lcov-gltf-integration-${{ matrix.features }}.info -- external_gltf2_import_sample_assets --nocapture
+        env:
+          FEATURES: ${{ matrix.features }}
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-gltf-integration-${{ matrix.features }}
+          path: lcov-gltf-integration-${{ matrix.features }}.info
+          retention-days: 1
+
+  test-gltf-v1:
+    name: Test GLTF V1 Format
+    runs-on: ubuntu-latest
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.gltf-v1 == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        use_default_features: [true, false]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: |
+          if [ "${{ matrix.use_default_features }}" == "true" ]; then
+            cargo build -v -p asset-importer-rs-gltf-v1
+          else
+            cargo build -v --no-default-features -p asset-importer-rs-gltf-v1
+          fi
+      - name: test crate
+        run: |
+          if [ "${{ matrix.use_default_features }}" == "true" ]; then
+            cargo llvm-cov -v -p asset-importer-rs-gltf-v1 --lcov --output-path lcov-gltf-v1-${{ matrix.use_default_features }}.info
+          else
+            cargo llvm-cov -v --no-default-features -p asset-importer-rs-gltf-v1 --lcov --output-path lcov-gltf-v1-${{ matrix.use_default_features }}.info
+          fi
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-gltf-v1-${{ matrix.use_default_features }}
+          path: lcov-gltf-v1-${{ matrix.use_default_features }}.info
+          retention-days: 1
+
+  test-gltf-v1-integration:
+    name: Test GLTF V1 Integration
+    runs-on: ubuntu-latest
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.gltf-v1 == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        features: ['minimal', 'default', 'extras']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v --no-default-features --features "$FEATURES"
+        env:
+          FEATURES: ${{ matrix.features }}
+      - name: test integration
+        run: cargo llvm-cov -v --no-default-features --features "$FEATURES" --test gltf_integration --lcov --output-path lcov-gltf-v1-integration-${{ matrix.features }}.info -- --nocapture
+        env:
+          FEATURES: ${{ matrix.features }}
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-gltf-v1-integration-${{ matrix.features }}
+          path: lcov-gltf-v1-integration-${{ matrix.features }}.info
+          retention-days: 1
+
+  test-obj:
+    name: Test OBJ Format
+    runs-on: ubuntu-latest
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.obj == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v -p asset-importer-rs-obj
+      - name: test crate
+        run: cargo llvm-cov -v -p asset-importer-rs-obj --lcov --output-path lcov-obj.info
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-obj
+          path: lcov-obj.info
+          retention-days: 1
+
+  test-obj-integration:
+    name: Test OBJ Integration
+    runs-on: ubuntu-latest
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.obj == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        features: ['minimal', 'default', 'extras']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v --no-default-features --features "$FEATURES"
+        env:
+          FEATURES: ${{ matrix.features }}
+      - name: test integration
+        run: cargo llvm-cov -v --no-default-features --features "$FEATURES" --test obj_integration --lcov --output-path lcov-obj-integration-${{ matrix.features }}.info -- --nocapture
+        env:
+          FEATURES: ${{ matrix.features }}
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-obj-integration-${{ matrix.features }}
+          path: lcov-obj-integration-${{ matrix.features }}.info
+          retention-days: 1
+
+  test-gltf-v1-lib:
+    name: Test GLTF V1 Library
+    runs-on: ubuntu-latest
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.gltf-v1-lib == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v -p gltf-v1
+      - name: test
+        run: cargo llvm-cov -v -p gltf-v1 --lcov --output-path lcov-gltf-v1.info
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-gltf-v1
+          path: lcov-gltf-v1.info
+          retention-days: 1
+
+  test-gltf-v1-json:
+    name: Test GLTF V1 JSON
+    runs-on: ubuntu-latest
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.gltf-v1-json == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v -p gltf-v1-json
+      - name: test
+        run: cargo llvm-cov -v -p gltf-v1-json --lcov --output-path lcov-gltf-v1-json.info
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-gltf-v1-json
+          path: lcov-gltf-v1-json.info
+          retention-days: 1
+
+  test-gltf-v1-derive:
+    name: Test GLTF V1 Derive
+    runs-on: ubuntu-latest
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.gltf-v1-derive == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Cache Cargo Dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+      - name: build
+        run: cargo build -v -p gltf-v1-derive
+      - name: test
+        run: cargo llvm-cov -v -p gltf-v1-derive --lcov --output-path lcov-gltf-v1-derive.info
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-gltf-v1-derive
+          path: lcov-gltf-v1-derive.info
+          retention-days: 1
+
+  merge-coverage-sonar:
+    name: Merge Coverage and SonarQube
+    runs-on: ubuntu-latest
+    needs:
+      - changes
+      - test-core
+      - test-scene
+      - test-post-process
+      - test-gltf
+      - test-gltf-integration
+      - test-gltf-v1
+      - test-gltf-v1-integration
+      - test-obj
+      - test-obj-integration
+      - test-gltf-v1-lib
+      - test-gltf-v1-json
+      - test-gltf-v1-derive
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: coverage-*
+          path: coverage-artifacts/
+          merge-multiple: false
+      - name: Flatten coverage files
+        run: |
+          mkdir -p coverage
+          if [ -d coverage-artifacts ] && [ "$(find coverage-artifacts -name "*.info" -type f | wc -l)" -gt 0 ]; then
+            find coverage-artifacts -name "*.info" -type f -exec mv {} coverage/ \;
+            find coverage-artifacts -type d -empty -delete
+          else
+            echo "No coverage artifacts found, creating empty coverage directory"
+          fi
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+

@@ -21,12 +21,15 @@ Cargo.lock
 #.idea/
 
 # Added by cargo
-
 /target
 
+# Ignore output files from tests
 /tests/output/**/*.glb
 /tests/output/**/*.gltf
 /tests/output/**/*.bin
 
-
+# Ignore sample assets folder if included in the project
 glTF-Sample-Assets/
+
+# Ignore coverage files
+lcov-*.info

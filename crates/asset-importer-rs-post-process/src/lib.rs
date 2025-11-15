@@ -13,6 +13,7 @@ pub use asset_importer_rs_scene::AiScene;
 pub use error::AiPostProcessError;
 
 use asset_importer_rs_core::AiPostProcess;
+use bytemuck;
 use enumflags2::BitFlags;
 
 // Re-export steps based on features
@@ -188,7 +189,7 @@ impl AiPostProcesser {
             #[cfg(feature = "fix-infacing-normals")]
             Box::new(AiPostProcesserWrapper::new(FixInfacingNormals)),
             #[cfg(feature = "flip-uvs")]
-            Box::new(AiPostProcesserWrapper::new(FlipUVs)),
+            Box::new(AiPostProcesserWrapper::new(FlipUVs::default())),
             #[cfg(feature = "flip-winding-order")]
             Box::new(AiPostProcesserWrapper::new(FlipWindingOrder)),
             #[cfg(feature = "force-gen-normals")]
