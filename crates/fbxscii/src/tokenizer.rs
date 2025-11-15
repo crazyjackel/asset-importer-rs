@@ -144,11 +144,11 @@ impl<R: BufRead> Iterator for Tokenizer<R> {
                 // This is a buffer to build up the data string.
                 let mut char_buffer: Vec<char> = Vec::new();
                 let mut buffer_ref: &Vec<char> = line;
-                let mut line_length = line.len();
                 let mut line_char_buffer: Option<Vec<char>> = None;
+                let mut lines_read = 0;
                 loop {
                     self.char_index += 1;
-                    if self.char_index >= line_length {
+                    if self.char_index >= buffer_ref.len() {
                         let mut new_line = String::new();
                         let result = self.reader.read_line(&mut new_line);
                         // We are unable to read the line, so we return an error.
@@ -161,8 +161,7 @@ impl<R: BufRead> Iterator for Tokenizer<R> {
                         }
                         line_char_buffer = Some(new_line.chars().collect());
                         buffer_ref = line_char_buffer.as_ref().unwrap();
-                        line_length = buffer_ref.len();
-                        self.line_number += 1;
+                        lines_read += 1;
                         self.char_index = 0;
                     }
                     if buffer_ref[self.char_index] == '"' {
@@ -170,8 +169,12 @@ impl<R: BufRead> Iterator for Tokenizer<R> {
                     }
                     char_buffer.push(buffer_ref[self.char_index]);
                 }
+
                 if let Some(line_char_buffer) = line_char_buffer {
-                    self.char_buffer_queue.pop_front();
+                    for _ in 0..lines_read {
+                        self.char_buffer_queue.pop_front();
+                    }
+                    self.line_number += lines_read;
                     self.char_buffer_queue.push_back(line_char_buffer);
                 }
 
@@ -193,7 +196,7 @@ impl<R: BufRead> Iterator for Tokenizer<R> {
             _ => {}
         }
 
-        // If we are here, it is either a key or data
+        // If we are here, what remains is either a key or data
         // If it is data, we need to read until we find a comma, whitespace/newline, or special character.
         // In the case that we find a whitespace/newline, we must read further to confirm there is no colon.
         // If there is a colon, it is a key, rather than data.
@@ -253,8 +256,7 @@ impl<R: BufRead> Iterator for Tokenizer<R> {
 
         // we have already read the token at token_end, so we start at the next character.
         let mut read_start = token_end + 1;
-        let mut read_end = line.len();
-        if read_start >= read_end {
+        if read_start >= line.len() {
             // pop the line if we have read everything.
             self.char_buffer_queue.pop_front();
         }
@@ -279,17 +281,17 @@ impl<R: BufRead> Iterator for Tokenizer<R> {
                 self.line_number += 1;
                 self.char_index = 0;
                 read_start = 0;
-                read_end = line.len();
             }
             let line = self.char_buffer_queue.front().unwrap();
-            for (index, char) in line.iter().take(read_end).skip(read_start).enumerate() {
+            // Read Start is guarenteed to be in bounds. 
+            for (index, char) in line[read_start..].iter().enumerate() {
                 match char {
                     c if c.is_whitespace() => {}
                     '\n' | '\r' | '\0' | '\u{000C}' => {}
                     ':' => {
                         // If we find a colon, we have a key.
                         // We set char_index to index + 1 to ensure the colon is not read as part of the next token.
-                        self.char_index = index + 1;
+                        self.char_index = read_start + index + 1;
                         return Some(Ok(TokenData {
                             data: Token::Key(key_or_data),
                             starting_line_number,
@@ -299,7 +301,7 @@ impl<R: BufRead> Iterator for Tokenizer<R> {
                     _ => {
                         // If we find a non-whitespace, non-endline character, we have a data token.
                         // We set char_index to index to ensure the character is read as the next token.
-                        self.char_index = index;
+                        self.char_index = read_start + index;
                         return Some(Ok(TokenData {
                             data: Token::Data(key_or_data),
                             starting_line_number,
@@ -493,28 +495,31 @@ FBXHeaderExtension:  {
     fn test_read_line_data_with_quotes_and_whitespace() {
         let input = "\t\tVertices: *6324 {";
         let mut tokenizer = Tokenizer::new(BufReader::new(input.as_bytes()));
+        let mut token = tokenizer.next();
         assert_eq!(
-            tokenizer.next(),
+            token,
             Some(Ok(TokenData {
                 data: Token::Key("Vertices".to_string()),
                 starting_line_number: 0,
                 starting_char_index: 2,
             }))
         );
+        token = tokenizer.next();
         assert_eq!(
-            tokenizer.next(),
+            token,
             Some(Ok(TokenData {
                 data: Token::Data("*6324".to_string()),
                 starting_line_number: 0,
                 starting_char_index: 12,
             }))
         );
+        token = tokenizer.next();
         assert_eq!(
-            tokenizer.next(),
+            token,
             Some(Ok(TokenData {
                 data: Token::OpenBrace,
                 starting_line_number: 0,
-                starting_char_index: 17,
+                starting_char_index: 18,
             }))
         );
     }

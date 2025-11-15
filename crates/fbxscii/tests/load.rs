@@ -13,5 +13,5 @@ fn test_tokenizer_load_duck() {
         println!("{:?}", token);
         tokens.push(token);
     }
-    assert_eq!(tokens.len(), 10);
+    assert_eq!(tokens.len(), 90627);
 }
