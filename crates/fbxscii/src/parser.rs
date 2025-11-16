@@ -12,6 +12,7 @@ pub enum ParserError {
 pub struct Element {
     pub key: String,
     pub tokens: Vec<String>,
+    pub children: Vec<usize>,
     pub parent_index: Option<usize>,
 }
 
@@ -20,6 +21,7 @@ impl Element {
         Self {
             key,
             tokens: Vec::new(),
+            children: Vec::new(),
             parent_index: None,
         }
     }
@@ -40,6 +42,9 @@ impl ElementArena {
 
     pub fn get(&self, index: usize) -> Option<&Element> {
         self.elements.get(index)
+    }
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut Element> {
+        self.elements.get_mut(index)
     }
 }
 
@@ -92,6 +97,19 @@ pub struct ParserIter<'a, R: BufRead> {
     current_element: Option<Element>,
 }
 
+impl<'a, R: BufRead> ParserIter<'a, R> {
+    pub fn insert_element(&mut self, element: Element) -> usize {
+        let parent_index = element.parent_index;
+        let index = self.parser_arena.insert(element);
+        if let Some(parent_index) = parent_index{
+            if let Some(parent) = self.parser_arena.get_mut(parent_index) {
+                parent.children.push(index);
+            }   
+        }
+        index
+    }
+}
+
 impl<'a, R: BufRead> Iterator for ParserIter<'a, R> {
     type Item = Result<usize, ParserError>;
 
@@ -108,9 +126,12 @@ impl<'a, R: BufRead> Iterator for ParserIter<'a, R> {
                     if self.current_element.is_none() {
                         return Some(Err(ParserError::OpenBraceNoKey));
                     }
-                    // move current element out of the option, current_element is guarenteed to have parent_index
+
+                    // move current element out of the option and insert it.
                     let element: Element = self.current_element.take().unwrap();
-                    let index = self.parser_arena.insert(element);
+                    let index = self.insert_element(element);
+
+                    // Update the current scope to the new element.
                     self.current_scope = Some(index);
                     return Some(Ok(index));
                 }
@@ -135,7 +156,10 @@ impl<'a, R: BufRead> Iterator for ParserIter<'a, R> {
                 Token::Key(key) => {
                     // If we find a key, we should return the current element and create a new one with the key as the key.
                     if let Some(element) = self.current_element.take() {
-                        let index = self.parser_arena.insert(element);
+                        // Insert the current element and get the index.
+                        let index = self.insert_element(element);
+                        
+                        // We can now create a new element and set it's parent index to the current scope.
                         let mut new_element = Element::new(key);
                         new_element.parent_index = self.current_scope;
                         self.current_element = Some(new_element);
@@ -153,7 +177,7 @@ impl<'a, R: BufRead> Iterator for ParserIter<'a, R> {
         // If we are here, we have reached the end of the file.
         // We should return the current element if it exists.
         if let Some(element) = self.current_element.take() {
-            let index = self.parser_arena.insert(element);
+            let index = self.insert_element(element);
             return Some(Ok(index));
         }
         // If we are here, we have no more elements to return.
