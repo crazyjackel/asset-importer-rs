@@ -10,6 +10,6 @@ documentation = "https://docs.rs/fbx-dom"
 
 [dependencies]
 fbxscii = { workspace = true }
-fbxcel = { workspace = true }
+fbxcel = { workspace = true, features = ["tree"]}
 
 [features]

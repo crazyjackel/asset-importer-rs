@@ -24,5 +24,5 @@ fn test_parser_load_duck() {
     let tokenizer = Tokenizer::new(BufReader::new(file));
     let parser = Parser::new(tokenizer);
     let elements = parser.load().unwrap();
-    assert_eq!(elements.root_index, 0);
+    assert_eq!(elements.count(), 517);
 }

@@ -10,3 +10,7 @@ pub use parser::Parser;
 pub use parser::ParserError;
 pub use parser::Element;
 pub use parser::ElementArena;
+pub use parser::ElementHandle;
+pub use parser::ElementChildren;
+pub use parser::ElementChildrenByKey;
+pub use parser::ElementParseError;
