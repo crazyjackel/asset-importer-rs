@@ -223,6 +223,11 @@ impl<'a> ElementHandle<'a> {
         &self.element().tokens
     }
 
+    #[inline]
+    pub fn has_children(&self) -> bool {
+        !self.element().children.is_empty()
+    }
+
     /// Returns an iterator of children.
     #[inline]
     #[must_use]
