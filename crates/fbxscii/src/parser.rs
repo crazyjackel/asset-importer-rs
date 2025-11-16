@@ -40,12 +40,14 @@ impl Element {
 // This however, provides significant indirection and the benefits of quicker removal is not neccessary.
 // Last consideration was forgoing either children or parent indices and reconstructing that information as needed.
 // Whilst sensible, I determined that it was additionally complex and the performance benefits were unclear as of writing.
+/// An ElementAmphitheatre is an Arena that stores children and parent indices within each Node.
+/// The Node is an Element with keys and tokens.
 #[derive(Debug, PartialEq)]
-pub struct ElementArena {
+pub struct ElementAmphitheatre {
     elements: Vec<Element>
 }
 
-impl ElementArena {
+impl ElementAmphitheatre {
     pub fn new() -> Self {
         Self {
             elements: Vec::new()
@@ -69,7 +71,7 @@ impl ElementArena {
         self.elements.iter().find(|element| element.key == key)
     }
 
-    /// Creates a new empty `ElementArena` with enough capacity to store `n` elements.
+    /// Creates a new empty `ElementAmphitheatre` with enough capacity to store `n` elements.
     pub fn with_capacity(n: usize) -> Self {
         Self {
             elements: Vec::with_capacity(n),
@@ -159,7 +161,7 @@ impl ElementArena {
 #[derive(Debug, Clone, Copy)]
 pub struct ElementHandle<'a> {
     /// The arena the element belongs to.
-    arena: &'a ElementArena,
+    arena: &'a ElementAmphitheatre,
     /// Element index.
     index: ElementIndex,
 }
@@ -176,7 +178,7 @@ impl<'a> ElementHandle<'a> {
     /// given arena.
     #[inline]
     #[must_use]
-    pub fn new(arena: &'a ElementArena, index: ElementIndex) -> Self {
+    pub fn new(arena: &'a ElementAmphitheatre, index: ElementIndex) -> Self {
         assert!(
             arena.get(index).is_some(),
             "The element index is not valid in the given arena: index={}",
@@ -189,7 +191,7 @@ impl<'a> ElementHandle<'a> {
     /// Returns a reference to the arena.
     #[inline]
     #[must_use]
-    pub fn arena(&self) -> &'a ElementArena {
+    pub fn arena(&self) -> &'a ElementAmphitheatre {
         self.arena
     }
 
@@ -335,11 +337,19 @@ impl TryFrom<ElementHandle<'_>> for u32 {
     }
 }
 
+impl TryFrom<ElementHandle<'_>> for String {
+    type Error = ElementParseError;
+    fn try_from(value: ElementHandle<'_>) -> Result<Self, Self::Error> {
+        let value = value.tokens().first().ok_or(ElementParseError::MissingValueToken)?;
+        Ok(value.to_string())
+    }
+}
+
 /// An iterator of children of an element.
 #[derive(Clone)]
 pub struct ElementChildren<'a> {
     /// Arena.
-    arena: &'a ElementArena,
+    arena: &'a ElementAmphitheatre,
     /// Iterator over child indices.
     indices: std::slice::Iter<'a, usize>,
 }
@@ -398,25 +408,25 @@ impl<'a> std::fmt::Debug for ElementChildrenByKey<'a> {
 
 pub struct Parser<R: BufRead> {
     tokenizer: Tokenizer<R>,
-    element_arena: ElementArena,
+    element_arena: ElementAmphitheatre,
 }
 
 impl<R: BufRead> Parser<R> {
     pub fn new(tokenizer: Tokenizer<R>) -> Self {
         Self {
             tokenizer,
-            element_arena: ElementArena::new(),
+            element_arena: ElementAmphitheatre::new(),
         }
     }
     
-    pub fn load(mut self) -> Result<ElementArena, ParserError> {
+    pub fn load(mut self) -> Result<ElementAmphitheatre, ParserError> {
         let mut iter = self.iter();
         while let Some(_result) = iter.next() {
         }
         Ok(self.element_arena)
     }
 
-    pub fn get_arena_ref(&self) -> &ElementArena {
+    pub fn get_arena_ref(&self) -> &ElementAmphitheatre {
         &self.element_arena
     }
 
@@ -432,7 +442,7 @@ impl<R: BufRead> Parser<R> {
 
 pub struct ParserIter<'a, R: BufRead> {
     tokenizer: &'a mut Tokenizer<R>,
-    parser_arena: &'a mut ElementArena,
+    parser_arena: &'a mut ElementAmphitheatre,
     current_scope: Option<usize>,
     current_element: Option<Element>,
 }
