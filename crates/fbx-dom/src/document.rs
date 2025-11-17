@@ -1,7 +1,9 @@
 use fbxscii::{ElementParseError, Parser, ParserError};
 use std::{collections::HashMap, io::BufRead};
 
-#[derive(Debug)]
+use crate::global::GlobalSettings;
+
+#[derive(Debug, PartialEq)]
 pub enum DocumentParseError {
     ParserError(ParserError),
     UnsupportedVersion(u32, Option<String>),
@@ -33,7 +35,7 @@ pub struct PropertyDetails{
     pub property: Property,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum PropertyParseError {
     InvalidTokenLength(usize, Option<String>),
     MissingPropertyType(String),
@@ -42,12 +44,13 @@ pub enum PropertyParseError {
 // @todo: Consider Lazy Loading of Properties
 pub type Template = HashMap<String, Property>;
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Document {
     pub fbx_version: u32,
     pub creator: String,
     pub creation_date: [u32; 7],
-    pub templates: HashMap<String, Template>
+    pub templates: HashMap<String, Template>,
+    pub global_settings: Template,
 }
 
 pub trait DocumentLoader {
@@ -70,5 +73,9 @@ impl Document {
         let mut document = Self::default();
         elements.load_into_document(&mut document, settings)?;
         Ok(document)
+    }
+
+    pub fn global_settings(&self) -> GlobalSettings<'_> {
+        GlobalSettings::new(self, &self.global_settings)
     }
 }

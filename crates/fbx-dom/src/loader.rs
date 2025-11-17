@@ -145,18 +145,43 @@ fn read_definitions(
                 property_template_handle.first_child_by_key("Properties70");
             if let Some(property_table_handle) = property_table_handle_opt {
                 let template_name = format!("{}.{}", object_name, property_name);
-                let property_details: PropertyDetails = property_table_handle
-                    .try_into()
-                    .map_err(DocumentParseError::PropertyParseError)?;
                 let template = document
                     .templates
                     .entry(template_name)
                     .or_insert(Template::default());
-                template.insert(property_name.to_string(), property_details.property);
+                for property_detail in property_table_handle.children() {
+                    let property_details: PropertyDetails = property_detail
+                        .try_into()
+                        .map_err(DocumentParseError::PropertyParseError)?;
+                    template.insert(property_details.name, property_details.property);
+                }
             }
         }
     }
 
+    Ok(())
+}
+
+fn read_global_settings(
+    amphitheatre: &ElementAmphitheatre,
+    document: &mut Document,
+) -> Result<(), DocumentParseError> {
+    let global_settings_handle_opt = amphitheatre.get_handle_by_key("GlobalSettings");
+    if global_settings_handle_opt.is_none() {
+        return Ok(());
+    }
+    let global_settings_handle = global_settings_handle_opt.unwrap();
+    let property_table_handle_opt = global_settings_handle.first_child_by_key("Properties70");
+    if let Some(property_table_handle) = property_table_handle_opt {
+        for property_detail in property_table_handle.children() {
+            let property_details: PropertyDetails = property_detail
+                .try_into()
+                .map_err(DocumentParseError::PropertyParseError)?;
+            document
+                .global_settings
+                .insert(property_details.name, property_details.property);
+        }
+    }
     Ok(())
 }
 
@@ -272,6 +297,7 @@ impl DocumentLoader for ElementAmphitheatre {
     ) -> Result<(), DocumentParseError> {
         read_header(self, document, settings)?;
         read_definitions(self, document)?;
+        read_global_settings(self, document)?;
         Ok(())
     }
 }
@@ -282,10 +308,10 @@ mod tests {
     use fbxscii::{Parser, Tokenizer};
     use std::io::BufReader;
 
-    use crate::document::{Document, ImportSettings};
+    use crate::document::{Document, DocumentParseError, ImportSettings};
 
     #[test]
-    fn test_document_parse() {
+    fn test_header_parse() {
         let test_document = r#"
 FBXHeaderExtension:  {
 	FBXHeaderVersion: 1003
@@ -308,5 +334,15 @@ FBXHeaderExtension:  {
         assert_eq!(document.fbx_version, 7300);
         assert_eq!(document.creator, "FBX SDK/FBX Plugins version 2013.1");
         assert_eq!(document.creation_date, [2012, 6, 28, 16, 32, 53, 433]);
+    }
+
+    #[test]
+    fn test_empty_document_parse() {
+        let test_document = "";
+        let tokenizer = Tokenizer::new(BufReader::new(test_document.as_bytes()));
+        let parser = Parser::new(tokenizer);
+        let document = Document::from_parser(parser, ImportSettings::default());
+        assert!(document.is_err());
+        assert_eq!(document.unwrap_err(), DocumentParseError::RequiredElementNotFound("FBXHeaderExtension".to_string()));
     }
 }
