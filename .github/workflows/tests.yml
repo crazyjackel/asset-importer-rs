@@ -475,7 +475,7 @@ jobs:
             echo "No coverage artifacts found, creating empty coverage directory"
           fi
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@v7
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
