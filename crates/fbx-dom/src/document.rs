@@ -1,4 +1,4 @@
-use fbxscii::{ElementParseError, Parser, ParserError};
+use fbxscii::{ElementAmphitheatre, ElementParseError, Parser, ParserError};
 use std::{collections::HashMap, io::BufRead};
 
 use crate::global::GlobalSettings;
@@ -17,7 +17,7 @@ pub struct ImportSettings {
     pub strict: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Property{
     String(String),
     Bool(bool),
@@ -41,21 +41,51 @@ pub enum PropertyParseError {
     MissingPropertyType(String),
 }
 
-// @todo: Consider Lazy Loading of Properties
 pub type Template = HashMap<String, Property>;
 
-#[derive(Default, Debug)]
+#[derive(Debug, PartialEq, Clone)]
+pub struct LazyObject{
+    pub name: String,
+    pub type_name: String,
+    pub class_name: String,
+    /// Index of the equivalent element in the object_element_amphitheatre of the document
+    /// Used for lazy loading of Type Specific Information
+    pub element_index: usize
+}
+
+#[derive(Debug, PartialEq, Clone, Hash, Eq)]
+pub struct ObjectPropertyConnection{
+    pub dest: u64,
+    pub property: String,
+}
+
+#[derive(Default, Debug, Clone)]
 pub struct Document {
+    /// The version of the FBX file
     pub fbx_version: u32,
+    /// The creating program of the FBX file
     pub creator: String,
+    /// The creation date of the FBX file
     pub creation_date: [u32; 7],
+    /// The templates of the FBX file
     pub templates: HashMap<String, Template>,
+    /// The global settings of the FBX file
     pub global_settings: Template,
+    /// The element amphitheatre containing object information 
+    pub object_element_amphitheatre: ElementAmphitheatre,
+    /// The objects of the FBX file
+    pub objects: HashMap<u64, LazyObject>,
+    /// The connections between objects
+    pub object_connections: HashMap<u64, Vec<u64>>,
+    /// The connections between object properties
+    pub object_property_connections: HashMap<u64, Vec<ObjectPropertyConnection>>,
+    /// The connections between properties
+    pub property_connections: HashMap<ObjectPropertyConnection, Vec<ObjectPropertyConnection>>,
 }
 
 pub trait DocumentLoader {
     fn load_into_document(
-        &self,
+        self,
         document: &mut Document,
         settings: ImportSettings,
     ) -> Result<(), DocumentParseError>;

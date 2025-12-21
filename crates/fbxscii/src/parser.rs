@@ -2,7 +2,7 @@ use std::{io::BufRead, num::ParseIntError};
 
 use crate::{Token, Tokenizer, TokenizerError};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum ParserError {
     TokenizerError(TokenizerError),
     OpenBraceNoKey,
@@ -11,7 +11,7 @@ pub enum ParserError {
 /// Element index type alias for clarity.
 pub type ElementIndex = usize;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Element {
     pub key: String,
     pub tokens: Vec<String>,
@@ -42,7 +42,7 @@ impl Element {
 // Whilst sensible, I determined that it was additionally complex and the performance benefits were unclear as of writing.
 /// An ElementAmphitheatre is an Arena that stores children and parent indices within each Node.
 /// The Node is an Element with keys and tokens.
-#[derive(Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Clone)]
 pub struct ElementAmphitheatre {
     elements: Vec<Element>
 }

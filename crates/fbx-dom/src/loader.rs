@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
 use fbxscii::{ElementAmphitheatre, ElementHandle};
 
 use crate::document::{
-    Document, DocumentLoader, DocumentParseError, ImportSettings, Property, PropertyDetails,
-    PropertyParseError, Template,
+    Document, DocumentLoader, DocumentParseError, ImportSettings, LazyObject, ObjectPropertyConnection,
+    Property, PropertyDetails, PropertyParseError, Template,
 };
 
 pub const LOWEST_SUPPORTED_VERSION: u32 = 7100;
@@ -150,10 +152,10 @@ fn read_definitions(
                     .entry(template_name)
                     .or_insert(Template::default());
                 for property_detail in property_table_handle.children() {
-                    let property_details: PropertyDetails = property_detail
-                        .try_into()
-                        .map_err(DocumentParseError::PropertyParseError)?;
-                    template.insert(property_details.name, property_details.property);
+                    let r: Result<PropertyDetails, _> = property_detail.try_into();
+                    if let Ok(property_details) = r {
+                        template.insert(property_details.name, property_details.property);
+                    }
                 }
             }
         }
@@ -181,6 +183,114 @@ fn read_global_settings(
                 .global_settings
                 .insert(property_details.name, property_details.property);
         }
+    }
+    Ok(())
+}
+
+fn read_connections(
+    amphitheatre: &ElementAmphitheatre,
+    document: &mut Document,
+) -> Result<(), DocumentParseError> {
+    let connections_handle_opt = amphitheatre.get_handle_by_key("Connections");
+    if connections_handle_opt.is_none() {
+        return Ok(());
+    }
+    let connections_handle = connections_handle_opt.unwrap();
+    // Read Object Connections
+    // Connections of the following format:
+    // C: "OO",40530896,0
+    // First token is always "C"
+    // Second token is the connection type ("OO" or "OP" or "PP") (Object to Object, Object to Property, Property to Property)
+    // If the connection is OO, it should have 2 more tokens:
+    // the source object index, and the destination object index.
+    // If the connection is OP, it should have 3 more tokens:
+    // the source object index, the destination object index, and the property name.
+    // If the connection is PP, it should have 4 more tokens:
+    // the source object index, the source property name, the destination object index, and the destination property name.
+    for connection_handle in connections_handle.children() {
+        let connection_tokens = connection_handle.tokens();
+        if connection_tokens.len() < 2 {
+            continue;
+        }
+        let connection_type = &connection_tokens[1];
+        match connection_type.as_str() {
+            "OO" => {
+                if connection_tokens.len() != 4 {
+                    continue;
+                }
+                let src = connection_tokens[2].parse::<u64>().unwrap_or(0);
+                let dest = connection_tokens[3].parse::<u64>().unwrap_or(0);
+                document
+                    .object_connections
+                    .entry(src)
+                    .or_insert(Vec::new())
+                    .push(dest);
+            }
+            "OP" => {
+                if connection_tokens.len() != 5 {
+                    continue;
+                }
+                let src = connection_tokens[2].parse::<u64>().unwrap_or(0);
+                let dest = connection_tokens[3].parse::<u64>().unwrap_or(0);
+                let property = connection_tokens[4].to_string();
+                document
+                    .object_property_connections
+                    .entry(src)
+                    .or_insert(Vec::new())
+                    .push(ObjectPropertyConnection { dest, property });
+            }
+            "PP" => {
+                if connection_tokens.len() != 6 {
+                    continue;
+                }
+                let src = connection_tokens[2].parse::<u64>().unwrap_or(0);
+                let src_property = connection_tokens[3].to_string();
+                let dest = connection_tokens[4].parse::<u64>().unwrap_or(0);
+                let dest_property = connection_tokens[5].to_string();
+                document
+                    .property_connections
+                    .entry(ObjectPropertyConnection {
+                        dest: src,
+                        property: src_property,
+                    })
+                    .or_insert(Vec::new())
+                    .push(ObjectPropertyConnection {
+                        dest,
+                        property: dest_property,
+                    });
+            }
+            _ => continue,
+        }
+    }
+    Ok(())
+}
+fn read_objects(
+    amphitheatre: &ElementAmphitheatre,
+    document: &mut Document,
+) -> Result<(), DocumentParseError> {
+    let objects_handle_opt = amphitheatre.get_handle_by_key("Objects");
+    if objects_handle_opt.is_none() {
+        return Ok(());
+    }
+    let objects_handle = objects_handle_opt.unwrap();
+    for object_handle in objects_handle.children() {
+        let object_tokens = object_handle.tokens();
+        if object_tokens.len() != 3 {
+            continue;
+        }
+        let object_index = object_tokens[0].parse::<u64>();
+        if object_index.is_err() {
+            continue;
+        }
+        let object_index = object_index.unwrap();
+
+        let object = LazyObject {
+            name: object_tokens[1].to_string(),
+            type_name: object_handle.key().to_string(),
+            class_name: object_tokens[2].to_string(),
+            element_index: object_handle.index(),
+        };
+        document.objects.insert(object_index, object);
     }
     Ok(())
 }
@@ -255,7 +365,8 @@ impl<'a> TryFrom<ElementHandle<'a>> for PropertyDetails {
                 let val = tokens[4].parse::<f32>().unwrap_or(0.0);
                 Property::Float(val)
             }
-            "Vector3D" => {
+            "Vector3D" | "Vector" | "Color" | "ColorRGB" | "Lcl Translation" | "Lcl Rotation"
+            | "Lcl Scaling" => {
                 if tokens.len() != 7 {
                     return Err(PropertyParseError::InvalidTokenLength(
                         tokens.len(),
@@ -289,15 +400,23 @@ impl<'a> TryFrom<ElementHandle<'a>> for PropertyDetails {
     }
 }
 
+
 impl DocumentLoader for ElementAmphitheatre {
     fn load_into_document(
-        &self,
+        self,
         document: &mut Document,
         settings: ImportSettings,
     ) -> Result<(), DocumentParseError> {
-        read_header(self, document, settings)?;
-        read_definitions(self, document)?;
-        read_global_settings(self, document)?;
+        read_header(&self, document, settings)?;
+        read_definitions(&self, document)?;
+        read_global_settings(&self, document)?;
+
+        read_objects(&self, document)?;
+        read_connections(&self, document)?;
+        // @todo: This is a big clone with lots of extra information.
+        // This amphitheatre only needs to keep track of object element information.
+        // Templates, Properties, Global Settings, etc. should ideally be removed during this clone.
+        document.object_element_amphitheatre = self;
         Ok(())
     }
 }
@@ -343,6 +462,9 @@ FBXHeaderExtension:  {
         let parser = Parser::new(tokenizer);
         let document = Document::from_parser(parser, ImportSettings::default());
         assert!(document.is_err());
-        assert_eq!(document.unwrap_err(), DocumentParseError::RequiredElementNotFound("FBXHeaderExtension".to_string()));
+        assert_eq!(
+            document.unwrap_err(),
+            DocumentParseError::RequiredElementNotFound("FBXHeaderExtension".to_string())
+        );
     }
 }

@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, io::BufRead};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     OpenBrace,
     CloseBrace,
@@ -38,7 +38,7 @@ impl std::fmt::Display for TokenData {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TokenizerError {
     ReadError(String),
 }
