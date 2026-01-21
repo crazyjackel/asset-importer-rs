@@ -413,9 +413,6 @@ impl DocumentLoader for ElementAmphitheatre {
 
         read_objects(&self, document)?;
         read_connections(&self, document)?;
-        // @todo: This is a big clone with lots of extra information.
-        // This amphitheatre only needs to keep track of object element information.
-        // Templates, Properties, Global Settings, etc. should ideally be removed during this clone.
         document.object_element_amphitheatre = self;
         Ok(())
     }

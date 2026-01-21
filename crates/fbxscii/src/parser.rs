@@ -1,4 +1,4 @@
-use std::{io::BufRead, num::ParseIntError};
+use std::{collections::VecDeque, io::BufRead, num::ParseIntError};
 
 use crate::{Token, Tokenizer, TokenizerError};
 
@@ -32,10 +32,10 @@ impl Element {
 
 // Data Structure Notes:
 // For the Parser, we went with an arena-based approach for dealing with element tree.
-// 
+//
 // Our implementation was a Vec<Element> where each element had a parent_index and children indices.
 // We could store those indices independent of the elements via some hashmaps, but this would only be beneficial if our data was sparse.
-// Other considerations were to use indextree:Arena or something similar, wherein each element stores 
+// Other considerations were to use indextree:Arena or something similar, wherein each element stores
 // parent_index, next_sibling, previous_sibling, first_child, last_child.
 // This however, provides significant indirection and the benefits of quicker removal is not neccessary.
 // Last consideration was forgoing either children or parent indices and reconstructing that information as needed.
@@ -44,13 +44,13 @@ impl Element {
 /// The Node is an Element with keys and tokens.
 #[derive(Default, Debug, PartialEq, Clone)]
 pub struct ElementAmphitheatre {
-    elements: Vec<Element>
+    elements: Vec<Element>,
 }
 
 impl ElementAmphitheatre {
     pub fn new() -> Self {
         Self {
-            elements: Vec::new()
+            elements: Vec::new(),
         }
     }
     pub fn insert(&mut self, element: Element) -> usize {
@@ -60,9 +60,9 @@ impl ElementAmphitheatre {
     }
 
     pub fn get(&self, index: ElementIndex) -> Option<&Element> {
-        self.elements.get(index)    
-    }   
-    
+        self.elements.get(index)
+    }
+
     pub fn get_mut(&mut self, index: ElementIndex) -> Option<&mut Element> {
         self.elements.get_mut(index)
     }
@@ -130,7 +130,7 @@ impl ElementAmphitheatre {
     pub fn as_mut_slice(&mut self) -> &mut [Element] {
         self.elements.as_mut_slice()
     }
-    
+
     /// Returns an element handle for the given index.
     ///
     /// Returns `None` if the index is not valid.
@@ -154,8 +154,49 @@ impl ElementAmphitheatre {
             .find(|(_, element)| element.key == key)
             .map(|(index, _)| ElementHandle::new(self, index))
     }
-}
 
+    pub fn extract_subtree(&self, index: ElementIndex) -> Option<ElementAttribute> {
+        // Handle simple Leaf case.
+        let element = self.get(index)?.clone();
+        if element.children.is_empty() {
+            return Some(ElementAttribute::Leaf(Box::new(LeafAttribute {
+                key: element.key,
+                tokens: element.tokens,
+            })));
+        }
+        // Create a new subtree.
+        let mut subtree = ElementAmphitheatre::new();
+
+        // We use a queue to traverse the elements in breadth-first order.
+        let mut queue = VecDeque::new();
+        queue.push_back((element, None));
+        let mut root_index = None;
+        while let Some((element, parent_index)) = queue.pop_front() {
+            // Insert the element into the subtree.
+            let index = subtree.insert(element);
+            let element = subtree.get_mut(index)?;
+            // Add the children to the queue.
+            for child_index in &element.children {
+                let child = self.get(*child_index)?.clone();
+                queue.push_back((child, Some(index)));
+            }
+            // Children Indexes are now invalid, clear them.
+            element.children.clear();
+            if parent_index.is_none() {
+                root_index = Some(index);
+                continue;
+            }
+            // Update the parent's children to include the new element.
+            if let Some(parent) = subtree.get_mut(parent_index.unwrap()) {
+                parent.children.push(index);
+            }
+        }
+        Some(ElementAttribute::SubTree(Box::new(SubTreeAttribute {
+            amphitheatre: subtree,
+            root_element_index: root_index.unwrap(),
+        })))
+    }
+}
 
 /// Element handle providing safe access to elements in an arena.
 #[derive(Debug, Clone, Copy)]
@@ -205,8 +246,15 @@ impl<'a> ElementHandle<'a> {
     /// Returns the internally managed element data.
     #[inline]
     #[must_use]
-    fn element(&self) -> &'a Element {
-        self.arena.get(self.index).expect("Element index should be valid")
+    pub fn element(&self) -> &'a Element {
+        self.arena
+            .get(self.index)
+            .expect("Element index should be valid")
+    }
+
+    #[inline]
+    pub fn to_attribute(&self) -> Option<ElementAttribute> {
+        self.arena().extract_subtree(self.index)
     }
 
     /// Returns the element key.
@@ -296,7 +344,7 @@ impl<'a> ElementHandle<'a> {
             .children
             .iter()
             .position(|&idx| idx == self.index)?;
-        
+
         if position > 0 {
             let prev_index = parent_element.children[position - 1];
             Some(Self::new(self.arena, prev_index))
@@ -317,13 +365,73 @@ impl<'a> ElementHandle<'a> {
             .children
             .iter()
             .position(|&idx| idx == self.index)?;
-        
+
         if position + 1 < parent_element.children.len() {
             let next_index = parent_element.children[position + 1];
             Some(Self::new(self.arena, next_index))
         } else {
             None
         }
+    }
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct LeafAttribute {
+    pub key: String,
+    pub tokens: Vec<String>,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct SubTreeAttribute {
+    pub amphitheatre: ElementAmphitheatre,
+    pub root_element_index: usize,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum ElementAttribute {
+    Leaf(Box<LeafAttribute>),
+    SubTree(Box<SubTreeAttribute>),
+}
+
+impl ElementAttribute {
+    pub fn is_leaf(&self) -> bool {
+        matches!(self, ElementAttribute::Leaf(_))
+    }
+
+    pub fn is_sub_tree(&self) -> bool {
+        matches!(self, ElementAttribute::SubTree(_))
+    }
+
+    pub fn get_key(&self) -> &str {
+        match self {
+            ElementAttribute::Leaf(leaf) => &leaf.key,
+            ElementAttribute::SubTree(sub_tree) => {
+                &sub_tree
+                    .amphitheatre
+                    .get(sub_tree.root_element_index)
+                    .expect("Root element index should exist in SubTree")
+                    .key
+            }
+        }
+    }
+
+    pub fn get_tokens(&self) -> &[String] {
+        match self {
+            ElementAttribute::Leaf(leaf) => &leaf.tokens,
+            ElementAttribute::SubTree(sub_tree) => {
+                &sub_tree
+                    .amphitheatre
+                    .get(sub_tree.root_element_index)
+                    .expect("Root element index should exist in SubTree")
+                    .tokens
+            }
+        }
+    }
+}
+
+impl<'a> From<ElementHandle<'a>> for Option<ElementAttribute> {
+    fn from(value: ElementHandle<'a>) -> Self {
+        value.to_attribute()
     }
 }
 
@@ -336,8 +444,13 @@ pub enum ElementParseError {
 impl TryFrom<ElementHandle<'_>> for u32 {
     type Error = ElementParseError;
     fn try_from(value: ElementHandle<'_>) -> Result<Self, Self::Error> {
-        let value = value.tokens().first().ok_or(ElementParseError::MissingValueToken)?;
-        let result = value.parse::<u32>().map_err(|e| ElementParseError::ParseError(e.to_string()))?;
+        let value = value
+            .tokens()
+            .first()
+            .ok_or(ElementParseError::MissingValueToken)?;
+        let result = value
+            .parse::<u32>()
+            .map_err(|e| ElementParseError::ParseError(e.to_string()))?;
         Ok(result)
     }
 }
@@ -345,7 +458,10 @@ impl TryFrom<ElementHandle<'_>> for u32 {
 impl TryFrom<ElementHandle<'_>> for String {
     type Error = ElementParseError;
     fn try_from(value: ElementHandle<'_>) -> Result<Self, Self::Error> {
-        let value = value.tokens().first().ok_or(ElementParseError::MissingValueToken)?;
+        let value = value
+            .tokens()
+            .first()
+            .ok_or(ElementParseError::MissingValueToken)?;
         Ok(value.to_string())
     }
 }
@@ -395,8 +511,7 @@ impl<'a> Iterator for ElementChildrenByKey<'a> {
     type Item = ElementHandle<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.children_iter
-            .find(|child| child.key() == self.key)
+        self.children_iter.find(|child| child.key() == self.key)
     }
 }
 
@@ -410,7 +525,6 @@ impl<'a> std::fmt::Debug for ElementChildrenByKey<'a> {
     }
 }
 
-
 pub struct Parser<R: BufRead> {
     tokenizer: Tokenizer<R>,
     element_arena: ElementAmphitheatre,
@@ -423,11 +537,10 @@ impl<R: BufRead> Parser<R> {
             element_arena: ElementAmphitheatre::new(),
         }
     }
-    
+
     pub fn load(mut self) -> Result<ElementAmphitheatre, ParserError> {
         let mut iter = self.iter();
-        while let Some(_result) = iter.next() {
-        }
+        while let Some(_result) = iter.next() {}
         Ok(self.element_arena)
     }
 
@@ -453,19 +566,19 @@ pub struct ParserIter<'a, R: BufRead> {
 }
 
 impl<'a, R: BufRead> ParserIter<'a, R> {
-    pub fn create_element(&mut self, key: String) {   
+    pub fn create_element(&mut self, key: String) {
         let mut new_element = Element::new(key);
         new_element.parent_index = self.current_scope;
         self.current_element = Some(new_element);
     }
-    
+
     pub fn insert_element(&mut self, element: Element) -> usize {
         let parent_index = element.parent_index;
         let index = self.parser_arena.insert(element);
-        if let Some(parent_index) = parent_index{
+        if let Some(parent_index) = parent_index {
             if let Some(parent) = self.parser_arena.get_mut(parent_index) {
                 parent.children.push(index);
-            }   
+            }
         }
         index
     }
@@ -539,7 +652,6 @@ impl<'a, R: BufRead> Iterator for ParserIter<'a, R> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
 
@@ -568,7 +680,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parser_read_line(){
+    fn test_parser_read_line() {
         let input = r#"
 FBXHeaderExtension:  {
     FBXHeaderVersion: 1003

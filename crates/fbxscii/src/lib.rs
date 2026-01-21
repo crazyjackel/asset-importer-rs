@@ -14,3 +14,6 @@ pub use parser::ElementHandle;
 pub use parser::ElementChildren;
 pub use parser::ElementChildrenByKey;
 pub use parser::ElementParseError;
+pub use parser::ElementAttribute;
+pub use parser::LeafAttribute;
+pub use parser::SubTreeAttribute;

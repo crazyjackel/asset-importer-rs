@@ -1,7 +1,7 @@
 use std::{fs::File, io::BufReader, path::Path};
 
 use fbxscii::{Parser, Tokenizer};
-use fbx_dom::document::{Document, ImportSettings};
+use fbx_dom::{Document, ImportSettings, OwnedObject};
 
 #[test]
 fn test_load_duck_fbx() {
@@ -16,8 +16,19 @@ fn test_load_duck_fbx() {
     assert!(document.is_ok(), "Failed to load duck.fbx: {:?}", document.err());
     
     let document = document.unwrap();
-    assert!(document.fbx_version > 0, "FBX version should be set");
-    assert!(!document.creator.is_empty(), "Creator should be set");
-    assert!(!document.objects.is_empty(), "Document should contain objects");
+    assert!(document.version() > 0, "FBX version should be set");
+    assert!(!document.creator().is_empty(), "Creator should be set");
+
+    let objects = document.objects();
+    for result in objects {
+        if let Ok(object) = result {
+            let owned_object: OwnedObject = object.into();
+            println!("Object: {}", owned_object.name);
+            println!("Type Name: {}", owned_object.type_name);
+            println!("Class Name: {}", owned_object.class_name);
+            println!("Properties: {:?}", owned_object.properties);
+            println!("Attributes: {:?}", owned_object.attributes);
+        }
+    }
 }
 
