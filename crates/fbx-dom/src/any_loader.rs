@@ -430,7 +430,11 @@ fn ensure_objects_amphitheatre_root(arena: &mut ElementAmphitheatre) -> usize {
 }
 
 /// Inserts `element` into `arena`, links it as a child of `parent_idx`, and returns the new element index.
-fn append_element_child(arena: &mut ElementAmphitheatre, parent_idx: usize, mut element: Element) -> usize {
+fn append_element_child(
+    arena: &mut ElementAmphitheatre,
+    parent_idx: usize,
+    mut element: Element,
+) -> usize {
     element.parent_index = Some(parent_idx);
     let child_idx = arena.insert(element);
     if let Some(parent) = arena.get_mut(parent_idx) {
@@ -460,9 +464,11 @@ fn read_objects_from_tree(
     root: NodeHandle<'_>,
     document: &mut Document,
 ) -> Result<(), DocumentParseError> {
-    let objects = root.first_child_by_name("Objects").ok_or(
-        DocumentParseError::RequiredElementNotFound("Objects".to_string()),
-    )?;
+    let objects =
+        root.first_child_by_name("Objects")
+            .ok_or(DocumentParseError::RequiredElementNotFound(
+                "Objects".to_string(),
+            ))?;
 
     let objects_parent_idx = {
         let arena = &mut document.object_element_amphitheatre;
@@ -497,11 +503,7 @@ fn read_objects_from_tree(
         let element_index = {
             let arena = &mut document.object_element_amphitheatre;
             let mut obj_el = Element::new(type_name.clone());
-            obj_el.tokens = vec![
-                object_index.to_string(),
-                name.clone(),
-                class_name.clone(),
-            ];
+            obj_el.tokens = vec![object_index.to_string(), name.clone(), class_name.clone()];
             let idx = append_element_child(arena, objects_parent_idx, obj_el);
             for child in object.children() {
                 mirror_fbxcel_subtree(arena, idx, child);

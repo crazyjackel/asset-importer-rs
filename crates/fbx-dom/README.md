@@ -18,6 +18,12 @@ Pull-parser remains useful as an internal building block (and can be revisited f
 streaming hot paths), but the canonical ingress in `fbx-dom` is tree-first while
 the shape of `Document` is stabilized.
 
+## Test assets (`assets/`)
+
+| File | Source |
+|------|--------|
+| [`assets/duck.fbx`](assets/duck.fbx) | Assimp test model. The file’s embedded `DocumentUrl` / texture paths reference the Assimp tree (`…/test/models/Collada/duck.fbx`). Upstream collection: [assimp/test/models](https://github.com/assimp/assimp/tree/master/test/models). |
+| [`assets/collision-track-straight.fbx`](assets/collision-track-straight.fbx) | [Kenney — Starter Kit Racing](https://github.com/KenneyNL/Starter-Kit-Racing), [`models/collision-track-straight.fbx`](https://github.com/KenneyNL/Starter-Kit-Racing/blob/main/models/collision-track-straight.fbx). |
 
 How to Write:
 
