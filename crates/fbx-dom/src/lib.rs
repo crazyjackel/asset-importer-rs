@@ -1,4 +1,5 @@
 mod loader;
+mod any_loader;
 mod global;
 mod object;
 mod document;

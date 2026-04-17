@@ -1,11 +1,16 @@
+use fbxcel::tree::any::AnyTree;
 use fbxscii::{ElementAmphitheatre, ElementParseError, Parser, ParserError};
-use std::{collections::HashMap, io::BufRead};
+use std::{
+    collections::HashMap,
+    io::{BufRead, Read, Seek},
+};
 
 use crate::{global::GlobalSettings, object::Objects};
 
 #[derive(Debug, PartialEq)]
 pub enum DocumentParseError {
     ParserError(ParserError),
+    BinaryParserError(String),
     UnsupportedVersion(u32, Option<String>),
     RequiredElementNotFound(String),
     ElementParseError(ElementParseError),
@@ -69,6 +74,9 @@ pub struct Document {
     pub(crate) creation_date: [u32; 7],
     /// The templates of the FBX file
     pub(crate) templates: HashMap<String, Template>,
+    /// Maps `ObjectType` (e.g. `Geometry`) to the first full template key
+    /// (`ObjectType.PropertyTemplate`, e.g. `Geometry.FbxMesh`) in file order.
+    pub(crate) default_template_by_object_type: HashMap<String, String>,
     /// The global settings of the FBX file
     pub(crate) global_settings: Template,
     /// The element amphitheatre containing object information
@@ -118,6 +126,29 @@ impl Document {
         let elements = parser.load().map_err(DocumentParseError::ParserError)?;
         let mut document = Self::default();
         elements.load_into_document(&mut document, settings)?;
+        Ok(document)
+    }
+
+    /// Loads a binary FBX document through `fbxcel`'s tree API.
+    ///
+    /// This is the chosen primary binary ingress for now:
+    /// - parse bytes into `AnyTree`
+    /// - adapt tree nodes into the existing `Document` fields
+    /// - drop the `AnyTree` after materialization so we do not persist
+    ///   both a full tree and a long-lived binary DOM side-by-side.
+    pub fn from_binary_reader<R>(
+        reader: R,
+        settings: ImportSettings,
+    ) -> Result<Self, DocumentParseError>
+    where
+        R: Read + Seek,
+    {
+        let any_tree =
+            AnyTree::from_seekable_reader(reader).map_err(|error| {
+                DocumentParseError::BinaryParserError(error.to_string())
+            })?;
+        let mut document = Self::default();
+        any_tree.load_into_document(&mut document, settings)?;
         Ok(document)
     }
 }

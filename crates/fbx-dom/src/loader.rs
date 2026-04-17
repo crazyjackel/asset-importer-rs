@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use fbxscii::{ElementAmphitheatre, ElementHandle};
 
 use crate::document::{
@@ -147,6 +145,10 @@ fn read_definitions(
                 property_template_handle.first_child_by_key("Properties70");
             if let Some(property_table_handle) = property_table_handle_opt {
                 let template_name = format!("{}.{}", object_name, property_name);
+                document
+                    .default_template_by_object_type
+                    .entry(object_name.to_string())
+                    .or_insert_with(|| template_name.clone());
                 let template = document
                     .templates
                     .entry(template_name)
@@ -464,4 +466,5 @@ FBXHeaderExtension:  {
             DocumentParseError::RequiredElementNotFound("FBXHeaderExtension".to_string())
         );
     }
+
 }

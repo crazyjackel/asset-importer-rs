@@ -125,14 +125,27 @@ pub struct Objects<'a> {
     pub(crate) document: &'a Document,
 }
 
+fn template_for_object<'a>(
+    document: &'a Document,
+    object: &'a LazyObject,
+) -> Option<&'a Template> {
+    document
+        .templates
+        .get(&object.type_name)
+        .or_else(|| {
+            document
+                .default_template_by_object_type
+                .get(&object.type_name)
+                .and_then(|full_key| document.templates.get(full_key))
+        })
+}
+
 impl ExactSizeIterator for Objects<'_> {}
 impl<'a> Iterator for Objects<'a> {
     type Item = Result<Object<'a>, ObjectError>;
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next().map(|(_index, object)| {
-            self.document
-                .templates
-                .get(&object.type_name)
+            template_for_object(self.document, object)
                 .map(|template| Object::new(self.document, template, object))
                 .ok_or_else(|| ObjectError::MissingTemplate(object.type_name.clone()))
         })
@@ -146,18 +159,14 @@ impl<'a> Iterator for Objects<'a> {
     fn last(self) -> Option<Self::Item> {
         let document = self.document;
         self.iter.last().map(|(_index, object)| {
-            document
-                .templates
-                .get(&object.type_name)
+            template_for_object(document, object)
                 .map(|template| Object::new(document, template, object))
                 .ok_or_else(|| ObjectError::MissingTemplate(object.type_name.clone()))
         })
     }
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         self.iter.nth(n).map(|(_index, object)| {
-            self.document
-                .templates
-                .get(&object.type_name)
+            template_for_object(self.document, object)
                 .map(|template| Object::new(self.document, template, object))
                 .ok_or_else(|| ObjectError::MissingTemplate(object.type_name.clone()))
         })
