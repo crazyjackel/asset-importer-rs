@@ -612,6 +612,11 @@ fn read_connections_from_tree(
                     continue;
                 };
                 document
+                    .object_to_source_properties
+                    .entry(src)
+                    .or_default()
+                    .push(src_property.clone());
+                document
                     .property_connections
                     .entry(ObjectPropertyConnection {
                         dest: src,
@@ -659,7 +664,8 @@ impl DocumentLoader for AnyTree {
 mod tests {
     use fbxcel::tree_v7400;
 
-    use crate::document::{Document, ImportSettings, Property};
+    use crate::document::{Document, ImportSettings, ObjectPropertyConnection, Property};
+    use crate::OwnedObject;
 
     use super::{
         read_connections_from_tree, read_definitions_from_tree, read_global_settings_from_tree,
@@ -731,5 +737,48 @@ mod tests {
         );
         assert!(document.objects.contains_key(&101));
         assert_eq!(document.object_connections.get(&101), Some(&vec![0]));
+        assert_eq!(
+            document.object_to_source_properties.get(&101),
+            Some(&vec!["SourceProp".to_string()])
+        );
+
+        let object = document.object_by_index(101).expect("object 101");
+        assert_eq!(object.connected_object_ids(), &[0]);
+        assert_eq!(
+            object.object_property_targets(),
+            &[ObjectPropertyConnection {
+                dest: 0,
+                property: "DiffuseColor".to_string(),
+            }]
+        );
+        assert_eq!(object.pp_source_property_names(), &["SourceProp".to_string()]);
+        assert_eq!(
+            object.pp_targets((101, "SourceProp")),
+            Some(
+                &[
+                    ObjectPropertyConnection {
+                        dest: 0,
+                        property: "DestProp".to_string(),
+                    }
+                ][..],
+            )
+        );
+
+        let owned: OwnedObject = document.object_by_index(101).unwrap().into();
+        assert_eq!(owned.connected_object_ids, vec![0]);
+        assert_eq!(
+            owned.object_property_targets,
+            vec![ObjectPropertyConnection {
+                dest: 0,
+                property: "DiffuseColor".to_string(),
+            }]
+        );
+        assert_eq!(
+            owned.pp_property_targets.get("SourceProp"),
+            Some(&ObjectPropertyConnection {
+                dest: 0,
+                property: "DestProp".to_string(),
+            })
+        );
     }
 }

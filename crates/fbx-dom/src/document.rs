@@ -5,7 +5,7 @@ use std::{
     io::{BufRead, Read, Seek},
 };
 
-use crate::{global::GlobalSettings, object::Objects};
+use crate::{Object, global::GlobalSettings, object::Objects};
 
 #[derive(Debug, PartialEq)]
 pub enum DocumentParseError {
@@ -53,8 +53,11 @@ pub struct LazyObject {
     pub name: String,
     pub type_name: String,
     pub class_name: String,
-    /// Index of the equivalent element in the object_element_amphitheatre of the document
-    /// Used for lazy loading of Type Specific Information
+    /// Index of this object’s root element in [`Document::object_element_amphitheatre`].
+    ///
+    /// Populated by both ASCII and binary loaders. [`Object::element_index`](crate::Object::element_index)
+    /// exposes the same value for materialization passes that walk the arena while a [`Document`]
+    /// is still live.
     pub element_index: usize,
 }
 
@@ -90,6 +93,8 @@ pub struct Document {
     /// The connections between properties
     pub(crate) property_connections:
         HashMap<ObjectPropertyConnection, Vec<ObjectPropertyConnection>>,
+    /// For each source object id in a `PP` connection, the source-side property names on that object.
+    pub(crate) object_to_source_properties: HashMap<u64, Vec<String>>,
 }
 
 impl Document {
@@ -114,6 +119,24 @@ impl Document {
             iter: self.objects.iter(),
             document: self,
         }
+    }
+
+    pub fn object_by_index(&self, index: u64) -> Option<Object<'_>> {
+        let object = self.object_for_index(index)?;
+        self.template_for_object(object)
+            .map(|template| Object::new(self, template, object, index))
+    }
+
+    pub(crate) fn object_for_index(&self, index: u64) -> Option<&LazyObject> {
+        self.objects.get(&index)
+    }
+
+    pub(crate) fn template_for_object(&self, object: &LazyObject) -> Option<&Template> {
+        self.templates.get(&object.type_name).or_else(|| {
+            self.default_template_by_object_type
+                .get(&object.type_name)
+                .and_then(|full_key| self.templates.get(full_key))
+        })
     }
 
     pub fn from_parser<R>(
@@ -143,10 +166,8 @@ impl Document {
     where
         R: Read + Seek,
     {
-        let any_tree =
-            AnyTree::from_seekable_reader(reader).map_err(|error| {
-                DocumentParseError::BinaryParserError(error.to_string())
-            })?;
+        let any_tree = AnyTree::from_seekable_reader(reader)
+            .map_err(|error| DocumentParseError::BinaryParserError(error.to_string()))?;
         let mut document = Self::default();
         any_tree.load_into_document(&mut document, settings)?;
         Ok(document)

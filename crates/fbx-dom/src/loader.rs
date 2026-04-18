@@ -250,6 +250,11 @@ fn read_connections(
                 let dest = connection_tokens[4].parse::<u64>().unwrap_or(0);
                 let dest_property = connection_tokens[5].to_string();
                 document
+                    .object_to_source_properties
+                    .entry(src)
+                    .or_insert(Vec::new())
+                    .push(src_property.clone());
+                document
                     .property_connections
                     .entry(ObjectPropertyConnection {
                         dest: src,
