@@ -1,4 +1,7 @@
 //! FBX `Video` — Assimp [`Video`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXMaterial.cpp).
+//!
+//! ASCII `Content` is optional base64 (often several value tokens); we decode each token and
+//! concatenate the bytes. Assimp’s binary `Content` (`R` + length + raw bytes) is not handled here.
 
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -21,10 +24,13 @@ const CONTENT_ATTR: &str = "Content";
 #[derive(Debug, PartialEq)]
 pub struct Video {
     object: OwnedObject,
+    /// `Type` child (case-insensitive key); e.g. clip vs embedded video metadata from the exporter.
     pub video_type: String,
+    /// `FileName` / `Filename` (case-insensitive), per Assimp `FindElementCaseInsensitive` for video.
     pub file_name: String,
+    /// `RelativeFilename` when present (case-insensitive key).
     pub relative_file_name: Option<String>,
-    /// Decoded `Content` when present (ASCII FBX: quoted base64 chunks, concatenated like Assimp).
+    /// Decoded `Content` when present: each DOM token is its own base64 payload; outputs are concatenated.
     pub content: Option<Vec<u8>>,
 }
 
@@ -38,6 +44,11 @@ impl Video {
     }
 }
 
+/// Parse optional `Content`: missing attribute, missing tokens, or all-empty tokens → `None`.
+///
+/// FBX may split large embedded payloads across **multiple** value tokens. Each token is a
+/// separate base64 string (Assimp decodes per token then appends); you cannot decode the
+/// concatenation of raw token text as one base64 stream.
 fn decode_optional_content(
     attrs: &HashMap<String, ElementAttribute>,
 ) -> Result<Option<Vec<u8>>, FbxTryFromReason> {
@@ -48,9 +59,11 @@ fn decode_optional_content(
         return Ok(None);
     }
 
+    // One decode per token, then concat — same semantics as Assimp’s two-pass size+decode loop.
     let mut out = Vec::new();
     for (i, t) in tokens.iter().enumerate() {
         let s = t.trim();
+        // ASCII FBX often wraps each chunk in double quotes (Assimp strips them).
         let payload = if s.len() >= 2 && s.starts_with('"') && s.ends_with('"') {
             &s[1..s.len() - 1]
         } else {
@@ -82,6 +95,7 @@ impl TryFrom<OwnedObject> for Video {
         }
 
         let attrs = &o.attributes;
+        // Case-insensitive keys match common exporter spelling drift (e.g. `Filename` vs `FileName`).
         let video_type = match require_attr_token_case_insensitive(attrs, TYPE_ATTR) {
             Ok(s) => s.to_string(),
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
