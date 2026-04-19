@@ -146,6 +146,8 @@ impl<'a> Object<'a> {
 /// without having to search the document for the object's properties and attributes.
 #[derive(Debug, PartialEq)]
 pub struct OwnedObject {
+    /// FBX object id from the `Objects` section (same as [`Object::object_index`]).
+    pub object_index: u64,
     pub name: String,
     pub type_name: String,
     pub class_name: String,
@@ -174,6 +176,7 @@ impl<'a> From<Object<'a>> for OwnedObject {
         }
 
         Self {
+            object_index: idx,
             name: object.name().to_string(),
             type_name: object.type_name().to_string(),
             class_name: object.class_name().to_string(),

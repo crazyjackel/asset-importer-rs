@@ -665,7 +665,7 @@ mod tests {
     use fbxcel::tree_v7400;
 
     use crate::document::{Document, ImportSettings, ObjectPropertyConnection, Property};
-    use crate::OwnedObject;
+    use crate::{ClassifiedFbxObject, OwnedObject};
 
     use super::{
         read_connections_from_tree, read_definitions_from_tree, read_global_settings_from_tree,
@@ -765,6 +765,7 @@ mod tests {
         );
 
         let owned: OwnedObject = document.object_by_index(101).unwrap().into();
+        assert_eq!(owned.object_index, 101);
         assert_eq!(owned.connected_object_ids, vec![0]);
         assert_eq!(
             owned.object_property_targets,
@@ -780,5 +781,12 @@ mod tests {
                 property: "DestProp".to_string(),
             })
         );
+
+        let classified = ClassifiedFbxObject::try_from(owned).unwrap();
+        assert!(
+            matches!(classified, ClassifiedFbxObject::MeshGeometry(_)),
+            "expected MeshGeometry, got {classified:?}"
+        );
+        assert_eq!(classified.object_index(), 101);
     }
 }
