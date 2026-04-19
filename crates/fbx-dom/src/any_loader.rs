@@ -665,7 +665,7 @@ mod tests {
     use fbxcel::tree_v7400;
 
     use crate::document::{Document, ImportSettings, ObjectPropertyConnection, Property};
-    use crate::{ClassifiedFbxObject, OwnedObject};
+    use crate::{ClassifiedFbxObject, FbxTryFromReason, OwnedObject};
 
     use super::{
         read_connections_from_tree, read_definitions_from_tree, read_global_settings_from_tree,
@@ -782,11 +782,11 @@ mod tests {
             })
         );
 
-        let classified = ClassifiedFbxObject::try_from(owned).unwrap();
-        assert!(
-            matches!(classified, ClassifiedFbxObject::MeshGeometry(_)),
-            "expected MeshGeometry, got {classified:?}"
-        );
-        assert_eq!(classified.object_index(), 101);
+        // `MeshGeometry` requires `Vertices` and `PolygonVertexIndex`; this spike has an empty node.
+        let err = ClassifiedFbxObject::try_from(owned).unwrap_err();
+        assert!(matches!(
+            err.reason,
+            FbxTryFromReason::MissingAttribute { ref name } if name == "Vertices"
+        ));
     }
 }

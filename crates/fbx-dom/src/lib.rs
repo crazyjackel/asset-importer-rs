@@ -3,6 +3,7 @@ mod document;
 mod global;
 mod loader;
 mod object;
+mod owned_document;
 pub mod objects;
 
 pub use document::Document;

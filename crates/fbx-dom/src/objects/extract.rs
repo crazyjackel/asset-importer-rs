@@ -128,6 +128,7 @@ fn parse_i32_token(attr_name: &str, tok: &str) -> Result<i32, FbxTryFromReason> 
 
 /// Optional parsing of typed token lists on top of [`AttrExtractor`].
 pub trait AttrExtractorParseExt {
+    fn optional_i32(&self, name: &str) -> Result<Option<i32>, FbxTryFromReason>;
     /// First two value tokens as `f32` (e.g. `ModelUVTranslation`). `None` if the attribute is absent.
     fn optional_two_f32(&self, name: &str) -> Result<Option<[f32; 2]>, FbxTryFromReason>;
     fn optional_two_f32_case_insensitive(
@@ -143,6 +144,19 @@ pub trait AttrExtractorParseExt {
 }
 
 impl<T: AttrExtractor> AttrExtractorParseExt for T {
+    fn optional_i32(&self, name: &str) -> Result<Option<i32>, FbxTryFromReason> {
+        let Some(attr) = self.extract(name) else {
+            return Ok(None);
+        };
+        let t = attr.get_tokens();
+        if t.len() != 1 {
+            return Err(FbxTryFromReason::InvalidAttributeFormat {
+                name: name.to_string(),
+                detail: format!("expected 1 int token, got {}", t.len()),
+            });
+        }
+        Ok(Some(parse_i32_token(name, &t[0])?))
+    }
     fn optional_two_f32(&self, name: &str) -> Result<Option<[f32; 2]>, FbxTryFromReason> {
         let Some(attr) = self.extract(name) else {
             return Ok(None);

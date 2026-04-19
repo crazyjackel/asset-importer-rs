@@ -14,6 +14,7 @@ mod camera;
 mod camera_switcher;
 mod cluster;
 mod extract;
+mod global_settings;
 mod layered_texture;
 mod light;
 mod limb_node;
@@ -39,6 +40,7 @@ pub use cluster::Cluster;
 pub use extract::AttrExtractor;
 pub use extract::AttrExtractorExt;
 pub use extract::AttrExtractorParseExt;
+pub use global_settings::OwnedGlobalSettings;
 pub use layered_texture::LayeredTexture;
 pub use light::Light;
 pub use limb_node::LimbNode;
@@ -130,6 +132,10 @@ pub struct FbxTypeMismatch {
 }
 
 impl FbxTypeMismatch {
+    fn new(o: OwnedObject, reason: FbxTryFromReason) -> FbxTypeMismatch {
+        FbxTypeMismatch { object: o, reason }
+    }
+
     pub(crate) fn wrong_object_kind(o: OwnedObject, expected: String) -> FbxTypeMismatch {
         let reason = FbxTryFromReason::WrongObjectKind {
             expected,
@@ -313,9 +319,9 @@ impl ClassifiedFbxObject {
     pub fn inner(&self) -> &OwnedObject {
         match self {
             ClassifiedFbxObject::Model(x) => &x.0,
-            ClassifiedFbxObject::MeshGeometry(x) => &x.0,
-            ClassifiedFbxObject::LineGeometry(x) => &x.0,
-            ClassifiedFbxObject::ShapeGeometry(x) => &x.0,
+            ClassifiedFbxObject::MeshGeometry(x) => &x.inner(),
+            ClassifiedFbxObject::LineGeometry(x) => &x.inner(),
+            ClassifiedFbxObject::ShapeGeometry(x) => &x.inner(),
             ClassifiedFbxObject::Camera(x) => &x.0,
             ClassifiedFbxObject::CameraSwitcher(x) => x.inner(),
             ClassifiedFbxObject::Light(x) => &x.0,

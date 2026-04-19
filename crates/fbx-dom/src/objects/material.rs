@@ -1,15 +1,10 @@
 //! FBX `Material` — Assimp [`Material`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXMaterial.cpp).
 
-use std::collections::HashMap;
 use std::convert::TryFrom;
-
-use fbxscii::ElementAttribute;
 
 use crate::{OwnedObject, objects::AttrExtractorExt};
 
-use super::{
-    fbx_object_tag, FbxObjectTag, FbxTryFromReason, FbxTypeMismatch,
-};
+use super::{FbxObjectTag, FbxTypeMismatch, fbx_object_tag};
 
 const SHADING_MODEL: &str = "ShadingModel";
 const MULTILAYER: &str = "MultiLayer";
@@ -32,30 +27,15 @@ impl Material {
     }
 }
 
-fn parse_multilayer(attrs: &HashMap<String, ElementAttribute>) -> Result<bool, FbxTryFromReason> {
-    let Some(attr) = attrs.get(MULTILAYER) else {
-        return Ok(false);
-    };
-    let tok = attr
-        .get_tokens()
-        .first()
-        .ok_or_else(|| FbxTryFromReason::InvalidAttributeFormat {
-            name: MULTILAYER.to_string(),
-            detail: "missing value token".into(),
-        })?;
-    let v: i32 = tok.parse::<i32>().map_err(|e| FbxTryFromReason::InvalidAttributeFormat {
-        name: MULTILAYER.to_string(),
-        detail: e.to_string(),
-    })?;
-    Ok(v != 0)
-}
-
 impl TryFrom<OwnedObject> for Material {
     type Error = FbxTypeMismatch;
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         if fbx_object_tag(&o) != Some(FbxObjectTag::Material) {
-            return Err(FbxTypeMismatch::wrong_object_kind(o, "Material".to_string()));
+            return Err(FbxTypeMismatch::wrong_object_kind(
+                o,
+                "Material".to_string(),
+            ));
         }
 
         let attrs = &o.attributes;
@@ -64,8 +44,11 @@ impl TryFrom<OwnedObject> for Material {
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         };
         let shading_model = shading_raw.to_lowercase();
-        let multilayer = match parse_multilayer(attrs) {
-            Ok(b) => b,
+        let multilayer = match attrs
+            .require_token(MULTILAYER)
+            .map(|t| t.parse::<i32>().unwrap_or(0))
+        {
+            Ok(b) => b != 0,
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         };
 
