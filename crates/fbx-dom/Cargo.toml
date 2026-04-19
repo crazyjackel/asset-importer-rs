@@ -9,6 +9,7 @@ repository = {workspace = true}
 documentation = "https://docs.rs/fbx-dom"
 
 [dependencies]
+base64 = { workspace = true }
 fbxscii = { workspace = true }
 fbxcel = { workspace = true, features = ["tree"]}
 

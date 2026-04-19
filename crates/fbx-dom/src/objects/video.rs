@@ -1,12 +1,16 @@
 //! FBX `Video` — Assimp [`Video`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXMaterial.cpp).
 
+use std::collections::HashMap;
 use std::convert::TryFrom;
+
+use fbxscii::ElementAttribute;
 
 use crate::OwnedObject;
 
 use super::{
-    fbx_object_tag, optional_attr_tokens_case_insensitive, optional_nonempty_string_case_insensitive,
-    require_attr_token, require_attr_token_case_insensitive, FbxObjectTag, FbxTypeMismatch,
+    FbxObjectTag, FbxTryFromReason, FbxTypeMismatch, fbx_object_tag,
+    optional_attr_tokens_case_insensitive, optional_nonempty_string_case_insensitive,
+    require_attr_token_case_insensitive,
 };
 
 const TYPE_ATTR: &str = "Type";
@@ -20,8 +24,8 @@ pub struct Video {
     pub video_type: String,
     pub file_name: String,
     pub relative_file_name: Option<String>,
-    /// Raw `Content` value tokens (ASCII: often base64-quoted chunks; Assimp decodes these separately).
-    pub content: Option<Vec<String>>,
+    /// Decoded `Content` when present (ASCII FBX: quoted base64 chunks, concatenated like Assimp).
+    pub content: Option<Vec<u8>>,
 }
 
 impl Video {
@@ -34,6 +38,41 @@ impl Video {
     }
 }
 
+fn decode_optional_content(
+    attrs: &HashMap<String, ElementAttribute>,
+) -> Result<Option<Vec<u8>>, FbxTryFromReason> {
+    let Some(tokens) = optional_attr_tokens_case_insensitive(attrs, CONTENT_ATTR)? else {
+        return Ok(None);
+    };
+    if tokens.is_empty() {
+        return Ok(None);
+    }
+
+    let mut out = Vec::new();
+    for (i, t) in tokens.iter().enumerate() {
+        let s = t.trim();
+        let payload = if s.len() >= 2 && s.starts_with('"') && s.ends_with('"') {
+            &s[1..s.len() - 1]
+        } else {
+            s
+        };
+        let decoded =
+            base64::decode(payload).map_err(|e| FbxTryFromReason::InvalidAttributeFormat {
+                name: CONTENT_ATTR,
+                detail: format!("base64 decode (token {i}): {e}"),
+            })?;
+        if decoded.is_empty() {
+            return Err(FbxTryFromReason::InvalidAttributeFormat {
+                name: CONTENT_ATTR,
+                detail: format!("base64 token {i} decoded to empty"),
+            });
+        }
+        out.extend_from_slice(&decoded);
+    }
+
+    Ok(Some(out))
+}
+
 impl TryFrom<OwnedObject> for Video {
     type Error = FbxTypeMismatch;
 
@@ -43,7 +82,7 @@ impl TryFrom<OwnedObject> for Video {
         }
 
         let attrs = &o.attributes;
-        let video_type = match require_attr_token(attrs, TYPE_ATTR) {
+        let video_type = match require_attr_token_case_insensitive(attrs, TYPE_ATTR) {
             Ok(s) => s.to_string(),
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         };
@@ -57,7 +96,7 @@ impl TryFrom<OwnedObject> for Video {
                 Ok(r) => r,
                 Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
             };
-        let content = match optional_attr_tokens_case_insensitive(attrs, CONTENT_ATTR) {
+        let content = match decode_optional_content(attrs) {
             Ok(c) => c,
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         };
@@ -69,5 +108,46 @@ impl TryFrom<OwnedObject> for Video {
             relative_file_name,
             content,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use fbxscii::{ElementAttribute, LeafAttribute};
+
+    use super::*;
+
+    #[test]
+    fn decode_content_quoted_base64() {
+        let mut attrs = HashMap::new();
+        attrs.insert(
+            "Content".to_string(),
+            ElementAttribute::Leaf(Box::new(LeafAttribute {
+                key: "Content".into(),
+                tokens: vec!["\"aGVsbG8=\"".into()],
+            })),
+        );
+        let out = decode_optional_content(&attrs).unwrap().unwrap();
+        assert_eq!(out, b"hello");
+    }
+
+    #[test]
+    fn decode_content_multipart_concat() {
+        let mut attrs = HashMap::new();
+        attrs.insert(
+            "content".to_string(),
+            ElementAttribute::Leaf(Box::new(LeafAttribute {
+                key: "content".into(),
+                tokens: vec!["aGVs".into(), "bG8=".into()],
+            })),
+        );
+        let out = decode_optional_content(&attrs).unwrap().unwrap();
+        assert_eq!(out, b"hello");
+    }
+
+    #[test]
+    fn decode_content_missing() {
+        let attrs = HashMap::new();
+        assert!(decode_optional_content(&attrs).unwrap().is_none());
     }
 }
