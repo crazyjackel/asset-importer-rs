@@ -8,13 +8,9 @@ use std::convert::TryFrom;
 
 use fbxscii::ElementAttribute;
 
-use crate::OwnedObject;
+use crate::{OwnedObject, objects::AttrExtractorExt};
 
-use super::{
-    FbxObjectTag, FbxTryFromReason, FbxTypeMismatch, fbx_object_tag,
-    optional_attr_tokens_case_insensitive, optional_nonempty_string_case_insensitive,
-    require_attr_token_case_insensitive,
-};
+use super::{FbxObjectTag, FbxTryFromReason, FbxTypeMismatch, fbx_object_tag};
 
 const TYPE_ATTR: &str = "Type";
 const FILE_NAME_ATTR: &str = "FileName";
@@ -52,7 +48,7 @@ impl Video {
 fn decode_optional_content(
     attrs: &HashMap<String, ElementAttribute>,
 ) -> Result<Option<Vec<u8>>, FbxTryFromReason> {
-    let Some(tokens) = optional_attr_tokens_case_insensitive(attrs, CONTENT_ATTR)? else {
+    let Some(tokens) = attrs.optional_tokens_case_insensitive(CONTENT_ATTR)? else {
         return Ok(None);
     };
     if tokens.is_empty() {
@@ -71,12 +67,12 @@ fn decode_optional_content(
         };
         let decoded =
             base64::decode(payload).map_err(|e| FbxTryFromReason::InvalidAttributeFormat {
-                name: CONTENT_ATTR,
+                name: CONTENT_ATTR.to_string(),
                 detail: format!("base64 decode (token {i}): {e}"),
             })?;
         if decoded.is_empty() {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: CONTENT_ATTR,
+                name: CONTENT_ATTR.to_string(),
                 detail: format!("base64 token {i} decoded to empty"),
             });
         }
@@ -91,25 +87,25 @@ impl TryFrom<OwnedObject> for Video {
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         if fbx_object_tag(&o) != Some(FbxObjectTag::Video) {
-            return Err(FbxTypeMismatch::wrong_object_kind(o, "Video"));
+            return Err(FbxTypeMismatch::wrong_object_kind(o, "Video".to_string()));
         }
 
         let attrs = &o.attributes;
         // Case-insensitive keys match common exporter spelling drift (e.g. `Filename` vs `FileName`).
-        let video_type = match require_attr_token_case_insensitive(attrs, TYPE_ATTR) {
+        let video_type = match attrs.require_token_case_insensitive(TYPE_ATTR) {
             Ok(s) => s.to_string(),
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         };
 
-        let file_name = match require_attr_token_case_insensitive(attrs, FILE_NAME_ATTR) {
+        let file_name = match attrs.require_token_case_insensitive(FILE_NAME_ATTR) {
             Ok(s) => s.to_string(),
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         };
-        let relative_file_name =
-            match optional_nonempty_string_case_insensitive(attrs, RELATIVE_FILENAME_ATTR) {
-                Ok(r) => r,
-                Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
-            };
+        let relative_file_name = match attrs.optional_token_case_insensitive(RELATIVE_FILENAME_ATTR)
+        {
+            Ok(r) => r.map(|s| s.to_string()),
+            Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
+        };
         let content = match decode_optional_content(attrs) {
             Ok(c) => c,
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),

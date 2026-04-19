@@ -5,10 +5,10 @@ use std::convert::TryFrom;
 
 use fbxscii::ElementAttribute;
 
-use crate::OwnedObject;
+use crate::{OwnedObject, objects::AttrExtractorExt};
 
 use super::{
-    fbx_object_tag, require_attr_token, FbxObjectTag, FbxTryFromReason, FbxTypeMismatch,
+    fbx_object_tag, FbxObjectTag, FbxTryFromReason, FbxTypeMismatch,
 };
 
 const SHADING_MODEL: &str = "ShadingModel";
@@ -40,11 +40,11 @@ fn parse_multilayer(attrs: &HashMap<String, ElementAttribute>) -> Result<bool, F
         .get_tokens()
         .first()
         .ok_or_else(|| FbxTryFromReason::InvalidAttributeFormat {
-            name: MULTILAYER,
+            name: MULTILAYER.to_string(),
             detail: "missing value token".into(),
         })?;
     let v: i32 = tok.parse::<i32>().map_err(|e| FbxTryFromReason::InvalidAttributeFormat {
-        name: MULTILAYER,
+        name: MULTILAYER.to_string(),
         detail: e.to_string(),
     })?;
     Ok(v != 0)
@@ -55,11 +55,11 @@ impl TryFrom<OwnedObject> for Material {
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         if fbx_object_tag(&o) != Some(FbxObjectTag::Material) {
-            return Err(FbxTypeMismatch::wrong_object_kind(o, "Material"));
+            return Err(FbxTypeMismatch::wrong_object_kind(o, "Material".to_string()));
         }
 
         let attrs = &o.attributes;
-        let shading_raw = match require_attr_token(attrs, SHADING_MODEL) {
+        let shading_raw = match attrs.require_token(&SHADING_MODEL) {
             Ok(s) => s,
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         };

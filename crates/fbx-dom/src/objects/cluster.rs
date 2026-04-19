@@ -25,7 +25,7 @@ impl TryFrom<OwnedObject> for Cluster {
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
             Some(FbxObjectTag::Cluster) => Ok(Cluster(o)),
-            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "Cluster")),
+            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "Cluster".to_string())),
         }
     }
 }

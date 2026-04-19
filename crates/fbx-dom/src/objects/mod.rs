@@ -13,6 +13,7 @@ mod blend_shape_channel;
 mod camera;
 mod camera_switcher;
 mod cluster;
+mod extract;
 mod layered_texture;
 mod light;
 mod limb_node;
@@ -35,6 +36,9 @@ pub use blend_shape_channel::BlendShapeChannel;
 pub use camera::Camera;
 pub use camera_switcher::CameraSwitcher;
 pub use cluster::Cluster;
+pub use extract::AttrExtractor;
+pub use extract::AttrExtractorExt;
+pub use extract::AttrExtractorParseExt;
 pub use layered_texture::LayeredTexture;
 pub use light::Light;
 pub use limb_node::LimbNode;
@@ -47,10 +51,6 @@ pub use shape_geometry::ShapeGeometry;
 pub use skin::Skin;
 pub use texture::Texture;
 pub use video::Video;
-
-use std::collections::HashMap;
-
-use fbxscii::ElementAttribute;
 
 use crate::OwnedObject;
 
@@ -107,17 +107,17 @@ pub const ANIMATION_CURVE_NODE_CLASS_NAME: &str = "AnimationCurveNode";
 pub enum FbxTryFromReason {
     /// `(type_name, class_name)` does not match the target wrapper (see [`wrong_object_kind`]).
     WrongObjectKind {
-        expected: &'static str,
+        expected: String,
         got_type_name: String,
         got_class_name: String,
     },
     /// A required non-`Properties70` child (FBX element under the object) was missing.
     MissingAttribute {
-        name: &'static str,
+        name: String,
     },
     /// A child was present but had no usable value or failed to parse.
     InvalidAttributeFormat {
-        name: &'static str,
+        name: String,
         detail: String,
     },
 }
@@ -130,7 +130,7 @@ pub struct FbxTypeMismatch {
 }
 
 impl FbxTypeMismatch {
-    pub(crate) fn wrong_object_kind(o: OwnedObject, expected: &'static str) -> FbxTypeMismatch {
+    pub(crate) fn wrong_object_kind(o: OwnedObject, expected: String) -> FbxTypeMismatch {
         let reason = FbxTryFromReason::WrongObjectKind {
             expected,
             got_type_name: o.type_name.clone(),
@@ -138,101 +138,6 @@ impl FbxTypeMismatch {
         };
         FbxTypeMismatch { object: o, reason }
     }
-}
-
-fn attr_case_insensitive<'a>(
-    attrs: &'a HashMap<String, ElementAttribute>,
-    name: &str,
-) -> Option<&'a ElementAttribute> {
-    attrs.get(name).or_else(|| {
-        attrs
-            .iter()
-            .find(|(k, _)| k.eq_ignore_ascii_case(name))
-            .map(|(_, v)| v)
-    })
-}
-
-/// First non-empty value token for a child element under an FBX object (Assimp `GetRequiredToken(…, 0)` when the child exists).
-pub(crate) fn require_attr_token<'a>(
-    attrs: &'a HashMap<String, ElementAttribute>,
-    name: &'static str,
-) -> Result<&'a str, FbxTryFromReason> {
-    let attr = attrs
-        .get(name)
-        .ok_or(FbxTryFromReason::MissingAttribute { name })?;
-    let tok = attr
-        .get_tokens()
-        .first()
-        .ok_or_else(|| FbxTryFromReason::InvalidAttributeFormat {
-            name,
-            detail: "missing value token".into(),
-        })?;
-    if tok.is_empty() {
-        return Err(FbxTryFromReason::InvalidAttributeFormat {
-            name,
-            detail: "empty value token".into(),
-        });
-    }
-    Ok(tok.as_str())
-}
-
-/// Like [`require_attr_token`], but matches the attribute key case-insensitively (e.g. `FileName` vs `Filename`, per Assimp `FindElementCaseInsensitive` on [`crate::objects::Video`]).
-pub(crate) fn require_attr_token_case_insensitive<'a>(
-    attrs: &'a HashMap<String, ElementAttribute>,
-    name: &'static str,
-) -> Result<&'a str, FbxTryFromReason> {
-    let Some(attr) = attr_case_insensitive(attrs, name) else {
-        return Err(FbxTryFromReason::MissingAttribute { name });
-    };
-    let tok = attr
-        .get_tokens()
-        .first()
-        .ok_or_else(|| FbxTryFromReason::InvalidAttributeFormat {
-            name,
-            detail: "missing value token".into(),
-        })?;
-    if tok.is_empty() {
-        return Err(FbxTryFromReason::InvalidAttributeFormat {
-            name,
-            detail: "empty value token".into(),
-        });
-    }
-    Ok(tok.as_str())
-}
-
-pub(crate) fn optional_nonempty_string_case_insensitive(
-    attrs: &HashMap<String, ElementAttribute>,
-    name: &'static str,
-) -> Result<Option<String>, FbxTryFromReason> {
-    let Some(attr) = attr_case_insensitive(attrs, name) else {
-        return Ok(None);
-    };
-    let tok = attr
-        .get_tokens()
-        .first()
-        .ok_or_else(|| FbxTryFromReason::InvalidAttributeFormat {
-            name,
-            detail: "missing value token".into(),
-        })?;
-    if tok.is_empty() {
-        return Ok(None);
-    }
-    Ok(Some(tok.clone()))
-}
-
-/// Optional multi-token attribute (e.g. [`crate::objects::Video`] `Content`), matched case-insensitively on the key.
-pub(crate) fn optional_attr_tokens_case_insensitive(
-    attrs: &HashMap<String, ElementAttribute>,
-    name: &'static str,
-) -> Result<Option<Vec<String>>, FbxTryFromReason> {
-    let Some(attr) = attr_case_insensitive(attrs, name) else {
-        return Ok(None);
-    };
-    let tokens = attr.get_tokens();
-    if tokens.is_empty() {
-        return Ok(None);
-    }
-    Ok(Some(tokens.to_vec()))
 }
 
 /// Internal discriminant for [`fbx_object_tag`].

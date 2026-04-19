@@ -8,10 +8,10 @@ use std::convert::TryFrom;
 
 use fbxscii::ElementAttribute;
 
-use crate::OwnedObject;
+use crate::{OwnedObject, objects::AttrExtractorExt};
 
 use super::{
-    fbx_object_tag, require_attr_token, FbxObjectTag, FbxTryFromReason, FbxTypeMismatch,
+    fbx_object_tag, FbxObjectTag, FbxTryFromReason, FbxTypeMismatch,
 };
 
 const CAMERA_ID: &str = "CameraId";
@@ -39,14 +39,14 @@ impl CameraSwitcher {
 fn parse_camera_switcher_fields(
     attrs: &HashMap<String, ElementAttribute>,
 ) -> Result<(i32, String, String), FbxTryFromReason> {
-    let id_tok = require_attr_token(attrs, CAMERA_ID)?;
+    let id_tok = attrs.require_token(&CAMERA_ID)?;
     let camera_id = id_tok.parse::<i32>().map_err(|e| FbxTryFromReason::InvalidAttributeFormat {
-        name: CAMERA_ID,
+        name: CAMERA_ID.to_string(),
         detail: e.to_string(),
     })?;
 
-    let camera_name = require_attr_token(attrs, CAMERA_NAME)?.to_string();
-    let camera_index_name = require_attr_token(attrs, CAMERA_INDEX_NAME)?.to_string();
+    let camera_name = attrs.require_token(&CAMERA_NAME)?.to_string();
+    let camera_index_name = attrs.require_token(&CAMERA_INDEX_NAME)?.to_string();
 
     Ok((camera_id, camera_name, camera_index_name))
 }
@@ -56,7 +56,7 @@ impl TryFrom<OwnedObject> for CameraSwitcher {
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         if fbx_object_tag(&o) != Some(FbxObjectTag::CameraSwitcher) {
-            return Err(FbxTypeMismatch::wrong_object_kind(o, "CameraSwitcher"));
+            return Err(FbxTypeMismatch::wrong_object_kind(o, "CameraSwitcher".to_string()));
         }
 
         match parse_camera_switcher_fields(&o.attributes) {
@@ -121,10 +121,11 @@ mod tests {
         attrs.insert(CAMERA_NAME.into(), leaf(&["X"]));
         let o = owned_camera_switcher(attrs);
         let err = CameraSwitcher::try_from(o).unwrap_err();
+        let name = CAMERA_INDEX_NAME.to_string();
         assert!(matches!(
             err.reason,
             FbxTryFromReason::MissingAttribute {
-                name: CAMERA_INDEX_NAME
+                name,
             }
         ));
     }
@@ -143,9 +144,10 @@ mod tests {
             pp_property_targets: HashMap::new(),
         };
         let err = CameraSwitcher::try_from(o).unwrap_err();
+        let expected = "CameraSwitcher".to_string();
         assert!(matches!(
             err.reason,
-            FbxTryFromReason::WrongObjectKind { expected: "CameraSwitcher", .. }
+            FbxTryFromReason::WrongObjectKind { expected, ..}
         ));
     }
 }

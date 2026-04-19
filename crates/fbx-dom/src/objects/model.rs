@@ -26,7 +26,7 @@ impl TryFrom<OwnedObject> for Model {
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
             Some(FbxObjectTag::Model) => Ok(Model(o)),
-            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "Model")),
+            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "Model".to_string())),
         }
     }
 }

@@ -25,7 +25,7 @@ impl TryFrom<OwnedObject> for Camera {
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
             Some(FbxObjectTag::Camera) => Ok(Camera(o)),
-            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "Camera")),
+            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "Camera".to_string())),
         }
     }
 }

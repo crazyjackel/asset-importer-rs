@@ -1,17 +1,29 @@
 //! FBX `Texture` — Assimp [`Texture`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXMaterial.cpp).
 
+use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::OwnedObject;
+use crate::Property;
+use crate::objects::AttrExtractorExt;
+use crate::objects::AttrExtractorParseExt;
 
 use super::{
-    fbx_object_tag, optional_nonempty_string_case_insensitive, require_attr_token,
-    require_attr_token_case_insensitive, FbxObjectTag, FbxTypeMismatch,
+    fbx_object_tag, FbxObjectTag,
+    FbxTypeMismatch,
 };
 
 const TYPE_ATTR: &str = "Type";
 const FILE_NAME_ATTR: &str = "FileName";
 const RELATIVE_FILENAME_ATTR: &str = "RelativeFilename";
+const MODEL_UV_TRANSLATION: &str = "ModelUVTranslation";
+const MODEL_UV_SCALING: &str = "ModelUVScaling";
+const TEXTURE_ALPHA_SOURCE: &str = "Texture_Alpha_Source";
+const CROPPING: &str = "Cropping";
+
+const PROP_SCALING: &str = "Scaling";
+const PROP_TRANSLATION: &str = "Translation";
+const PROP_ROTATION: &str = "Rotation";
 
 #[derive(Debug, PartialEq)]
 pub struct Texture {
@@ -19,6 +31,11 @@ pub struct Texture {
     pub texture_type: String,
     pub file_name: String,
     pub relative_file_name: Option<String>,
+    pub uv_translation: [f32; 2],
+    pub uv_scaling: [f32; 2],
+    pub uv_rotation: f32,
+    pub cropping: [i32; 4],
+    pub alpha_source: String,
 }
 
 impl Texture {
@@ -29,6 +46,28 @@ impl Texture {
     pub fn into_inner(self) -> OwnedObject {
         self.object
     }
+
+    //@TODO: add a method to use get the 
+}
+
+fn apply_texture_property_uv_overrides(
+    properties: &HashMap<String, Property>,
+    uv_translation: &mut [f32; 2],
+    uv_scaling: &mut [f32; 2],
+    uv_rotation: &mut f32,
+) {
+    // 3ds Max / FBX SDK path (Assimp reads after element scope).
+    if let Some(Property::Vec3(v)) = properties.get(PROP_SCALING) {
+        uv_scaling[0] = v[0];
+        uv_scaling[1] = v[1];
+    }
+    if let Some(Property::Vec3(v)) = properties.get(PROP_TRANSLATION) {
+        uv_translation[0] = v[0];
+        uv_translation[1] = v[1];
+    }
+    if let Some(Property::Vec3(v)) = properties.get(PROP_ROTATION) {
+        *uv_rotation = v[2];
+    }
 }
 
 impl TryFrom<OwnedObject> for Texture {
@@ -36,29 +75,64 @@ impl TryFrom<OwnedObject> for Texture {
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         if fbx_object_tag(&o) != Some(FbxObjectTag::Texture) {
-            return Err(FbxTypeMismatch::wrong_object_kind(o, "Texture"));
+            return Err(FbxTypeMismatch::wrong_object_kind(o, "Texture".to_string()));
         }
 
         let attrs = &o.attributes;
-        let texture_type = match require_attr_token(attrs, TYPE_ATTR) {
-            Ok(s) => s.to_string(),
+        let props = &o.properties;
+
+        let texture_type = match attrs.optional_token_case_insensitive( &TYPE_ATTR) {
+            Ok(s) => s.map(|s| s.to_string()).unwrap_or_default(),
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         };
-        let file_name = match require_attr_token_case_insensitive(attrs, FILE_NAME_ATTR) {
-            Ok(s) => s.to_string(),
+        let file_name = match attrs.optional_token_case_insensitive( &FILE_NAME_ATTR) {
+            Ok(s) => s.map(|s| s.to_string()).unwrap_or_default(),
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         };
         let relative_file_name =
-            match optional_nonempty_string_case_insensitive(attrs, RELATIVE_FILENAME_ATTR) {
-                Ok(r) => r,
+            match attrs.optional_token_case_insensitive( &RELATIVE_FILENAME_ATTR) {
+                Ok(r) => r.map(|s| s.to_string()),
                 Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
             };
+
+        let mut uv_translation = [0.0f32, 0.0f32];
+        let mut uv_scaling = [1.0f32, 1.0f32];
+        let mut uv_rotation = 0.0f32;
+        let mut cropping = [0i32; 4];
+
+        match attrs.optional_two_f32( &MODEL_UV_TRANSLATION) {
+            Ok(Some(t)) => uv_translation = t,
+            Ok(None) => {}
+            Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
+        }
+        match attrs.optional_two_f32_case_insensitive( &MODEL_UV_SCALING) {
+            Ok(Some(t)) => uv_scaling = t,
+            Ok(None) => {}
+            Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
+        }
+        match attrs.optional_four_i32_case_insensitive( &CROPPING) {
+            Ok(Some(c)) => cropping = c,
+            Ok(None) => {}
+            Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
+        }
+
+        apply_texture_property_uv_overrides(props, &mut uv_translation, &mut uv_scaling, &mut uv_rotation);
+
+        let alpha_source = match attrs.optional_token_case_insensitive( &TEXTURE_ALPHA_SOURCE) {
+            Ok(s) => s.map(|s| s.to_string()).unwrap_or_default(),
+            Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
+        };
 
         Ok(Texture {
             object: o,
             texture_type,
             file_name,
             relative_file_name,
+            uv_translation,
+            uv_scaling,
+            uv_rotation,
+            cropping,
+            alpha_source,
         })
     }
 }

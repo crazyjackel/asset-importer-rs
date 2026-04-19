@@ -25,7 +25,7 @@ impl TryFrom<OwnedObject> for MeshGeometry {
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
             Some(FbxObjectTag::MeshGeometry) => Ok(MeshGeometry(o)),
-            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "MeshGeometry")),
+            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "MeshGeometry".to_string())),
         }
     }
 }

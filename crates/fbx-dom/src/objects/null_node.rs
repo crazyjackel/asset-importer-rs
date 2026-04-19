@@ -26,7 +26,7 @@ impl TryFrom<OwnedObject> for NullNode {
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
             Some(FbxObjectTag::NullNode) => Ok(NullNode(o)),
-            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "NullNode")),
+            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "NullNode".to_string())),
         }
     }
 }
