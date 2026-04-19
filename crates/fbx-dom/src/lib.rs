@@ -25,7 +25,7 @@ pub use global::GlobalSettings;
 
 pub use objects::{
     AnimationCurve, AnimationCurveNode, AnimationLayer, AnimationStack, BlendShape,
-    BlendShapeChannel, Camera, CameraSwitcher, ClassifiedFbxObject, Cluster, FbxTypeMismatch,
-    LayeredTexture, Light, LimbNode, LineGeometry, Material, MeshGeometry, Model, NullNode,
-    ShapeGeometry, Skin, Texture, Video,
+    BlendShapeChannel, Camera, CameraSwitcher, ClassifiedFbxObject, Cluster, FbxTryFromReason,
+    FbxTypeMismatch, LayeredTexture, Light, LimbNode, LineGeometry, Material, MeshGeometry, Model,
+    NullNode, ShapeGeometry, Skin, Texture, Video,
 };

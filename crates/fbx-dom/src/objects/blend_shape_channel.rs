@@ -25,7 +25,7 @@ impl TryFrom<OwnedObject> for BlendShapeChannel {
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
             Some(FbxObjectTag::BlendShapeChannel) => Ok(BlendShapeChannel(o)),
-            _ => Err(FbxTypeMismatch(o)),
+            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "BlendShapeChannel")),
         }
     }
 }

@@ -25,7 +25,7 @@ impl TryFrom<OwnedObject> for LimbNode {
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
             Some(FbxObjectTag::LimbNode) => Ok(LimbNode(o)),
-            _ => Err(FbxTypeMismatch(o)),
+            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "LimbNode")),
         }
     }
 }

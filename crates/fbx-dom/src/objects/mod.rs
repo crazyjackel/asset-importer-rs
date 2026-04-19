@@ -1,8 +1,8 @@
 //! Owned FBX DOM object wrappers aligned with Assimp’s [`FBXDocument`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXDocument.h)
 //! [`LazyObject::Get`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXDocument.cpp) dispatch (`type_name` + `class_name` on [`crate::OwnedObject`]).
 //!
-//! Each type is a newtype over [`crate::OwnedObject`] with [`TryFrom`] for narrowing, or
-//! [`classify_owned_fbx_object`] for the combined `(type_name, class_name)` dispatch.
+//! Each type is a newtype over [`crate::OwnedObject`] (or a small struct for parsed kinds) with
+//! [`TryFrom`] for narrowing. Use [`ClassifiedFbxObject::try_from`] for discriminated classification.
 
 mod animation_curve;
 mod animation_curve_node;
@@ -47,6 +47,10 @@ pub use shape_geometry::ShapeGeometry;
 pub use skin::Skin;
 pub use texture::Texture;
 pub use video::Video;
+
+use std::collections::HashMap;
+
+use fbxscii::ElementAttribute;
 
 use crate::OwnedObject;
 
@@ -98,9 +102,138 @@ pub const ANIMATION_CURVE_CLASS_NAME: &str = "AnimationCurve";
 pub const ANIMATION_CURVE_NODE_TYPE_NAME: &str = "AnimationCurveNode";
 pub const ANIMATION_CURVE_NODE_CLASS_NAME: &str = "AnimationCurveNode";
 
+/// Why [`TryFrom`]`<`[`OwnedObject`]`>` failed for a typed FBX wrapper.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FbxTryFromReason {
+    /// `(type_name, class_name)` does not match the target wrapper (see [`wrong_object_kind`]).
+    WrongObjectKind {
+        expected: &'static str,
+        got_type_name: String,
+        got_class_name: String,
+    },
+    /// A required non-`Properties70` child (FBX element under the object) was missing.
+    MissingAttribute {
+        name: &'static str,
+    },
+    /// A child was present but had no usable value or failed to parse.
+    InvalidAttributeFormat {
+        name: &'static str,
+        detail: String,
+    },
+}
+
 /// Returned when [`TryFrom`]`<`[`OwnedObject`]`>` fails for a typed FBX wrapper.
 #[derive(Debug, PartialEq)]
-pub struct FbxTypeMismatch(pub OwnedObject);
+pub struct FbxTypeMismatch {
+    pub object: OwnedObject,
+    pub reason: FbxTryFromReason,
+}
+
+impl FbxTypeMismatch {
+    pub(crate) fn wrong_object_kind(o: OwnedObject, expected: &'static str) -> FbxTypeMismatch {
+        let reason = FbxTryFromReason::WrongObjectKind {
+            expected,
+            got_type_name: o.type_name.clone(),
+            got_class_name: o.class_name.clone(),
+        };
+        FbxTypeMismatch { object: o, reason }
+    }
+}
+
+fn attr_case_insensitive<'a>(
+    attrs: &'a HashMap<String, ElementAttribute>,
+    name: &str,
+) -> Option<&'a ElementAttribute> {
+    attrs.get(name).or_else(|| {
+        attrs
+            .iter()
+            .find(|(k, _)| k.eq_ignore_ascii_case(name))
+            .map(|(_, v)| v)
+    })
+}
+
+/// First non-empty value token for a child element under an FBX object (Assimp `GetRequiredToken(…, 0)` when the child exists).
+pub(crate) fn require_attr_token<'a>(
+    attrs: &'a HashMap<String, ElementAttribute>,
+    name: &'static str,
+) -> Result<&'a str, FbxTryFromReason> {
+    let attr = attrs
+        .get(name)
+        .ok_or(FbxTryFromReason::MissingAttribute { name })?;
+    let tok = attr
+        .get_tokens()
+        .first()
+        .ok_or_else(|| FbxTryFromReason::InvalidAttributeFormat {
+            name,
+            detail: "missing value token".into(),
+        })?;
+    if tok.is_empty() {
+        return Err(FbxTryFromReason::InvalidAttributeFormat {
+            name,
+            detail: "empty value token".into(),
+        });
+    }
+    Ok(tok.as_str())
+}
+
+/// Like [`require_attr_token`], but matches the attribute key case-insensitively (e.g. `FileName` vs `Filename`, per Assimp `FindElementCaseInsensitive` on [`crate::objects::Video`]).
+pub(crate) fn require_attr_token_case_insensitive<'a>(
+    attrs: &'a HashMap<String, ElementAttribute>,
+    name: &'static str,
+) -> Result<&'a str, FbxTryFromReason> {
+    let Some(attr) = attr_case_insensitive(attrs, name) else {
+        return Err(FbxTryFromReason::MissingAttribute { name });
+    };
+    let tok = attr
+        .get_tokens()
+        .first()
+        .ok_or_else(|| FbxTryFromReason::InvalidAttributeFormat {
+            name,
+            detail: "missing value token".into(),
+        })?;
+    if tok.is_empty() {
+        return Err(FbxTryFromReason::InvalidAttributeFormat {
+            name,
+            detail: "empty value token".into(),
+        });
+    }
+    Ok(tok.as_str())
+}
+
+pub(crate) fn optional_nonempty_string_case_insensitive(
+    attrs: &HashMap<String, ElementAttribute>,
+    name: &'static str,
+) -> Result<Option<String>, FbxTryFromReason> {
+    let Some(attr) = attr_case_insensitive(attrs, name) else {
+        return Ok(None);
+    };
+    let tok = attr
+        .get_tokens()
+        .first()
+        .ok_or_else(|| FbxTryFromReason::InvalidAttributeFormat {
+            name,
+            detail: "missing value token".into(),
+        })?;
+    if tok.is_empty() {
+        return Ok(None);
+    }
+    Ok(Some(tok.clone()))
+}
+
+/// Optional multi-token attribute (e.g. [`crate::objects::Video`] `Content`), matched case-insensitively on the key.
+pub(crate) fn optional_attr_tokens_case_insensitive(
+    attrs: &HashMap<String, ElementAttribute>,
+    name: &'static str,
+) -> Result<Option<Vec<String>>, FbxTryFromReason> {
+    let Some(attr) = attr_case_insensitive(attrs, name) else {
+        return Ok(None);
+    };
+    let tokens = attr.get_tokens();
+    if tokens.is_empty() {
+        return Ok(None);
+    }
+    Ok(Some(tokens.to_vec()))
+}
 
 /// Internal discriminant for [`fbx_object_tag`].
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -279,14 +412,14 @@ impl ClassifiedFbxObject {
             ClassifiedFbxObject::LineGeometry(x) => &x.0,
             ClassifiedFbxObject::ShapeGeometry(x) => &x.0,
             ClassifiedFbxObject::Camera(x) => &x.0,
-            ClassifiedFbxObject::CameraSwitcher(x) => &x.0,
+            ClassifiedFbxObject::CameraSwitcher(x) => x.inner(),
             ClassifiedFbxObject::Light(x) => &x.0,
             ClassifiedFbxObject::NullNode(x) => &x.0,
             ClassifiedFbxObject::LimbNode(x) => &x.0,
-            ClassifiedFbxObject::Material(x) => &x.0,
-            ClassifiedFbxObject::Texture(x) => &x.0,
+            ClassifiedFbxObject::Material(x) => x.inner(),
+            ClassifiedFbxObject::Texture(x) => x.inner(),
             ClassifiedFbxObject::LayeredTexture(x) => &x.0,
-            ClassifiedFbxObject::Video(x) => &x.0,
+            ClassifiedFbxObject::Video(x) => x.inner(),
             ClassifiedFbxObject::Cluster(x) => &x.0,
             ClassifiedFbxObject::Skin(x) => &x.0,
             ClassifiedFbxObject::BlendShape(x) => &x.0,
