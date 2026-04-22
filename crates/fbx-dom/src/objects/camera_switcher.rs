@@ -8,7 +8,7 @@ use std::convert::TryFrom;
 
 use fbxscii::ElementAttribute;
 
-use crate::{OwnedObject, objects::AttrExtractorExt};
+use crate::{OwnedObject, Property, objects::AttrExtractorExt};
 
 use super::{
     fbx_object_tag, FbxObjectTag, FbxTryFromReason, FbxTypeMismatch,
@@ -33,6 +33,15 @@ impl CameraSwitcher {
 
     pub fn into_inner(self) -> OwnedObject {
         self.object
+    }
+
+    /// Temporary bridge to Assimp-style camera switcher properties until typed accessors are added.
+    pub fn properties(&self) -> &HashMap<String, Property> {
+        &self.object.properties
+    }
+
+    pub fn property(&self, name: &str) -> Option<&Property> {
+        self.object.properties.get(name)
     }
 }
 
@@ -121,12 +130,12 @@ mod tests {
         attrs.insert(CAMERA_NAME.into(), leaf(&["X"]));
         let o = owned_camera_switcher(attrs);
         let err = CameraSwitcher::try_from(o).unwrap_err();
-        let name = CAMERA_INDEX_NAME.to_string();
         assert!(matches!(
             err.reason,
             FbxTryFromReason::MissingAttribute {
-                name,
+                name: ref n,
             }
+            if n == CAMERA_INDEX_NAME
         ));
     }
 
@@ -144,10 +153,26 @@ mod tests {
             pp_property_targets: HashMap::new(),
         };
         let err = CameraSwitcher::try_from(o).unwrap_err();
-        let expected = "CameraSwitcher".to_string();
         assert!(matches!(
             err.reason,
-            FbxTryFromReason::WrongObjectKind { expected, ..}
+            FbxTryFromReason::WrongObjectKind { expected: ref e, ..}
+            if e == "CameraSwitcher"
         ));
+    }
+
+    #[test]
+    fn property_accessors_return_owned_object_properties() {
+        let mut attrs = HashMap::new();
+        attrs.insert(CAMERA_ID.into(), leaf(&["7"]));
+        attrs.insert(CAMERA_NAME.into(), leaf(&["MainCam"]));
+        attrs.insert(CAMERA_INDEX_NAME.into(), leaf(&["IndexA"]));
+
+        let mut o = owned_camera_switcher(attrs);
+        o.properties
+            .insert("SomeFlag".to_string(), Property::Bool(true));
+
+        let cs = CameraSwitcher::try_from(o).unwrap();
+        assert_eq!(cs.property("SomeFlag"), Some(&Property::Bool(true)));
+        assert_eq!(cs.properties().len(), 1);
     }
 }

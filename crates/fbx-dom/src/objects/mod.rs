@@ -43,6 +43,8 @@ pub use extract::AttrExtractorParseExt;
 pub use global_settings::OwnedGlobalSettings;
 pub use layered_texture::LayeredTexture;
 pub use light::Light;
+pub use light::LightDecay;
+pub use light::LightType;
 pub use limb_node::LimbNode;
 pub use line_geometry::LineGeometry;
 pub use material::Material;
