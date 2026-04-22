@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 
 use crate::OwnedObject;
-use fbxscii::{ElementAmphitheatre, ElementAttribute};
+use fbxscii::ElementAttribute;
 
 use super::AttrExtractor;
 use super::AttrExtractorExt;
@@ -24,6 +24,14 @@ const MAPPING_ALL_SAME: &str = "AllSame";
 
 const REFERENCE_DIRECT: &str = "Direct";
 const REFERENCE_INDEX_TO_DIRECT: &str = "IndexToDirect";
+
+const ATTR_VERTICES: &str = "Vertices";
+const ATTR_POLYGON_VERTEX_INDEX: &str = "PolygonVertexIndex";
+const ATTR_LAYER_ELEMENT_NORMAL: &str = "LayerElementNormal";
+const ATTR_LAYER_ELEMENT_TANGENT: &str = "LayerElementTangent";
+const ATTR_LAYER_ELEMENT_BINORMAL: &str = "LayerElementBinormal";
+const ATTR_LAYER_ELEMENT_UV: &str = "LayerElementUV";
+const ATTR_MATERIALS: &str = "Materials";
 
 #[derive(Debug, PartialEq)]
 pub struct MeshGeometry {
@@ -53,6 +61,7 @@ impl TryFrom<OwnedObject> for MeshGeometry {
     type Error = FbxTypeMismatch;
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
+        // Check if tagged as MeshGeometry
         match fbx_object_tag(&o) {
             Some(FbxObjectTag::MeshGeometry) => {}
             _ => {
@@ -65,71 +74,90 @@ impl TryFrom<OwnedObject> for MeshGeometry {
 
         let attrs = &o.attributes;
 
-        let verts_attr = match attrs.extract_case_insensitive("Vertices") {
-            Some(a) => a,
-            None => {
-                return Err(FbxTypeMismatch::new(
-                    o,
-                    FbxTryFromReason::MissingAttribute {
-                        name: "Vertices".to_string(),
-                    },
-                ));
-            }
-        };
-        let verts_flat = match parse_f32_array(verts_attr, "Vertices") {
-            Ok(v) => v,
+        let mapping_ty = match attrs
+            .require_token_case_insensitive(ATTR_MAPPING_INFORMATION_TYPE)
+            .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
+        {
+            Ok(s) => s,
             Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
         };
-        let temp_verts = match vec3_positions_from_flat(&verts_flat, "Vertices") {
-            Ok(v) => v,
+        let reference_ty = match attrs
+            .require_token_case_insensitive(ATTR_REFERENCE_INFORMATION_TYPE)
+            .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
+        {
+            Ok(s) => s,
             Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
         };
 
-        let poly_attr = match attrs.extract_case_insensitive("PolygonVertexIndex") {
+        // Extract Vertices
+        let verts_attr = match attrs.extract_case_insensitive(ATTR_VERTICES) {
             Some(a) => a,
             None => {
                 return Err(FbxTypeMismatch::new(
                     o,
                     FbxTryFromReason::MissingAttribute {
-                        name: "PolygonVertexIndex".to_string(),
+                        name: ATTR_VERTICES.to_string(),
                     },
                 ));
             }
         };
-        let temp_faces = match parse_i32_array(poly_attr, "PolygonVertexIndex") {
-            Ok(v) => v,
-            Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
+        let vertices = parse_f32_array(verts_attr)
+            .chunks_exact(3)
+            .map(|c| [c[0], c[1], c[2]])
+            .collect::<Vec<[f32; 3]>>();
+
+        // Extract Face Indices
+        let poly_attr = match attrs.extract_case_insensitive(ATTR_POLYGON_VERTEX_INDEX) {
+            Some(a) => a,
+            None => {
+                return Err(FbxTypeMismatch::new(
+                    o,
+                    FbxTryFromReason::MissingAttribute {
+                        name: ATTR_POLYGON_VERTEX_INDEX.to_string(),
+                    },
+                ));
+            }
         };
+        let temp_faces = parse_i32_array(poly_attr);
 
         let (vertices, face_vertex_counts, mapping_counts, mapping_offsets, mappings) =
-            match expand_mesh_polygon_vertices(&temp_verts, &temp_faces) {
+            match expand_mesh_polygon_vertices(&vertices, &temp_faces) {
                 Ok(v) => v,
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
         let vertex_count = vertices.len();
 
         let mut normals = Vec::new();
-        if let Some(el) = attrs.extract_case_insensitive("LayerElementNormal") {
+        if let Some(el) = attrs.extract_case_insensitive(ATTR_LAYER_ELEMENT_NORMAL) {
             let map = match child_attribute_map(el) {
                 Ok(m) => m,
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
-            normals = match resolve_vec3_channel(
+            let normals_flat = match resolve_flat_f32_channel(
                 &map,
-                "Normals",
-                "NormalsIndex",
-                vertex_count,
-                &mapping_counts,
-                &mapping_offsets,
-                &mappings,
+                ResolveFlatF32ChannelParams {
+                    data_name: "Normals",
+                    index_name: "NormalsIndex",
+                    vertex_count,
+                    components: 3,
+                    mapping_counts: &mapping_counts,
+                    mapping_offsets: &mapping_offsets,
+                    mappings: &mappings,
+                    mapping_ty: mapping_ty,
+                    reference_ty: reference_ty,
+                },
             ) {
                 Ok(v) => v,
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
+            normals = normals_flat
+                .chunks_exact(3)
+                .map(|c| [c[0], c[1], c[2]])
+                .collect();
         }
 
         let mut tangents = Vec::new();
-        if let Some(el) = attrs.extract_case_insensitive("LayerElementTangent") {
+        if let Some(el) = attrs.extract_case_insensitive(ATTR_LAYER_ELEMENT_TANGENT) {
             let map = match child_attribute_map(el) {
                 Ok(m) => m,
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
@@ -139,22 +167,31 @@ impl TryFrom<OwnedObject> for MeshGeometry {
             } else {
                 ("Tangent", "TangentIndex")
             };
-            tangents = match resolve_vec3_channel(
+            let tangents_flat = match resolve_flat_f32_channel(
                 &map,
-                data_name,
-                index_name,
-                vertex_count,
-                &mapping_counts,
-                &mapping_offsets,
-                &mappings,
+                ResolveFlatF32ChannelParams {
+                    data_name,
+                    index_name,
+                    vertex_count,
+                    components: 3,
+                    mapping_counts: &mapping_counts,
+                    mapping_offsets: &mapping_offsets,
+                    mappings: &mappings,
+                    mapping_ty: mapping_ty,
+                    reference_ty: reference_ty,
+                },
             ) {
                 Ok(v) => v,
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
+            tangents = tangents_flat
+                .chunks_exact(3)
+                .map(|c| [c[0], c[1], c[2]])
+                .collect();
         }
 
         let mut binormals = Vec::new();
-        if let Some(el) = attrs.extract_case_insensitive("LayerElementBinormal") {
+        if let Some(el) = attrs.extract_case_insensitive(ATTR_LAYER_ELEMENT_BINORMAL) {
             let map = match child_attribute_map(el) {
                 Ok(m) => m,
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
@@ -164,26 +201,33 @@ impl TryFrom<OwnedObject> for MeshGeometry {
             } else {
                 ("Binormal", "BinormalIndex")
             };
-            binormals = match resolve_vec3_channel(
+            let binormals_flat = match resolve_flat_f32_channel(
                 &map,
-                data_name,
-                index_name,
-                vertex_count,
-                &mapping_counts,
-                &mapping_offsets,
-                &mappings,
+                ResolveFlatF32ChannelParams {
+                    data_name,
+                    index_name,
+                    vertex_count,
+                    components: 3,
+                    mapping_counts: &mapping_counts,
+                    mapping_offsets: &mapping_offsets,
+                    mappings: &mappings,
+                    mapping_ty: mapping_ty,
+                    reference_ty: reference_ty,
+                },
             ) {
                 Ok(v) => v,
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
+            binormals = binormals_flat
+                .chunks_exact(3)
+                .map(|c| [c[0], c[1], c[2]])
+                .collect();
         }
 
-        let mut texture_coords: [Vec<[f32; 2]>; MAX_UV_CHANNELS] =
-            std::array::from_fn(|_| Vec::new());
-        let mut texture_coord_names: [String; MAX_UV_CHANNELS] =
-            std::array::from_fn(|_| String::new());
+        let mut texture_coords: [Vec<[f32; 2]>; MAX_UV_CHANNELS] = Default::default();
+        let mut texture_coord_names: [String; MAX_UV_CHANNELS] = Default::default();
 
-        if let Some(el) = attrs.extract_case_insensitive("LayerElementUV") {
+        if let Some(el) = attrs.extract_case_insensitive(ATTR_LAYER_ELEMENT_UV) {
             let map = match child_attribute_map(el) {
                 Ok(m) => m,
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
@@ -194,53 +238,74 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                     .trim_matches(|c| c == '"' || c == '\'')
                     .to_string();
             }
-            texture_coords[0] = match resolve_vec2_channel(
+            let uv_flat = match resolve_flat_f32_channel(
                 &map,
-                "UV",
-                "UVIndex",
-                vertex_count,
-                &mapping_counts,
-                &mapping_offsets,
-                &mappings,
+                ResolveFlatF32ChannelParams {
+                    data_name: "UV",
+                    index_name: "UVIndex",
+                    vertex_count,
+                    components: 2,
+                    mapping_counts: &mapping_counts,
+                    mapping_offsets: &mapping_offsets,
+                    mappings: &mappings,
+                    mapping_ty: mapping_ty,
+                    reference_ty: reference_ty,
+                },
             ) {
                 Ok(v) => v,
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
+            texture_coords[0] = uv_flat.chunks_exact(2).map(|c| [c[0], c[1]]).collect();
         }
 
-        let mut vertex_colors: [Vec<[f32; 4]>; MAX_COLOR_SETS] =
-            std::array::from_fn(|_| Vec::new());
+        let mut vertex_colors: [Vec<[f32; 4]>; MAX_COLOR_SETS] = Default::default();
         if let Some(el) = attrs.extract_case_insensitive("LayerElementColor") {
             let map = match child_attribute_map(el) {
                 Ok(m) => m,
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
-            vertex_colors[0] = match resolve_vec4_channel(
+            let colors_flat = match resolve_flat_f32_channel(
                 &map,
-                "Colors",
-                "ColorIndex",
-                vertex_count,
-                &mapping_counts,
-                &mapping_offsets,
-                &mappings,
+                ResolveFlatF32ChannelParams {
+                    data_name: "Colors",
+                    index_name: "ColorIndex",
+                    vertex_count,
+                    components: 4,
+                    mapping_counts: &mapping_counts,
+                    mapping_offsets: &mapping_offsets,
+                    mappings: &mappings,
+                    mapping_ty: mapping_ty,
+                    reference_ty: reference_ty,
+                },
             ) {
                 Ok(v) => v,
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
+            vertex_colors[0] = colors_flat
+                .chunks_exact(4)
+                .map(|c| [c[0], c[1], c[2], c[3]])
+                .collect();
         }
 
-        let material_indices = if let Some(el) = attrs.extract_case_insensitive("LayerElementMaterial") {
-            let map = match child_attribute_map(el) {
-                Ok(m) => m,
-                Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
+        let material_indices =
+            if let Some(el) = attrs.extract_case_insensitive("LayerElementMaterial") {
+                let map = match child_attribute_map(el) {
+                    Ok(m) => m,
+                    Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
+                };
+                match read_vertex_data_materials(
+                    &map,
+                    &face_vertex_counts,
+                    vertex_count,
+                    &mapping_ty,
+                    &reference_ty,
+                ) {
+                    Ok(v) => v,
+                    Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
+                }
+            } else {
+                Vec::new()
             };
-            match read_vertex_data_materials(&map, &face_vertex_counts, vertex_count) {
-                Ok(v) => v,
-                Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
-            }
-        } else {
-            Vec::new()
-        };
 
         Ok(MeshGeometry {
             object: o,
@@ -257,10 +322,11 @@ impl TryFrom<OwnedObject> for MeshGeometry {
     }
 }
 
-/// Direct children of a geometry or layer-element subtree as attribute map (last duplicate key wins).
+/// From a given ElementAttribute representing a tree, make a key-value map to direct children element attributes.
 fn child_attribute_map(
     attr: &ElementAttribute,
 ) -> Result<HashMap<String, ElementAttribute>, FbxTryFromReason> {
+    // Extract the subtree and grab the root element.
     let ElementAttribute::SubTree(st) = attr else {
         return Err(FbxTryFromReason::InvalidAttributeFormat {
             name: "geometry".to_string(),
@@ -268,10 +334,14 @@ fn child_attribute_map(
         });
     };
     let arena = &st.amphitheatre;
-    let root = arena.get(st.root_element_index).ok_or_else(|| FbxTryFromReason::InvalidAttributeFormat {
-        name: "geometry".to_string(),
-        detail: "subtree root missing".to_string(),
+    let root = arena.get(st.root_element_index).ok_or_else(|| {
+        FbxTryFromReason::InvalidAttributeFormat {
+            name: "geometry".to_string(),
+            detail: "subtree root missing".to_string(),
+        }
     })?;
+
+    // Create a map of key's to direct children element attributes.
     let mut map = HashMap::new();
     for &child_idx in &root.children {
         let Some(sub) = arena.extract_subtree(child_idx) else {
@@ -286,105 +356,28 @@ fn child_attribute_map(
     Ok(map)
 }
 
-fn dfs_collect_f32(
-    arena: &ElementAmphitheatre,
-    idx: usize,
-    out: &mut Vec<f32>,
-    ctx: &str,
-) -> Result<(), FbxTryFromReason> {
-    let el = arena.get(idx).ok_or_else(|| FbxTryFromReason::InvalidAttributeFormat {
-        name: ctx.to_string(),
-        detail: "element index out of range".to_string(),
-    })?;
-    out.extend(
-        el.tokens
-            .iter()
-            .flat_map(|t| t.split(','))
-            .map(|t| t.trim())
-            .filter(|t| !t.is_empty())
-            .filter_map(|t| t.parse::<f32>().ok()),
-    );
-    for &ch in &el.children {
-        dfs_collect_f32(arena, ch, out, ctx)?;
-    }
-    Ok(())
+fn parse_f32_array(attr: &ElementAttribute) -> Vec<f32> {
+    let tokens = attr.get_tokens();
+    let parsed = tokens
+        .iter()
+        .flat_map(|t| t.split(','))
+        .map(|t| t.trim())
+        .filter(|t| !t.is_empty())
+        .filter_map(|t| t.parse::<f32>().ok())
+        .collect();
+    parsed
 }
 
-fn parse_f32_array(attr: &ElementAttribute, ctx: &str) -> Result<Vec<f32>, FbxTryFromReason> {
-    let mut out = Vec::new();
-    match attr {
-        ElementAttribute::Leaf(_) => {
-            out.extend(
-                attr.get_tokens()
-                    .iter()
-                    .flat_map(|t| t.split(','))
-                    .map(|t| t.trim())
-                    .filter(|t| !t.is_empty())
-                    .filter_map(|t| t.parse::<f32>().ok()),
-            );
-        }
-        ElementAttribute::SubTree(st) => {
-            dfs_collect_f32(&st.amphitheatre, st.root_element_index, &mut out, ctx)?;
-        }
-    }
-    Ok(out)
-}
-
-fn dfs_collect_i32(
-    arena: &ElementAmphitheatre,
-    idx: usize,
-    out: &mut Vec<i32>,
-    ctx: &str,
-) -> Result<(), FbxTryFromReason> {
-    let el = arena.get(idx).ok_or_else(|| FbxTryFromReason::InvalidAttributeFormat {
-        name: ctx.to_string(),
-        detail: "element index out of range".to_string(),
-    })?;
-    out.extend(
-        el.tokens
-            .iter()
-            .flat_map(|t| t.split(','))
-            .map(|t| t.trim())
-            .filter(|t| !t.is_empty())
-            .filter_map(|t| t.parse::<i32>().ok()),
-    );
-    for &ch in &el.children {
-        dfs_collect_i32(arena, ch, out, ctx)?;
-    }
-    Ok(())
-}
-
-fn parse_i32_array(attr: &ElementAttribute, ctx: &str) -> Result<Vec<i32>, FbxTryFromReason> {
-    let mut out = Vec::new();
-    match attr {
-        ElementAttribute::Leaf(_) => {
-            out.extend(
-                attr.get_tokens()
-                    .iter()
-                    .flat_map(|t| t.split(','))
-                    .map(|t| t.trim())
-                    .filter(|t| !t.is_empty())
-                    .filter_map(|t| t.parse::<i32>().ok()),
-            );
-        }
-        ElementAttribute::SubTree(st) => {
-            dfs_collect_i32(&st.amphitheatre, st.root_element_index, &mut out, ctx)?;
-        }
-    }
-    Ok(out)
-}
-
-fn vec3_positions_from_flat(f: &[f32], ctx: &str) -> Result<Vec<[f32; 3]>, FbxTryFromReason> {
-    if f.len() % 3 != 0 {
-        return Err(FbxTryFromReason::InvalidAttributeFormat {
-            name: ctx.to_string(),
-            detail: format!("vertex float count {} not divisible by 3", f.len()),
-        });
-    }
-    Ok(f
-        .chunks_exact(3)
-        .map(|c| [c[0], c[1], c[2]])
-        .collect())
+fn parse_i32_array(attr: &ElementAttribute) -> Vec<i32> {
+    let tokens = attr.get_tokens();
+    let parsed = tokens
+        .iter()
+        .flat_map(|t| t.split(','))
+        .map(|t| t.trim())
+        .filter(|t| !t.is_empty())
+        .filter_map(|t| t.parse::<i32>().ok())
+        .collect();
+    parsed
 }
 
 /// Assimp [`MeshGeometry` ctor](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXMeshGeometry.cpp): expand to per-corner vertices and face sizes.
@@ -398,7 +391,10 @@ fn expand_mesh_polygon_vertices(
     let mut face_vertex_counts = Vec::new();
     let mut count = 0u32;
 
+    // FBX Indexing uses a indexing system whereby negative indices are used to help compress representation.
+    // We need to expand these indices to get the proper model representation.
     for &index in temp_faces {
+        // Get absolute index
         let absi = if index < 0 {
             (-index - 1) as usize
         } else {
@@ -406,20 +402,24 @@ fn expand_mesh_polygon_vertices(
         };
         if absi >= vertex_count {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: "PolygonVertexIndex".to_string(),
+                name: ATTR_POLYGON_VERTEX_INDEX.to_string(),
                 detail: format!("index {absi} out of range (vertex count {vertex_count})"),
             });
         }
+        // Add vertex to expanded vertices
         expanded_vertices.push(temp_verts[absi]);
         count += 1;
+        // Update the running count of how many vertices are expanded.
         mapping_counts[absi] = mapping_counts[absi].saturating_add(1);
         if index < 0 {
+            // Count the index difference between this and the last negative index.
             face_vertex_counts.push(count);
             count = 0;
         }
     }
 
     let polygon_vertex_count = expanded_vertices.len();
+    // Create a mapping of offsets for each vertex.
     let mut mapping_offsets = vec![0u32; vertex_count];
     let mut cursor = 0u32;
     for i in 0..vertex_count {
@@ -428,6 +428,7 @@ fn expand_mesh_polygon_vertices(
         mapping_counts[i] = 0;
     }
 
+    // Create a mapping of face index to expanded vertex index
     let mut mappings = vec![0u32; polygon_vertex_count];
     cursor = 0;
     for &index in temp_faces {
@@ -451,451 +452,187 @@ fn expand_mesh_polygon_vertices(
     ))
 }
 
-fn vec3_from_flat_slice(data: &[f32], i: usize) -> Result<[f32; 3], FbxTryFromReason> {
-    let base = i * 3;
-    if base + 3 > data.len() {
-        return Err(FbxTryFromReason::InvalidAttributeFormat {
-            name: "Normals".to_string(),
-            detail: "vec3 index out of range".to_string(),
-        });
-    }
-    Ok([data[base], data[base + 1], data[base + 2]])
-}
-
-fn vec2_from_flat_slice(data: &[f32], i: usize) -> Result<[f32; 2], FbxTryFromReason> {
-    let base = i * 2;
-    if base + 2 > data.len() {
-        return Err(FbxTryFromReason::InvalidAttributeFormat {
-            name: "UV".to_string(),
-            detail: "vec2 index out of range".to_string(),
-        });
-    }
-    Ok([data[base], data[base + 1]])
-}
-
-fn vec4_from_flat_slice(data: &[f32], i: usize) -> Result<[f32; 4], FbxTryFromReason> {
-    let base = i * 4;
-    if base + 4 > data.len() {
-        return Err(FbxTryFromReason::InvalidAttributeFormat {
-            name: "Colors".to_string(),
-            detail: "vec4 index out of range".to_string(),
-        });
-    }
-    Ok([data[base], data[base + 1], data[base + 2], data[base + 3]])
-}
-
-fn resolve_vec3_channel(
-    source: &HashMap<String, ElementAttribute>,
-    data_name: &str,
-    index_name: &str,
+pub struct ResolveFlatF32ChannelParams<'a> {
+    data_name: &'a str,
+    index_name: &'a str,
     vertex_count: usize,
-    mapping_counts: &[u32],
-    mapping_offsets: &[u32],
-    mappings: &[u32],
-) -> Result<Vec<[f32; 3]>, FbxTryFromReason> {
-    let mapping_ty = source
-        .require_token_case_insensitive(ATTR_MAPPING_INFORMATION_TYPE)
-        .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))?;
-    let reference_ty = source
-        .require_token_case_insensitive(ATTR_REFERENCE_INFORMATION_TYPE)
-        .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))?;
+    components: usize,
+    mapping_counts: &'a [u32],
+    mapping_offsets: &'a [u32],
+    mappings: &'a [u32],
+    mapping_ty: &'a str,
+    reference_ty: &'a str,
+}
 
-    let mut is_direct = reference_ty.eq_ignore_ascii_case(REFERENCE_DIRECT);
-    let mut is_index_to_direct = reference_ty.eq_ignore_ascii_case(REFERENCE_INDEX_TO_DIRECT);
-    let has_data = source.extract_case_insensitive(data_name).is_some();
-    let has_index = source.extract_case_insensitive(index_name).is_some();
+fn resolve_flat_f32_channel(
+    source: &HashMap<String, ElementAttribute>,
+    params: ResolveFlatF32ChannelParams<'_>,
+) -> Result<Vec<f32>, FbxTryFromReason> {
+    let mut is_direct = params.reference_ty.eq_ignore_ascii_case(REFERENCE_DIRECT);
+    let mut is_index_to_direct = params
+        .reference_ty
+        .eq_ignore_ascii_case(REFERENCE_INDEX_TO_DIRECT);
+    let has_data = source.extract_case_insensitive(params.data_name).is_some();
+    let has_index = source.extract_case_insensitive(params.index_name).is_some();
     if is_index_to_direct && !has_index {
         is_direct = true;
         is_index_to_direct = false;
     }
 
-    let empty = [0f32; 3];
-    let mut data_out = vec![empty; vertex_count];
+    if params.components == 0 {
+        return Ok(Vec::new());
+    }
+    let mut vertex_out = vec![0f32; params.vertex_count * params.components];
 
-    if mapping_ty.eq_ignore_ascii_case(MAPPING_BY_VERTICE) && is_direct {
+    let by_vertice = params.mapping_ty.eq_ignore_ascii_case(MAPPING_BY_VERTICE);
+    let by_polygon_vertex = params
+        .mapping_ty
+        .eq_ignore_ascii_case(MAPPING_BY_POLYGON_VERTEX);
+
+    if by_vertice && is_direct {
+        // Case 1: Map type is ByVertice and reference type is Direct
         if !has_data {
             return Ok(Vec::new());
         }
-        let temp = parse_f32_array(
-            source.extract_case_insensitive(data_name).unwrap(),
-            data_name,
+        let channel_attribute = source.extract_case_insensitive(params.data_name).ok_or(
+            FbxTryFromReason::InvalidAttributeFormat {
+                name: params.data_name.to_string(),
+                detail: "data channel not found".to_string(),
+            },
         )?;
-        if temp.len() != mapping_offsets.len() * 3 {
+        let channel_data = parse_f32_array(&channel_attribute);
+        if channel_data.len() != params.mapping_offsets.len() * params.components {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: data_name.to_string(),
+                name: params.data_name.to_string(),
                 detail: format!(
                     "{} {}: expected {} floats, got {}",
                     MAPPING_BY_VERTICE,
                     REFERENCE_DIRECT,
-                    mapping_offsets.len() * 3,
-                    temp.len()
+                    params.mapping_offsets.len() * params.components,
+                    channel_data.len()
                 ),
             });
         }
-        for i in 0..mapping_offsets.len() {
-            let v = vec3_from_flat_slice(&temp, i)?;
-            let istart = mapping_offsets[i] as usize;
-            let iend = istart + mapping_counts[i] as usize;
+        for i in 0..params.mapping_offsets.len() {
+            let istart = params.mapping_offsets[i] as usize;
+            let iend = istart + params.mapping_counts[i] as usize;
             for j in istart..iend {
-                data_out[mappings[j] as usize] = v;
+                vertex_out[params.mappings[j] as usize] = channel_data[i];
             }
         }
-    } else if mapping_ty.eq_ignore_ascii_case(MAPPING_BY_VERTICE) && is_index_to_direct {
+    } else if by_vertice && is_index_to_direct {
+        // Case 2: Map type is ByVertice and reference type is IndexToDirect
         if !has_data || !has_index {
             return Ok(Vec::new());
         }
-        let temp_data = parse_f32_array(
-            source.extract_case_insensitive(data_name).unwrap(),
-            data_name,
+
+        let channel_attribute = source.extract_case_insensitive(params.data_name).ok_or(
+            FbxTryFromReason::InvalidAttributeFormat {
+                name: params.data_name.to_string(),
+                detail: "data channel not found".to_string(),
+            },
         )?;
-        let uv_indices = parse_i32_array(
-            source.extract_case_insensitive(index_name).unwrap(),
-            index_name,
+        let channel_data = parse_f32_array(&channel_attribute);
+        let channel_index_attribute = source.extract_case_insensitive(params.index_name).ok_or(
+            FbxTryFromReason::InvalidAttributeFormat {
+                name: params.index_name.to_string(),
+                detail: "index channel not found".to_string(),
+            },
         )?;
-        if uv_indices.len() != mapping_offsets.len() {
+        let channel_index_data = parse_i32_array(&channel_index_attribute);
+        if channel_index_data.len() != params.mapping_offsets.len() {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: index_name.to_string(),
+                name: params.index_name.to_string(),
                 detail: format!("length mismatch for {MAPPING_BY_VERTICE}"),
             });
         }
-        for i in 0..mapping_offsets.len() {
-            let idx = uv_indices[i] as usize;
-            let v = vec3_from_flat_slice(&temp_data, idx)?;
-            let istart = mapping_offsets[i] as usize;
-            let iend = istart + mapping_counts[i] as usize;
+        // Remap the vertex data to the new vertex positions, based on the index data.
+        for i in 0..params.mapping_offsets.len() {
+            let idx = channel_index_data[i] as usize;
+            let istart = params.mapping_offsets[i] as usize;
+            let iend = istart + params.mapping_counts[i] as usize;
             for j in istart..iend {
-                data_out[mappings[j] as usize] = v;
+                vertex_out[params.mappings[j] as usize] = channel_data[idx];
             }
         }
-    } else if mapping_ty.eq_ignore_ascii_case(MAPPING_BY_POLYGON_VERTEX) && is_direct {
+    } else if by_polygon_vertex && is_direct {
+        // Case 3: Map type is ByPolygonVertex and reference type is Direct
         if !has_data {
             return Ok(Vec::new());
         }
-        let temp = parse_f32_array(
-            source.extract_case_insensitive(data_name).unwrap(),
-            data_name,
+        let channel_attribute = source.extract_case_insensitive(params.data_name).ok_or(
+            FbxTryFromReason::InvalidAttributeFormat {
+                name: params.data_name.to_string(),
+                detail: "data channel not found".to_string(),
+            },
         )?;
-        if temp.len() != vertex_count * 3 {
+        let channel_data = parse_f32_array(&channel_attribute);
+        if channel_data.len() != params.vertex_count * params.components {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: data_name.to_string(),
+                name: params.data_name.to_string(),
                 detail: format!(
                     "{} {}: expected {} floats, got {}",
                     MAPPING_BY_POLYGON_VERTEX,
                     REFERENCE_DIRECT,
-                    vertex_count * 3,
-                    temp.len()
+                    params.vertex_count,
+                    channel_data.len()
                 ),
             });
         }
-        for i in 0..vertex_count {
-            data_out[i] = vec3_from_flat_slice(&temp, i)?;
-        }
-    } else if mapping_ty.eq_ignore_ascii_case(MAPPING_BY_POLYGON_VERTEX) && is_index_to_direct {
+        // Copy the channel data to the vertex output.
+        vertex_out = channel_data;
+    } else if by_polygon_vertex && is_index_to_direct {
+        // Case 4: Map type is ByPolygonVertex and reference type is IndexToDirect
         if !has_data || !has_index {
             return Ok(Vec::new());
         }
-        let temp_data = parse_f32_array(
-            source.extract_case_insensitive(data_name).unwrap(),
-            data_name,
+        // Get data and attributes for the data and index keys.
+        let channel_attribute = source.extract_case_insensitive(params.data_name).ok_or(
+            FbxTryFromReason::InvalidAttributeFormat {
+                name: params.data_name.to_string(),
+                detail: "data channel not found".to_string(),
+            },
         )?;
-        let mut uv_indices = parse_i32_array(
-            source.extract_case_insensitive(index_name).unwrap(),
-            index_name,
+        let channel_data = parse_f32_array(&channel_attribute);
+        let channel_index_attribute = source.extract_case_insensitive(params.index_name).ok_or(
+            FbxTryFromReason::InvalidAttributeFormat {
+                name: params.index_name.to_string(),
+                detail: "index channel not found".to_string(),
+            },
         )?;
-        if uv_indices.len() > vertex_count {
-            uv_indices.truncate(vertex_count);
+        let mut channel_index_data = parse_i32_array(&channel_index_attribute);
+        // Truncate the index data if it's longer than the vertex count.
+        if channel_index_data.len() > params.vertex_count {
+            channel_index_data.truncate(params.vertex_count);
         }
-        if uv_indices.len() != vertex_count {
+        // Make sure the index data matches the vertex count.
+        if channel_index_data.len() != params.vertex_count {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: index_name.to_string(),
+                name: params.index_name.to_string(),
                 detail: format!(
                     "{} {}: expected {} indices, got {}",
                     MAPPING_BY_POLYGON_VERTEX,
                     REFERENCE_INDEX_TO_DIRECT,
-                    vertex_count,
-                    uv_indices.len()
+                    params.vertex_count,
+                    channel_index_data.len()
                 ),
             });
         }
-        for (next, &i) in uv_indices.iter().enumerate() {
+        let mut next_index = 0;
+        for &i in channel_index_data.iter() {
             if i == -1 {
-                data_out[next] = empty;
+                vertex_out[next_index] = 0f32;
+                next_index += 1;
                 continue;
             }
-            let ui = i as usize;
-            if ui * 3 + 3 > temp_data.len() {
-                return Err(FbxTryFromReason::InvalidAttributeFormat {
-                    name: data_name.to_string(),
-                    detail: "index out of range".to_string(),
-                });
-            }
-            data_out[next] = vec3_from_flat_slice(&temp_data, ui)?;
+            vertex_out[next_index] = channel_data[i as usize];
+            next_index += 1;
         }
     } else {
+        // Case 5: Map type is not ByVertice or ByPolygonVertex, or reference type is not Direct or IndexToDirect
         return Ok(Vec::new());
     }
-
-    Ok(data_out)
-}
-
-fn resolve_vec2_channel(
-    source: &HashMap<String, ElementAttribute>,
-    data_name: &str,
-    index_name: &str,
-    vertex_count: usize,
-    mapping_counts: &[u32],
-    mapping_offsets: &[u32],
-    mappings: &[u32],
-) -> Result<Vec<[f32; 2]>, FbxTryFromReason> {
-    let mapping_ty = source
-        .require_token_case_insensitive(ATTR_MAPPING_INFORMATION_TYPE)
-        .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))?;
-    let reference_ty = source
-        .require_token_case_insensitive(ATTR_REFERENCE_INFORMATION_TYPE)
-        .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))?;
-
-    let mut is_direct = reference_ty.eq_ignore_ascii_case(REFERENCE_DIRECT);
-    let mut is_index_to_direct = reference_ty.eq_ignore_ascii_case(REFERENCE_INDEX_TO_DIRECT);
-    let has_data = source.extract_case_insensitive(data_name).is_some();
-    let has_index = source.extract_case_insensitive(index_name).is_some();
-    if is_index_to_direct && !has_index {
-        is_direct = true;
-        is_index_to_direct = false;
-    }
-
-    let empty = [0f32; 2];
-    let mut data_out = vec![empty; vertex_count];
-
-    if mapping_ty.eq_ignore_ascii_case(MAPPING_BY_VERTICE) && is_direct {
-        if !has_data {
-            return Ok(Vec::new());
-        }
-        let temp = parse_f32_array(
-            source.extract_case_insensitive(data_name).unwrap(),
-            data_name,
-        )?;
-        if temp.len() != mapping_offsets.len() * 2 {
-            return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: data_name.to_string(),
-                detail: format!("length mismatch {MAPPING_BY_VERTICE} vec2"),
-            });
-        }
-        for i in 0..mapping_offsets.len() {
-            let v = vec2_from_flat_slice(&temp, i)?;
-            let istart = mapping_offsets[i] as usize;
-            let iend = istart + mapping_counts[i] as usize;
-            for j in istart..iend {
-                data_out[mappings[j] as usize] = v;
-            }
-        }
-    } else if mapping_ty.eq_ignore_ascii_case(MAPPING_BY_VERTICE) && is_index_to_direct {
-        if !has_data || !has_index {
-            return Ok(Vec::new());
-        }
-        let temp_data = parse_f32_array(
-            source.extract_case_insensitive(data_name).unwrap(),
-            data_name,
-        )?;
-        let uv_indices = parse_i32_array(
-            source.extract_case_insensitive(index_name).unwrap(),
-            index_name,
-        )?;
-        if uv_indices.len() != mapping_offsets.len() {
-            return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: index_name.to_string(),
-                detail: "length mismatch".to_string(),
-            });
-        }
-        for i in 0..mapping_offsets.len() {
-            let idx = uv_indices[i] as usize;
-            let v = vec2_from_flat_slice(&temp_data, idx)?;
-            let istart = mapping_offsets[i] as usize;
-            let iend = istart + mapping_counts[i] as usize;
-            for j in istart..iend {
-                data_out[mappings[j] as usize] = v;
-            }
-        }
-    } else if mapping_ty.eq_ignore_ascii_case(MAPPING_BY_POLYGON_VERTEX) && is_direct {
-        if !has_data {
-            return Ok(Vec::new());
-        }
-        let temp = parse_f32_array(
-            source.extract_case_insensitive(data_name).unwrap(),
-            data_name,
-        )?;
-        if temp.len() != vertex_count * 2 {
-            return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: data_name.to_string(),
-                detail: format!("length mismatch {MAPPING_BY_POLYGON_VERTEX} vec2"),
-            });
-        }
-        for i in 0..vertex_count {
-            data_out[i] = vec2_from_flat_slice(&temp, i)?;
-        }
-    } else if mapping_ty.eq_ignore_ascii_case(MAPPING_BY_POLYGON_VERTEX) && is_index_to_direct {
-        if !has_data || !has_index {
-            return Ok(Vec::new());
-        }
-        let temp_data = parse_f32_array(
-            source.extract_case_insensitive(data_name).unwrap(),
-            data_name,
-        )?;
-        let mut uv_indices = parse_i32_array(
-            source.extract_case_insensitive(index_name).unwrap(),
-            index_name,
-        )?;
-        if uv_indices.len() > vertex_count {
-            uv_indices.truncate(vertex_count);
-        }
-        if uv_indices.len() != vertex_count {
-            return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: index_name.to_string(),
-                detail: format!(
-                    "length mismatch {MAPPING_BY_POLYGON_VERTEX} {REFERENCE_INDEX_TO_DIRECT} vec2"
-                ),
-            });
-        }
-        for (next, &i) in uv_indices.iter().enumerate() {
-            if i == -1 {
-                data_out[next] = empty;
-                continue;
-            }
-            let ui = i as usize;
-            data_out[next] = vec2_from_flat_slice(&temp_data, ui)?;
-        }
-    } else {
-        return Ok(Vec::new());
-    }
-
-    Ok(data_out)
-}
-
-fn resolve_vec4_channel(
-    source: &HashMap<String, ElementAttribute>,
-    data_name: &str,
-    index_name: &str,
-    vertex_count: usize,
-    mapping_counts: &[u32],
-    mapping_offsets: &[u32],
-    mappings: &[u32],
-) -> Result<Vec<[f32; 4]>, FbxTryFromReason> {
-    let mapping_ty = source
-        .require_token_case_insensitive(ATTR_MAPPING_INFORMATION_TYPE)
-        .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))?;
-    let reference_ty = source
-        .require_token_case_insensitive(ATTR_REFERENCE_INFORMATION_TYPE)
-        .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))?;
-
-    let mut is_direct = reference_ty.eq_ignore_ascii_case(REFERENCE_DIRECT);
-    let mut is_index_to_direct = reference_ty.eq_ignore_ascii_case(REFERENCE_INDEX_TO_DIRECT);
-    let has_data = source.extract_case_insensitive(data_name).is_some();
-    let has_index = source.extract_case_insensitive(index_name).is_some();
-    if is_index_to_direct && !has_index {
-        is_direct = true;
-        is_index_to_direct = false;
-    }
-
-    let empty = [0f32; 4];
-    let mut data_out = vec![empty; vertex_count];
-
-    if mapping_ty.eq_ignore_ascii_case(MAPPING_BY_VERTICE) && is_direct {
-        if !has_data {
-            return Ok(Vec::new());
-        }
-        let temp = parse_f32_array(
-            source.extract_case_insensitive(data_name).unwrap(),
-            data_name,
-        )?;
-        if temp.len() != mapping_offsets.len() * 4 {
-            return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: data_name.to_string(),
-                detail: format!("length mismatch vec4 {MAPPING_BY_VERTICE}"),
-            });
-        }
-        for i in 0..mapping_offsets.len() {
-            let v = vec4_from_flat_slice(&temp, i)?;
-            let istart = mapping_offsets[i] as usize;
-            let iend = istart + mapping_counts[i] as usize;
-            for j in istart..iend {
-                data_out[mappings[j] as usize] = v;
-            }
-        }
-    } else if mapping_ty.eq_ignore_ascii_case(MAPPING_BY_VERTICE) && is_index_to_direct {
-        if !has_data || !has_index {
-            return Ok(Vec::new());
-        }
-        let temp_data = parse_f32_array(
-            source.extract_case_insensitive(data_name).unwrap(),
-            data_name,
-        )?;
-        let ix = parse_i32_array(
-            source.extract_case_insensitive(index_name).unwrap(),
-            index_name,
-        )?;
-        if ix.len() != mapping_offsets.len() {
-            return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: index_name.to_string(),
-                detail: "length mismatch".to_string(),
-            });
-        }
-        for i in 0..mapping_offsets.len() {
-            let v = vec4_from_flat_slice(&temp_data, ix[i] as usize)?;
-            let istart = mapping_offsets[i] as usize;
-            let iend = istart + mapping_counts[i] as usize;
-            for j in istart..iend {
-                data_out[mappings[j] as usize] = v;
-            }
-        }
-    } else if mapping_ty.eq_ignore_ascii_case(MAPPING_BY_POLYGON_VERTEX) && is_direct {
-        if !has_data {
-            return Ok(Vec::new());
-        }
-        let temp = parse_f32_array(
-            source.extract_case_insensitive(data_name).unwrap(),
-            data_name,
-        )?;
-        if temp.len() != vertex_count * 4 {
-            return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: data_name.to_string(),
-                detail: format!("length mismatch vec4 {MAPPING_BY_POLYGON_VERTEX}"),
-            });
-        }
-        for i in 0..vertex_count {
-            data_out[i] = vec4_from_flat_slice(&temp, i)?;
-        }
-    } else if mapping_ty.eq_ignore_ascii_case(MAPPING_BY_POLYGON_VERTEX) && is_index_to_direct {
-        if !has_data || !has_index {
-            return Ok(Vec::new());
-        }
-        let temp_data = parse_f32_array(
-            source.extract_case_insensitive(data_name).unwrap(),
-            data_name,
-        )?;
-        let mut ix = parse_i32_array(
-            source.extract_case_insensitive(index_name).unwrap(),
-            index_name,
-        )?;
-        if ix.len() > vertex_count {
-            ix.truncate(vertex_count);
-        }
-        if ix.len() != vertex_count {
-            return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: index_name.to_string(),
-                detail: "length mismatch vec4".to_string(),
-            });
-        }
-        for (next, &i) in ix.iter().enumerate() {
-            if i == -1 {
-                data_out[next] = empty;
-                continue;
-            }
-            data_out[next] = vec4_from_flat_slice(&temp_data, i as usize)?;
-        }
-    } else {
-        return Ok(Vec::new());
-    }
-
-    Ok(data_out)
+    Ok(vertex_out)
 }
 
 /// Assimp `ReadVertexDataMaterials` (subset): `AllSame` and `ByPolygon` + `IndexToDirect`.
@@ -903,24 +640,24 @@ fn read_vertex_data_materials(
     source: &HashMap<String, ElementAttribute>,
     face_vertex_counts: &[u32],
     polygon_vertex_count: usize,
+    mapping_ty: &str,
+    reference_ty: &str,
 ) -> Result<Vec<i32>, FbxTryFromReason> {
+    // Face count guard
     let face_count = face_vertex_counts.len();
     if face_count == 0 {
         return Ok(Vec::new());
     }
-    let mapping_ty = source
-        .require_token_case_insensitive(ATTR_MAPPING_INFORMATION_TYPE)
-        .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))?;
-    let reference_ty = source
-        .require_token_case_insensitive(ATTR_REFERENCE_INFORMATION_TYPE)
-        .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))?;
 
+    // Extract Materials
     let Some(mat_el) = source.extract_case_insensitive("Materials") else {
         return Ok(Vec::new());
     };
-    let materials_out = parse_i32_array(mat_el, "Materials")?;
+    let materials_out = parse_i32_array(mat_el);
 
     if mapping_ty.eq_ignore_ascii_case(MAPPING_ALL_SAME) {
+        // Case 1: Map type is AllSame
+        // All materials are the same, so return a mapping of all polygons to the same material.
         if materials_out.is_empty() {
             return Ok(Vec::new());
         }
@@ -933,9 +670,11 @@ fn read_vertex_data_materials(
     } else if mapping_ty.eq_ignore_ascii_case(MAPPING_BY_POLYGON)
         && reference_ty.eq_ignore_ascii_case(REFERENCE_INDEX_TO_DIRECT)
     {
+        // Case 2: Map type is ByPolygon and reference type is IndexToDirect
+        // The materials are indexed by the face index, so we need to map the materials to the vertices.
         if materials_out.len() != face_count {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: "Materials".to_string(),
+                name: ATTR_MATERIALS.to_string(),
                 detail: format!(
                     "{}: expected {} material indices, got {}",
                     MAPPING_BY_POLYGON,
@@ -956,7 +695,7 @@ fn read_vertex_data_materials(
         }
         if per_corner.len() != polygon_vertex_count {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
-                name: "Materials".to_string(),
+                name: ATTR_MATERIALS.to_string(),
                 detail: format!(
                     "expanded material indices length {} != polygon vertex count {}",
                     per_corner.len(),
@@ -967,5 +706,179 @@ fn read_vertex_data_materials(
         Ok(per_corner)
     } else {
         Ok(Vec::new())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use std::convert::TryFrom;
+
+    use fbxscii::{Element, ElementAmphitheatre, ElementAttribute, LeafAttribute, SubTreeAttribute};
+
+    use crate::OwnedObject;
+
+    use super::super::{
+        FbxTryFromReason, GEOMETRY_LINE_CLASS_NAME, GEOMETRY_MESH_CLASS_NAME, GEOMETRY_TYPE_NAME,
+    };
+    use super::MeshGeometry;
+
+    fn leaf(tokens: &[&str]) -> ElementAttribute {
+        ElementAttribute::Leaf(Box::new(LeafAttribute {
+            key: String::new(),
+            tokens: tokens.iter().map(|s| (*s).to_string()).collect(),
+        }))
+    }
+
+    fn layer_element_normal(normals_csv: &str) -> ElementAttribute {
+        let mut arena = ElementAmphitheatre::new();
+        let root_idx = arena.insert(Element::new("LayerElementNormal".into()));
+        let mut normals_el = Element::new("Normals".into());
+        normals_el.tokens = vec![normals_csv.to_string()];
+        normals_el.parent_index = Some(root_idx);
+        let normals_idx = arena.insert(normals_el);
+        arena.get_mut(root_idx).unwrap().children.push(normals_idx);
+
+        ElementAttribute::SubTree(Box::new(SubTreeAttribute {
+            amphitheatre: arena,
+            root_element_index: root_idx,
+        }))
+    }
+
+    fn layer_element_material(materials_csv: &str) -> ElementAttribute {
+        let mut arena = ElementAmphitheatre::new();
+        let root_idx = arena.insert(Element::new("LayerElementMaterial".into()));
+        let mut mats_el = Element::new("Materials".into());
+        mats_el.tokens = vec![materials_csv.to_string()];
+        mats_el.parent_index = Some(root_idx);
+        let mats_idx = arena.insert(mats_el);
+        arena.get_mut(root_idx).unwrap().children.push(mats_idx);
+
+        ElementAttribute::SubTree(Box::new(SubTreeAttribute {
+            amphitheatre: arena,
+            root_element_index: root_idx,
+        }))
+    }
+
+    fn owned_mesh(attrs: HashMap<String, ElementAttribute>) -> OwnedObject {
+        OwnedObject {
+            object_index: 11,
+            name: "Geometry::TestMesh".into(),
+            type_name: GEOMETRY_TYPE_NAME.into(),
+            class_name: GEOMETRY_MESH_CLASS_NAME.into(),
+            properties: HashMap::new(),
+            attributes: attrs,
+            connected_object_ids: vec![],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        }
+    }
+
+    fn minimal_attrs(mapping: &str, reference: &str) -> HashMap<String, ElementAttribute> {
+        let mut attrs = HashMap::new();
+        attrs.insert("MappingInformationType".into(), leaf(&[mapping]));
+        attrs.insert("ReferenceInformationType".into(), leaf(&[reference]));
+        attrs.insert("Vertices".into(), leaf(&["0,0,0,1,0,0,0,1,0"]));
+        attrs.insert("PolygonVertexIndex".into(), leaf(&["0,1,-3"]));
+        attrs
+    }
+
+    #[test]
+    fn minimal_triangle_expands_corners() {
+        let attrs = minimal_attrs("ByPolygonVertex", "Direct");
+        let mesh = MeshGeometry::try_from(owned_mesh(attrs)).unwrap();
+        assert_eq!(mesh.vertices.len(), 3);
+        assert_eq!(mesh.face_vertex_counts, vec![3u32]);
+        assert!(mesh.normals.is_empty());
+        assert!(mesh.material_indices.is_empty());
+    }
+
+    #[test]
+    fn mapping_and_reference_trim_quotes_and_lowercase_keys() {
+        let mut attrs = HashMap::new();
+        attrs.insert(
+            "mappinginformationtype".into(),
+            leaf(&["  \"ByPolygonVertex\"  "]),
+        );
+        attrs.insert(
+            "referenceinformationtype".into(),
+            leaf(&["'Direct'"]),
+        );
+        attrs.insert("Vertices".into(), leaf(&["0,0,0,1,0,0,0,1,0"]));
+        attrs.insert("PolygonVertexIndex".into(), leaf(&["0,1,-3"]));
+        let mesh = MeshGeometry::try_from(owned_mesh(attrs)).unwrap();
+        assert_eq!(mesh.vertices.len(), 3);
+    }
+
+    #[test]
+    fn normals_by_polygon_vertex_direct() {
+        let mut attrs = minimal_attrs("ByPolygonVertex", "Direct");
+        attrs.insert(
+            "LayerElementNormal".into(),
+            layer_element_normal("0,0,1,0,0,1,0,0,1"),
+        );
+        let mesh = MeshGeometry::try_from(owned_mesh(attrs)).unwrap();
+        assert_eq!(mesh.normals, vec![
+            [0.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0],
+            [0.0, 0.0, 1.0],
+        ]);
+    }
+
+    #[test]
+    fn materials_all_same_replicates_first_index() {
+        let mut attrs = minimal_attrs("AllSame", "IndexToDirect");
+        attrs.insert(
+            "LayerElementMaterial".into(),
+            layer_element_material("5"),
+        );
+        let mesh = MeshGeometry::try_from(owned_mesh(attrs)).unwrap();
+        assert_eq!(mesh.material_indices, vec![5, 5, 5]);
+    }
+
+    #[test]
+    fn wrong_object_kind_line_geometry() {
+        let o = OwnedObject {
+            object_index: 1,
+            name: "G".into(),
+            type_name: GEOMETRY_TYPE_NAME.into(),
+            class_name: GEOMETRY_LINE_CLASS_NAME.into(),
+            properties: HashMap::new(),
+            attributes: HashMap::new(),
+            connected_object_ids: vec![],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        };
+        let err = MeshGeometry::try_from(o).unwrap_err();
+        assert!(matches!(
+            err.reason,
+            FbxTryFromReason::WrongObjectKind { ref expected, .. } if expected == "MeshGeometry"
+        ));
+    }
+
+    #[test]
+    fn missing_mapping_information_type() {
+        let mut attrs = HashMap::new();
+        attrs.insert("ReferenceInformationType".into(), leaf(&["Direct"]));
+        attrs.insert("Vertices".into(), leaf(&["0,0,0,1,0,0,0,1,0"]));
+        attrs.insert("PolygonVertexIndex".into(), leaf(&["0,1,-3"]));
+        let err = MeshGeometry::try_from(owned_mesh(attrs)).unwrap_err();
+        assert!(matches!(
+            err.reason,
+            FbxTryFromReason::MissingAttribute { ref name } if name == "MappingInformationType"
+        ));
+    }
+
+    #[test]
+    fn missing_reference_information_type() {
+        let mut attrs = HashMap::new();
+        attrs.insert("MappingInformationType".into(), leaf(&["ByPolygonVertex"]));
+        attrs.insert("Vertices".into(), leaf(&["0,0,0,1,0,0,0,1,0"]));
+        attrs.insert("PolygonVertexIndex".into(), leaf(&["0,1,-3"]));
+        let err = MeshGeometry::try_from(owned_mesh(attrs)).unwrap_err();
+        assert!(matches!(
+            err.reason,
+            FbxTryFromReason::MissingAttribute { ref name } if name == "ReferenceInformationType"
+        ));
     }
 }
