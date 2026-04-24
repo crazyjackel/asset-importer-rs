@@ -337,10 +337,10 @@ impl ClassifiedFbxObject {
             ClassifiedFbxObject::Skin(x) => &x.0,
             ClassifiedFbxObject::BlendShape(x) => &x.0,
             ClassifiedFbxObject::BlendShapeChannel(x) => &x.0,
-            ClassifiedFbxObject::AnimationStack(x) => &x.0,
-            ClassifiedFbxObject::AnimationLayer(x) => &x.0,
-            ClassifiedFbxObject::AnimationCurve(x) => &x.0,
-            ClassifiedFbxObject::AnimationCurveNode(x) => &x.0,
+            ClassifiedFbxObject::AnimationStack(x) => x.inner(),
+            ClassifiedFbxObject::AnimationLayer(x) => x.inner(),
+            ClassifiedFbxObject::AnimationCurve(x) => x.inner(),
+            ClassifiedFbxObject::AnimationCurveNode(x) => x.inner(),
             ClassifiedFbxObject::Unknown(o) => o,
         }
     }
