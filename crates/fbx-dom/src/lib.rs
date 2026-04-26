@@ -28,6 +28,6 @@ pub use objects::{
     AnimationCurve, AnimationCurveNode, AnimationLayer, AnimationStack, BlendShape,
     BlendShapeChannel, Camera, CameraSwitcher, ClassifiedFbxObject, Cluster, FbxTryFromReason,
     FbxTypeMismatch, LayeredTexture, Light, LightDecay, LightType, LimbNode, LineGeometry,
-    Material, MeshGeometry, Model,
+    Material, MeshGeometry, Model, ModelRotationOrder, ModelTransformInheritance,
     NullNode, ShapeGeometry, Skin, Texture, Video,
 };

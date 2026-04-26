@@ -50,6 +50,8 @@ pub use line_geometry::LineGeometry;
 pub use material::Material;
 pub use mesh_geometry::MeshGeometry;
 pub use model::Model;
+pub use model::ModelRotationOrder;
+pub use model::ModelTransformInheritance;
 pub use null_node::NullNode;
 pub use shape_geometry::ShapeGeometry;
 pub use skin::Skin;
@@ -320,23 +322,23 @@ impl ClassifiedFbxObject {
 
     pub fn inner(&self) -> &OwnedObject {
         match self {
-            ClassifiedFbxObject::Model(x) => &x.0,
-            ClassifiedFbxObject::MeshGeometry(x) => &x.inner(),
-            ClassifiedFbxObject::LineGeometry(x) => &x.inner(),
-            ClassifiedFbxObject::ShapeGeometry(x) => &x.inner(),
-            ClassifiedFbxObject::Camera(x) => &x.0,
+            ClassifiedFbxObject::Model(x) => x.inner(),
+            ClassifiedFbxObject::MeshGeometry(x) => x.inner(),
+            ClassifiedFbxObject::LineGeometry(x) => x.inner(),
+            ClassifiedFbxObject::ShapeGeometry(x) => x.inner(),
+            ClassifiedFbxObject::Camera(x) => &x.inner(),
             ClassifiedFbxObject::CameraSwitcher(x) => x.inner(),
-            ClassifiedFbxObject::Light(x) => &x.0,
-            ClassifiedFbxObject::NullNode(x) => &x.0,
-            ClassifiedFbxObject::LimbNode(x) => &x.0,
+            ClassifiedFbxObject::Light(x) => x.inner(),
+            ClassifiedFbxObject::NullNode(x) => x.inner(),
+            ClassifiedFbxObject::LimbNode(x) => x.inner(),
             ClassifiedFbxObject::Material(x) => x.inner(),
             ClassifiedFbxObject::Texture(x) => x.inner(),
-            ClassifiedFbxObject::LayeredTexture(x) => &x.0,
+            ClassifiedFbxObject::LayeredTexture(x) => x.inner(),
             ClassifiedFbxObject::Video(x) => x.inner(),
-            ClassifiedFbxObject::Cluster(x) => &x.0,
-            ClassifiedFbxObject::Skin(x) => &x.0,
-            ClassifiedFbxObject::BlendShape(x) => &x.0,
-            ClassifiedFbxObject::BlendShapeChannel(x) => &x.0,
+            ClassifiedFbxObject::Cluster(x) => x.inner(),
+            ClassifiedFbxObject::Skin(x) => x.inner(),
+            ClassifiedFbxObject::BlendShape(x) => x.inner(),
+            ClassifiedFbxObject::BlendShapeChannel(x) => x.inner(),
             ClassifiedFbxObject::AnimationStack(x) => x.inner(),
             ClassifiedFbxObject::AnimationLayer(x) => x.inner(),
             ClassifiedFbxObject::AnimationCurve(x) => x.inner(),
