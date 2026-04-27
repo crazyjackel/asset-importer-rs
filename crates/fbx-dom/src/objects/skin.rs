@@ -3,8 +3,9 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use crate::{OwnedObject, Property};
+use crate::{OwnedDocument, OwnedObject, Property};
 
+use super::Cluster;
 use super::{AttrExtractor, FbxObjectTag, FbxTypeMismatch, fbx_object_tag};
 
 const ATTR_LINK_DEFORM_ACURACY: &str = "Link_DeformAcuracy";
@@ -35,6 +36,25 @@ impl Skin {
     pub fn accuracy(&self) -> f32 {
         self.accuracy
     }
+
+    /// Resolve incoming `Cluster -> Skin` object links from [`OwnedDocument`].
+    ///
+    /// Assimp resolves this via destination-side connection scans + `ProcessSimpleConnection`.
+    /// In the owned snapshot, each object's outgoing OO links are in `connected_object_ids`,
+    /// so this finds clusters whose outgoing links include `self.object_index`.
+    pub fn get_clusters<'a>(&'a self, document: &'a OwnedDocument) -> Vec<&'a Cluster> {
+        let skin_id = self.inner().object_index;
+        document
+            .clusters
+            .iter()
+            .filter(|cluster| {
+                cluster
+                    .inner()
+                    .connected_object_ids
+                    .contains(&skin_id)
+            })
+            .collect()
+    }
 }
 
 impl TryFrom<OwnedObject> for Skin {
@@ -63,8 +83,8 @@ mod tests {
 
     use fbxscii::{ElementAttribute, LeafAttribute};
 
-    use crate::objects::{DEFORMER_SKIN_CLASS_NAME, DEFORMER_TYPE_NAME};
-    use crate::{OwnedObject, Property};
+    use crate::objects::{Cluster, DEFORMER_CLUSTER_CLASS_NAME, DEFORMER_SKIN_CLASS_NAME, DEFORMER_TYPE_NAME};
+    use crate::{OwnedDocument, OwnedObject, Property};
 
     use super::{ATTR_LINK_DEFORM_ACURACY, Skin};
 
@@ -112,5 +132,54 @@ mod tests {
         };
         let s = Skin::try_from(o).unwrap();
         assert_eq!(s.accuracy(), 0.0);
+    }
+
+    #[test]
+    fn resolves_clusters_from_owned_document_connections() {
+        let skin = Skin::try_from(OwnedObject {
+            object_index: 500,
+            name: "Skin::Target".into(),
+            type_name: DEFORMER_TYPE_NAME.into(),
+            class_name: DEFORMER_SKIN_CLASS_NAME.into(),
+            properties: HashMap::new(),
+            attributes: HashMap::new(),
+            connected_object_ids: vec![],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        })
+        .unwrap();
+
+        let mk_cluster = |id: u64, connected_object_ids: Vec<u64>| {
+            Cluster::try_from(OwnedObject {
+                object_index: id,
+                name: format!("Cluster::{id}"),
+                type_name: DEFORMER_TYPE_NAME.into(),
+                class_name: DEFORMER_CLUSTER_CLASS_NAME.into(),
+                properties: HashMap::new(),
+                attributes: HashMap::from([
+                    (
+                        "Transform".to_string(),
+                        leaf(&["1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1"]),
+                    ),
+                    (
+                        "TransformLink".to_string(),
+                        leaf(&["1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1"]),
+                    ),
+                ]),
+                connected_object_ids,
+                object_property_targets: vec![],
+                pp_property_targets: HashMap::new(),
+            })
+            .unwrap()
+        };
+
+        let matching = mk_cluster(1, vec![500]);
+        let non_matching = mk_cluster(2, vec![999]);
+        let mut owned = OwnedDocument::default();
+        owned.clusters = vec![matching, non_matching];
+
+        let clusters = skin.get_clusters(&owned);
+        assert_eq!(clusters.len(), 1);
+        assert_eq!(clusters[0].inner().object_index, 1);
     }
 }

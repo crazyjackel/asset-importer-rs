@@ -6,10 +6,10 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use crate::OwnedObject;
+use crate::{OwnedDocument, OwnedObject};
 use crate::Property;
 
-use super::{fbx_object_tag, FbxObjectTag, FbxTypeMismatch};
+use super::{AnimationCurveNode, fbx_object_tag, FbxObjectTag, FbxTypeMismatch};
 
 #[derive(Debug, PartialEq)]
 pub struct AnimationLayer(pub OwnedObject);
@@ -52,6 +52,19 @@ impl AnimationLayer {
             _ => false,
         }
     }
+
+    /// Resolve incoming `AnimationCurveNode -> AnimationLayer` OO links.
+    pub fn get_animation_curve_nodes<'a>(
+        &'a self,
+        document: &'a OwnedDocument,
+    ) -> Vec<&'a AnimationCurveNode> {
+        let layer_id = self.inner().object_index;
+        document
+            .animation_curve_nodes
+            .iter()
+            .filter(|node| node.inner().connected_object_ids.contains(&layer_id))
+            .collect()
+    }
 }
 
 impl TryFrom<OwnedObject> for AnimationLayer {
@@ -73,8 +86,11 @@ mod tests {
     use std::collections::HashMap;
     use std::convert::TryFrom;
 
-    use crate::objects::{ANIMATION_LAYER_CLASS_NAME, ANIMATION_LAYER_TYPE_NAME};
-    use crate::{OwnedObject, Property};
+    use crate::objects::{
+        ANIMATION_CURVE_NODE_CLASS_NAME, ANIMATION_CURVE_NODE_TYPE_NAME, ANIMATION_LAYER_CLASS_NAME,
+        ANIMATION_LAYER_TYPE_NAME, AnimationCurveNode,
+    };
+    use crate::{OwnedDocument, OwnedObject, Property};
 
     use super::AnimationLayer;
 
@@ -115,5 +131,38 @@ mod tests {
         assert_eq!(layer.weight(), 50.0);
         assert_eq!(layer.mute(), true);
         assert_eq!(layer.solo(), true);
+    }
+
+    #[test]
+    fn resolves_animation_curve_node_links() {
+        let layer = AnimationLayer::try_from(OwnedObject {
+            object_index: 2000,
+            name: "AnimLayer::Layer0".into(),
+            type_name: ANIMATION_LAYER_TYPE_NAME.into(),
+            class_name: ANIMATION_LAYER_CLASS_NAME.into(),
+            properties: HashMap::new(),
+            attributes: HashMap::new(),
+            connected_object_ids: vec![],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        })
+        .unwrap();
+        let node = AnimationCurveNode::try_from(OwnedObject {
+            object_index: 2001,
+            name: "AnimCurveNode::T".into(),
+            type_name: ANIMATION_CURVE_NODE_TYPE_NAME.into(),
+            class_name: ANIMATION_CURVE_NODE_CLASS_NAME.into(),
+            properties: HashMap::new(),
+            attributes: HashMap::new(),
+            connected_object_ids: vec![2000],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        })
+        .unwrap();
+        let mut owned = OwnedDocument::default();
+        owned.animation_curve_nodes = vec![node];
+        let links = layer.get_animation_curve_nodes(&owned);
+        assert_eq!(links.len(), 1);
+        assert_eq!(links[0].inner().object_index, 2001);
     }
 }

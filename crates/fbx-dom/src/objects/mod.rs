@@ -60,6 +60,30 @@ pub use video::Video;
 
 use crate::OwnedObject;
 
+/// Borrowed polymorphic NodeAttribute reference (replacement for inheritance-style base).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum NodeAttributeRef<'a> {
+    Camera(&'a Camera),
+    CameraSwitcher(&'a CameraSwitcher),
+    Light(&'a Light),
+    NullNode(&'a NullNode),
+    LimbNode(&'a LimbNode),
+    Unknown(&'a OwnedObject),
+}
+
+impl<'a> NodeAttributeRef<'a> {
+    pub fn inner(self) -> &'a OwnedObject {
+        match self {
+            NodeAttributeRef::Camera(x) => x.inner(),
+            NodeAttributeRef::CameraSwitcher(x) => x.inner(),
+            NodeAttributeRef::Light(x) => x.inner(),
+            NodeAttributeRef::NullNode(x) => x.inner(),
+            NodeAttributeRef::LimbNode(x) => x.inner(),
+            NodeAttributeRef::Unknown(x) => x,
+        }
+    }
+}
+
 // --- `type_name` / `class_name` pairs (Assimp `LazyObject::Get` dispatch) -----------------------
 
 pub const MODEL_TYPE_NAME: &str = "Model";
@@ -282,7 +306,17 @@ impl TryFrom<OwnedObject> for ClassifiedFbxObject {
             Some(FbxObjectTag::AnimationCurveNode) => Ok(ClassifiedFbxObject::AnimationCurveNode(
                 AnimationCurveNode::try_from(o)?,
             )),
-            None => Ok(ClassifiedFbxObject::Unknown(o)),
+            None => {
+                if o.type_name == GEOMETRY_TYPE_NAME {
+                    Ok(ClassifiedFbxObject::UnknownGeometry(o))
+                } else if o.type_name == NODE_ATTRIBUTE_TYPE_NAME {
+                    Ok(ClassifiedFbxObject::UnknownNodeAttribute(o))
+                } else if o.type_name == DEFORMER_TYPE_NAME {
+                    Ok(ClassifiedFbxObject::UnknownDeformer(o))
+                } else {
+                    Ok(ClassifiedFbxObject::Unknown(o))
+                }
+            }
         }
     }
 }
@@ -311,6 +345,12 @@ pub enum ClassifiedFbxObject {
     AnimationLayer(AnimationLayer),
     AnimationCurve(AnimationCurve),
     AnimationCurveNode(AnimationCurveNode),
+    /// `Deformer` object with unhandled class name.
+    UnknownDeformer(OwnedObject),
+    /// `Geometry` object with unhandled class name.
+    UnknownGeometry(OwnedObject),
+    /// `NodeAttribute` object with unhandled class name.
+    UnknownNodeAttribute(OwnedObject),
     /// Any `Objects` row not mapped to a known Assimp DOM class pair.
     Unknown(OwnedObject),
 }
@@ -343,6 +383,9 @@ impl ClassifiedFbxObject {
             ClassifiedFbxObject::AnimationLayer(x) => x.inner(),
             ClassifiedFbxObject::AnimationCurve(x) => x.inner(),
             ClassifiedFbxObject::AnimationCurveNode(x) => x.inner(),
+            ClassifiedFbxObject::UnknownDeformer(o) => o,
+            ClassifiedFbxObject::UnknownGeometry(o) => o,
+            ClassifiedFbxObject::UnknownNodeAttribute(o) => o,
             ClassifiedFbxObject::Unknown(o) => o,
         }
     }

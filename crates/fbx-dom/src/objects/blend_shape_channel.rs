@@ -3,9 +3,9 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use crate::{OwnedObject, Property};
+use crate::{OwnedDocument, OwnedObject, Property};
 
-use super::{AttrExtractor, FbxObjectTag, FbxTypeMismatch, fbx_object_tag};
+use super::{AttrExtractor, FbxObjectTag, FbxTypeMismatch, ShapeGeometry, fbx_object_tag};
 
 const ATTR_DEFORM_PERCENT: &str = "DeformPercent";
 const ATTR_FULL_WEIGHTS: &str = "FullWeights";
@@ -40,6 +40,16 @@ impl BlendShapeChannel {
 
     pub fn full_weights(&self) -> &[f32] {
         &self.full_weights
+    }
+
+    /// Resolve `ShapeGeometry -> BlendShapeChannel` links via owned OO connections.
+    pub fn get_shape_geometries<'a>(&'a self, document: &'a OwnedDocument) -> Vec<&'a ShapeGeometry> {
+        let channel_id = self.inner().object_index;
+        document
+            .shape_geometries
+            .iter()
+            .filter(|shape| shape.inner().connected_object_ids.contains(&channel_id))
+            .collect()
     }
 }
 
@@ -86,8 +96,11 @@ mod tests {
 
     use fbxscii::{ElementAttribute, LeafAttribute};
 
-    use crate::objects::{DEFORMER_BLEND_SHAPE_CHANNEL_CLASS_NAME, DEFORMER_TYPE_NAME};
-    use crate::{OwnedObject, Property};
+    use crate::objects::{
+        DEFORMER_BLEND_SHAPE_CHANNEL_CLASS_NAME, DEFORMER_TYPE_NAME, GEOMETRY_SHAPE_CLASS_NAME,
+        GEOMETRY_TYPE_NAME, ShapeGeometry,
+    };
+    use crate::{OwnedDocument, OwnedObject, Property};
 
     use super::{ATTR_DEFORM_PERCENT, ATTR_FULL_WEIGHTS, BlendShapeChannel};
 
@@ -120,5 +133,43 @@ mod tests {
         assert_eq!(c.deform_percent(), 37.5);
         assert_eq!(c.full_weights(), &[1.0, 0.5, 0.25]);
         assert_eq!(c.property("Foo"), Some(&Property::String("bar".into())));
+    }
+
+    #[test]
+    fn resolves_shape_geometry_connections() {
+        let channel = BlendShapeChannel::try_from(OwnedObject {
+            object_index: 40,
+            name: "BlendShapeChannel::Conn".into(),
+            type_name: DEFORMER_TYPE_NAME.into(),
+            class_name: DEFORMER_BLEND_SHAPE_CHANNEL_CLASS_NAME.into(),
+            properties: HashMap::new(),
+            attributes: HashMap::new(),
+            connected_object_ids: vec![],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        })
+        .unwrap();
+
+        let shape = ShapeGeometry::try_from(OwnedObject {
+            object_index: 41,
+            name: "Geometry::Shape".into(),
+            type_name: GEOMETRY_TYPE_NAME.into(),
+            class_name: GEOMETRY_SHAPE_CLASS_NAME.into(),
+            properties: HashMap::new(),
+            attributes: HashMap::from([
+                ("Indexes".to_string(), leaf(&["0"])),
+                ("Vertices".to_string(), leaf(&["0,0,0"])),
+            ]),
+            connected_object_ids: vec![40],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        })
+        .unwrap();
+
+        let mut owned = OwnedDocument::default();
+        owned.shape_geometries = vec![shape];
+        let linked = channel.get_shape_geometries(&owned);
+        assert_eq!(linked.len(), 1);
+        assert_eq!(linked[0].inner().object_index, 41);
     }
 }

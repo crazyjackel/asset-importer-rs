@@ -782,11 +782,11 @@ mod tests {
             })
         );
 
-        // `MeshGeometry` requires `Vertices` and `PolygonVertexIndex`; this spike has an empty node.
+        // `MeshGeometry` now validates mapping/reference fields first; this spike has an empty node.
         let err = ClassifiedFbxObject::try_from(owned).unwrap_err();
         assert!(matches!(
             err.reason,
-            FbxTryFromReason::MissingAttribute { ref name } if name == "Vertices"
+            FbxTryFromReason::MissingAttribute { ref name } if name == "MappingInformationType"
         ));
     }
 }

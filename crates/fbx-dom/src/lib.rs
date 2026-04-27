@@ -20,6 +20,7 @@ pub use object::Object;
 pub use object::ObjectError;
 pub use object::Objects;
 pub use object::OwnedObject;
+pub use owned_document::OwnedDocument;
 
 pub use global::FrameRate;
 pub use global::GlobalSettings;
@@ -28,6 +29,6 @@ pub use objects::{
     AnimationCurve, AnimationCurveNode, AnimationLayer, AnimationStack, BlendShape,
     BlendShapeChannel, Camera, CameraSwitcher, ClassifiedFbxObject, Cluster, FbxTryFromReason,
     FbxTypeMismatch, LayeredTexture, Light, LightDecay, LightType, LimbNode, LineGeometry,
-    Material, MeshGeometry, Model, ModelRotationOrder, ModelTransformInheritance,
+    Material, MeshGeometry, Model, ModelRotationOrder, ModelTransformInheritance, NodeAttributeRef,
     NullNode, ShapeGeometry, Skin, Texture, Video,
 };

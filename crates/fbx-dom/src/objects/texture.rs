@@ -3,15 +3,12 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use crate::OwnedObject;
+use crate::{OwnedDocument, OwnedObject};
 use crate::Property;
 use crate::objects::AttrExtractorExt;
 use crate::objects::AttrExtractorParseExt;
 
-use super::{
-    fbx_object_tag, FbxObjectTag,
-    FbxTypeMismatch,
-};
+use super::{Video, fbx_object_tag, FbxObjectTag, FbxTypeMismatch};
 
 const TYPE_ATTR: &str = "Type";
 const FILE_NAME_ATTR: &str = "FileName";
@@ -47,7 +44,14 @@ impl Texture {
         self.object
     }
 
-    //@TODO: add a method to use get the 
+    /// Resolve incoming `Video -> Texture` OO links (Assimp `Texture::Media`).
+    pub fn get_media_video<'a>(&'a self, document: &'a OwnedDocument) -> Option<&'a Video> {
+        let texture_id = self.inner().object_index;
+        document
+            .videos
+            .iter()
+            .find(|video| video.inner().connected_object_ids.contains(&texture_id))
+    }
 }
 
 fn apply_texture_property_uv_overrides(
@@ -134,5 +138,61 @@ impl TryFrom<OwnedObject> for Texture {
             cropping,
             alpha_source,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashMap;
+    use std::convert::TryFrom;
+
+    use super::Texture;
+    use crate::objects::{TEXTURE_CLASS_NAME, TEXTURE_TYPE_NAME, VIDEO_CLASS_NAME, VIDEO_TYPE_NAME, Video};
+    use crate::OwnedDocument;
+
+    #[test]
+    fn resolves_media_video_connection() {
+        let texture = Texture::try_from(crate::OwnedObject {
+            object_index: 700,
+            name: "Texture::A".into(),
+            type_name: TEXTURE_TYPE_NAME.into(),
+            class_name: TEXTURE_CLASS_NAME.into(),
+            properties: HashMap::new(),
+            attributes: HashMap::new(),
+            connected_object_ids: vec![],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        })
+        .unwrap();
+        let video = Video::try_from(crate::OwnedObject {
+            object_index: 701,
+            name: "Video::A".into(),
+            type_name: VIDEO_TYPE_NAME.into(),
+            class_name: VIDEO_CLASS_NAME.into(),
+            properties: HashMap::new(),
+            attributes: HashMap::from([
+                (
+                    "Type".to_string(),
+                    fbxscii::ElementAttribute::Leaf(Box::new(fbxscii::LeafAttribute {
+                        key: "Type".into(),
+                        tokens: vec!["Clip".into()],
+                    })),
+                ),
+                (
+                    "FileName".to_string(),
+                    fbxscii::ElementAttribute::Leaf(Box::new(fbxscii::LeafAttribute {
+                        key: "FileName".into(),
+                        tokens: vec!["a.png".into()],
+                    })),
+                ),
+            ]),
+            connected_object_ids: vec![700],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        })
+        .unwrap();
+        let mut doc = OwnedDocument::default();
+        doc.videos = vec![video];
+        assert_eq!(texture.get_media_video(&doc).map(|v| v.inner().object_index), Some(701));
     }
 }

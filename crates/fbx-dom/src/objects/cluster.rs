@@ -3,9 +3,9 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use crate::{OwnedObject, Property};
+use crate::{OwnedDocument, OwnedObject, Property};
 
-use super::{AttrExtractor, FbxObjectTag, FbxTryFromReason, FbxTypeMismatch, fbx_object_tag};
+use super::{AttrExtractor, FbxObjectTag, FbxTryFromReason, FbxTypeMismatch, Model, fbx_object_tag};
 
 const ATTR_INDEXES: &str = "Indexes";
 const ATTR_WEIGHTS: &str = "Weights";
@@ -36,6 +36,15 @@ impl Cluster {
 
     pub fn property(&self, name: &str) -> Option<&Property> {
         self.object.properties.get(name)
+    }
+
+    /// Resolve `Model -> Cluster` link (Assimp destination-side lookup).
+    pub fn get_target_model<'a>(&'a self, document: &'a OwnedDocument) -> Option<&'a Model> {
+        let cluster_id = self.inner().object_index;
+        document
+            .models
+            .iter()
+            .find(|model| model.inner().connected_object_ids.contains(&cluster_id))
     }
 }
 
@@ -161,8 +170,11 @@ mod tests {
 
     use fbxscii::{ElementAttribute, LeafAttribute};
 
-    use crate::objects::{DEFORMER_CLUSTER_CLASS_NAME, DEFORMER_TYPE_NAME, FbxTryFromReason};
+    use crate::objects::{
+        DEFORMER_CLUSTER_CLASS_NAME, DEFORMER_TYPE_NAME, FbxTryFromReason, MODEL_TYPE_NAME, Model,
+    };
     use crate::{OwnedObject, Property};
+    use crate::OwnedDocument;
 
     use super::{ATTR_INDEXES, ATTR_TRANSFORM, ATTR_TRANSFORM_LINK, ATTR_WEIGHTS, Cluster};
 
@@ -224,5 +236,44 @@ mod tests {
         };
         let err = Cluster::try_from(o).unwrap_err();
         assert!(matches!(err.reason, FbxTryFromReason::InvalidAttributeFormat { .. }));
+    }
+
+    #[test]
+    fn resolves_target_model_from_connections() {
+        let cluster = Cluster::try_from(OwnedObject {
+            object_index: 20,
+            name: "Cluster::T".into(),
+            type_name: DEFORMER_TYPE_NAME.into(),
+            class_name: DEFORMER_CLUSTER_CLASS_NAME.into(),
+            properties: HashMap::new(),
+            attributes: HashMap::from([
+                ("Transform".to_string(), leaf(&[matrix_csv()])),
+                ("TransformLink".to_string(), leaf(&[matrix_csv()])),
+            ]),
+            connected_object_ids: vec![],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        })
+        .unwrap();
+
+        let model = Model::try_from(OwnedObject {
+            object_index: 30,
+            name: "Model::Node".into(),
+            type_name: MODEL_TYPE_NAME.into(),
+            class_name: "Mesh".into(),
+            properties: HashMap::new(),
+            attributes: HashMap::new(),
+            connected_object_ids: vec![20],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        })
+        .unwrap();
+
+        let mut owned = OwnedDocument::default();
+        owned.models = vec![model];
+        assert_eq!(
+            cluster.get_target_model(&owned).map(|m| m.inner().object_index),
+            Some(30)
+        );
     }
 }
