@@ -30,7 +30,7 @@ impl TryFrom<OwnedObject> for ShapeGeometry {
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
-            Some(FbxObjectTag::ShapeGeometry) => {}
+            FbxObjectTag::ShapeGeometry => {}
             _ => {
                 return Err(FbxTypeMismatch::wrong_object_kind(
                     o,
@@ -116,9 +116,7 @@ mod tests {
 
     use crate::OwnedObject;
 
-    use super::super::{
-        FbxTryFromReason, GEOMETRY_LINE_CLASS_NAME, GEOMETRY_SHAPE_CLASS_NAME, GEOMETRY_TYPE_NAME,
-    };
+    use super::super::{GEOMETRY_SHAPE_CLASS_NAME, GEOMETRY_TYPE_NAME};
     use super::ShapeGeometry;
 
     fn leaf(tokens: &[&str]) -> ElementAttribute {

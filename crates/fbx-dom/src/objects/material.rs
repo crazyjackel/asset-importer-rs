@@ -70,7 +70,7 @@ impl TryFrom<OwnedObject> for Material {
     type Error = FbxTypeMismatch;
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
-        if fbx_object_tag(&o) != Some(FbxObjectTag::Material) {
+        if fbx_object_tag(&o) != FbxObjectTag::Material {
             return Err(FbxTypeMismatch::wrong_object_kind(
                 o,
                 "Material".to_string(),

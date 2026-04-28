@@ -29,7 +29,7 @@ impl TryFrom<OwnedObject> for LineGeometry {
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
-            Some(FbxObjectTag::LineGeometry) => {}
+            FbxObjectTag::LineGeometry => {}
             _ => return Err(FbxTypeMismatch::wrong_object_kind(o, "LineGeometry".to_string())),
         }
 

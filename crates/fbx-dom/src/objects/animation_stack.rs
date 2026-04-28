@@ -75,7 +75,7 @@ impl TryFrom<OwnedObject> for AnimationStack {
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
-            Some(FbxObjectTag::AnimationStack) => Ok(AnimationStack(o)),
+            FbxObjectTag::AnimationStack => Ok(AnimationStack(o)),
             _ => Err(FbxTypeMismatch::wrong_object_kind(
                 o,
                 "AnimationStack".to_string(),

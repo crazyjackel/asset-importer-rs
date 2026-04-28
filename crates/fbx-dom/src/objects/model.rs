@@ -3,9 +3,12 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use crate::{OwnedObject, Property};
+use crate::{OwnedDocument, OwnedObject, Property};
 
-use super::{AttrExtractorExt, FbxObjectTag, FbxTypeMismatch, fbx_object_tag};
+use super::{
+    AttrExtractorExt, FbxObjectTag, FbxTypeMismatch, Material, ModelGeometryRef, NodeAttributeRef,
+    fbx_object_tag,
+};
 
 const ATTR_SHADING: &str = "Shading";
 const ATTR_CULLING: &str = "Culling";
@@ -457,13 +460,97 @@ impl Model {
             _ => false,
         }
     }
+
+    /// Incoming object–object (`OO`) links from [`Material`] sources whose `connected_object_ids`
+    /// contain this model’s id — Assimp [`Model::ResolveLinks`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXModel.cpp) material branch (`OP` links are excluded).
+    ///
+    /// Use `Material::get_textures` / `Material::get_layered_textures` on each entry for texture data.
+    pub fn connected_materials<'a>(&'a self, document: &'a OwnedDocument) -> Vec<&'a Material> {
+        let id = self.object.object_index;
+        document
+            .materials
+            .iter()
+            .filter(|m| m.inner().connected_object_ids.contains(&id))
+            .collect()
+    }
+
+    /// Incoming `OO` links from `Geometry` sources (mesh, line, shape, or unknown geometry class).
+    pub fn connected_geometries<'a>(
+        &'a self,
+        document: &'a OwnedDocument,
+    ) -> Vec<ModelGeometryRef<'a>> {
+        let id = self.object.object_index;
+        let mut out = Vec::new();
+        for g in &document.mesh_geometries {
+            if g.inner().connected_object_ids.contains(&id) {
+                out.push(ModelGeometryRef::Mesh(g));
+            }
+        }
+        for g in &document.line_geometries {
+            if g.inner().connected_object_ids.contains(&id) {
+                out.push(ModelGeometryRef::Line(g));
+            }
+        }
+        for g in &document.shape_geometries {
+            if g.inner().connected_object_ids.contains(&id) {
+                out.push(ModelGeometryRef::Shape(g));
+            }
+        }
+        for o in &document.unknown_geometries {
+            if o.connected_object_ids.contains(&id) {
+                out.push(ModelGeometryRef::Unknown(o));
+            }
+        }
+        out
+    }
+
+    /// Incoming `OO` links from `NodeAttribute` sources, same discriminant shape as
+    /// `AnimationCurveNode::get_target_node_attribute`.
+    pub fn connected_node_attributes<'a>(
+        &'a self,
+        document: &'a OwnedDocument,
+    ) -> Vec<NodeAttributeRef<'a>> {
+        let id = self.object.object_index;
+        let mut out = Vec::new();
+        for v in &document.cameras {
+            if v.inner().connected_object_ids.contains(&id) {
+                out.push(NodeAttributeRef::Camera(v));
+            }
+        }
+        for v in &document.camera_switchers {
+            if v.inner().connected_object_ids.contains(&id) {
+                out.push(NodeAttributeRef::CameraSwitcher(v));
+            }
+        }
+        for v in &document.lights {
+            if v.inner().connected_object_ids.contains(&id) {
+                out.push(NodeAttributeRef::Light(v));
+            }
+        }
+        for v in &document.null_nodes {
+            if v.inner().connected_object_ids.contains(&id) {
+                out.push(NodeAttributeRef::NullNode(v));
+            }
+        }
+        for v in &document.limb_nodes {
+            if v.inner().connected_object_ids.contains(&id) {
+                out.push(NodeAttributeRef::LimbNode(v));
+            }
+        }
+        for o in &document.unknown_node_attributes {
+            if o.connected_object_ids.contains(&id) {
+                out.push(NodeAttributeRef::Unknown(o));
+            }
+        }
+        out
+    }
 }
 
 impl TryFrom<OwnedObject> for Model {
     type Error = FbxTypeMismatch;
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
-        if fbx_object_tag(&o) != Some(FbxObjectTag::Model) {
+        if fbx_object_tag(&o) != FbxObjectTag::Model {
             return Err(FbxTypeMismatch::wrong_object_kind(o, "Model".to_string()));
         }
 
@@ -497,9 +584,13 @@ mod tests {
 
     use fbxscii::{ElementAttribute, LeafAttribute};
 
-    use crate::objects::{MODEL_TYPE_NAME, Model, ModelRotationOrder, ModelTransformInheritance};
-    use crate::OwnedObject;
-    use crate::Property;
+    use crate::objects::{
+        GEOMETRY_TYPE_NAME, MATERIAL_CLASS_NAME, MATERIAL_TYPE_NAME, MODEL_TYPE_NAME, Model,
+        ModelGeometryRef, ModelRotationOrder, ModelTransformInheritance, NodeAttributeRef,
+        NODE_ATTRIBUTE_LIGHT_CLASS_NAME, NODE_ATTRIBUTE_TYPE_NAME, TEXTURE_CLASS_NAME,
+        TEXTURE_TYPE_NAME,
+    };
+    use crate::{ObjectPropertyConnection, OwnedDocument, OwnedObject, Property};
 
     fn leaf(tokens: &[&str]) -> ElementAttribute {
         ElementAttribute::Leaf(Box::new(LeafAttribute {
@@ -559,5 +650,115 @@ mod tests {
         assert_eq!(m.freeze(), false);
         assert_eq!(m.rotation_order(), ModelRotationOrder::EulerXYZ);
         assert_eq!(m.inherit_type(), ModelTransformInheritance::RrSs);
+    }
+
+    #[test]
+    fn resolves_incoming_material_geometry_and_node_attribute_oo_links() {
+        let model = Model::try_from(OwnedObject {
+            object_index: 500,
+            name: "Model::Root".into(),
+            type_name: MODEL_TYPE_NAME.into(),
+            class_name: "Mesh".into(),
+            properties: HashMap::new(),
+            attributes: HashMap::new(),
+            connected_object_ids: vec![],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        })
+        .unwrap();
+
+        let material = crate::objects::Material::try_from(OwnedObject {
+            object_index: 501,
+            name: "Material::M".into(),
+            type_name: MATERIAL_TYPE_NAME.into(),
+            class_name: MATERIAL_CLASS_NAME.into(),
+            properties: HashMap::new(),
+            attributes: HashMap::from([
+                (
+                    "ShadingModel".to_string(),
+                    ElementAttribute::Leaf(Box::new(LeafAttribute {
+                        key: "ShadingModel".into(),
+                        tokens: vec!["Phong".into()],
+                    })),
+                ),
+                (
+                    "MultiLayer".to_string(),
+                    ElementAttribute::Leaf(Box::new(LeafAttribute {
+                        key: "MultiLayer".into(),
+                        tokens: vec!["0".into()],
+                    })),
+                ),
+            ]),
+            connected_object_ids: vec![500],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        })
+        .unwrap();
+
+        let unknown_geo = OwnedObject {
+            object_index: 502,
+            name: "Geometry::Custom".into(),
+            type_name: GEOMETRY_TYPE_NAME.into(),
+            class_name: "CustomMesh".into(),
+            properties: HashMap::new(),
+            attributes: HashMap::new(),
+            connected_object_ids: vec![500],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        };
+
+        let light = crate::objects::Light::try_from(OwnedObject {
+            object_index: 503,
+            name: "NodeAttribute::L".into(),
+            type_name: NODE_ATTRIBUTE_TYPE_NAME.into(),
+            class_name: NODE_ATTRIBUTE_LIGHT_CLASS_NAME.into(),
+            properties: HashMap::new(),
+            attributes: HashMap::new(),
+            connected_object_ids: vec![500],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        })
+        .unwrap();
+
+        let texture = crate::objects::Texture::try_from(OwnedObject {
+            object_index: 504,
+            name: "Texture::D".into(),
+            type_name: TEXTURE_TYPE_NAME.into(),
+            class_name: TEXTURE_CLASS_NAME.into(),
+            properties: HashMap::new(),
+            attributes: HashMap::new(),
+            connected_object_ids: vec![],
+            object_property_targets: vec![ObjectPropertyConnection {
+                dest: 501,
+                property: "DiffuseColor".into(),
+            }],
+            pp_property_targets: HashMap::new(),
+        })
+        .unwrap();
+
+        let mut doc = OwnedDocument::default();
+        doc.models = vec![model];
+        doc.materials = vec![material];
+        doc.unknown_geometries = vec![unknown_geo];
+        doc.lights = vec![light];
+        doc.textures = vec![texture];
+
+        let model = &doc.models[0];
+        let mats = model.connected_materials(&doc);
+        assert_eq!(mats.len(), 1);
+        assert_eq!(mats[0].inner().object_index, 501);
+
+        let geos = model.connected_geometries(&doc);
+        assert_eq!(geos.len(), 1);
+        assert!(matches!(geos[0], ModelGeometryRef::Unknown(_)));
+        assert_eq!(geos[0].inner().object_index, 502);
+
+        let attrs = model.connected_node_attributes(&doc);
+        assert_eq!(attrs.len(), 1);
+        assert!(matches!(attrs[0], NodeAttributeRef::Light(_)));
+        assert_eq!(attrs[0].inner().object_index, 503);
+
+        let tex = mats[0].get_textures(&doc);
+        assert_eq!(tex.get("DiffuseColor").map(|t| t.inner().object_index), Some(504));
     }
 }

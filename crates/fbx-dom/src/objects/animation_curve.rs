@@ -45,7 +45,7 @@ impl TryFrom<OwnedObject> for AnimationCurve {
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         // Check if tagged as AnimationCurve
-        if fbx_object_tag(&o) != Some(FbxObjectTag::AnimationCurve) {
+        if fbx_object_tag(&o) != FbxObjectTag::AnimationCurve {
             return Err(FbxTypeMismatch::wrong_object_kind(
                 o,
                 "AnimationCurve".to_string(),

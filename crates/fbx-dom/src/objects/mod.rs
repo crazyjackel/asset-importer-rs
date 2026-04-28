@@ -84,6 +84,26 @@ impl<'a> NodeAttributeRef<'a> {
     }
 }
 
+/// Borrowed polymorphic `Geometry` reference for incoming `Geometry -> Model` `OO` links.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ModelGeometryRef<'a> {
+    Mesh(&'a MeshGeometry),
+    Line(&'a LineGeometry),
+    Shape(&'a ShapeGeometry),
+    Unknown(&'a OwnedObject),
+}
+
+impl<'a> ModelGeometryRef<'a> {
+    pub fn inner(self) -> &'a OwnedObject {
+        match self {
+            ModelGeometryRef::Mesh(x) => x.inner(),
+            ModelGeometryRef::Line(x) => x.inner(),
+            ModelGeometryRef::Shape(x) => x.inner(),
+            ModelGeometryRef::Unknown(x) => x,
+        }
+    }
+}
+
 // --- `type_name` / `class_name` pairs (Assimp `LazyObject::Get` dispatch) -----------------------
 
 pub const MODEL_TYPE_NAME: &str = "Model";
@@ -181,11 +201,13 @@ pub(crate) enum FbxObjectTag {
     MeshGeometry,
     LineGeometry,
     ShapeGeometry,
+    UnknownGeometry,
     Camera,
     CameraSwitcher,
     Light,
     NullNode,
     LimbNode,
+    UnknownNodeAttribute,
     Material,
     Texture,
     LayeredTexture,
@@ -194,61 +216,69 @@ pub(crate) enum FbxObjectTag {
     Skin,
     BlendShape,
     BlendShapeChannel,
+    UnknownDeformer,
     AnimationStack,
     AnimationLayer,
     AnimationCurve,
     AnimationCurveNode,
+    /// Unsupported `Model` kinds (e.g. IK/FK effectors) or any object not mapped above.
+    Unknown,
 }
 
-/// Map [`OwnedObject::type_name`] / [`OwnedObject::class_name`] to a known Assimp DOM kind.
-pub(crate) fn fbx_object_tag(o: &OwnedObject) -> Option<FbxObjectTag> {
-    match (o.type_name.as_str(), o.class_name.as_str()) {
-        (MODEL_TYPE_NAME, MODEL_IK_EFFECTOR_CLASS_NAME)
-        | (MODEL_TYPE_NAME, MODEL_FK_EFFECTOR_CLASS_NAME) => None,
-        (MODEL_TYPE_NAME, _) => Some(FbxObjectTag::Model),
+/// Map [`OwnedObject::type_name`] and [`OwnedObject::class_name`] to a dispatch tag.
+///
+/// `Material`, `Texture`, `LayeredTexture`, `Video`, and animation objects are keyed by
+/// `type_name` only (SDK exports vary `class_name`). `Geometry` / `NodeAttribute` / `Deformer`
+/// use `class_name` for known Assimp kinds; anything else under those types gets an explicit
+/// `Unknown*` tag instead of falling through to a generic [`FbxObjectTag::Unknown`].
+pub(crate) fn fbx_object_tag(o: &OwnedObject) -> FbxObjectTag {
+    let ty = o.type_name.as_str();
+    let cls = o.class_name.as_str();
 
-        (GEOMETRY_TYPE_NAME, GEOMETRY_MESH_CLASS_NAME) => Some(FbxObjectTag::MeshGeometry),
-        (GEOMETRY_TYPE_NAME, GEOMETRY_LINE_CLASS_NAME) => Some(FbxObjectTag::LineGeometry),
-        (GEOMETRY_TYPE_NAME, GEOMETRY_SHAPE_CLASS_NAME) => Some(FbxObjectTag::ShapeGeometry),
-
-        (NODE_ATTRIBUTE_TYPE_NAME, NODE_ATTRIBUTE_CAMERA_CLASS_NAME) => Some(FbxObjectTag::Camera),
-        (NODE_ATTRIBUTE_TYPE_NAME, NODE_ATTRIBUTE_CAMERA_SWITCHER_CLASS_NAME) => {
-            Some(FbxObjectTag::CameraSwitcher)
-        }
-        (NODE_ATTRIBUTE_TYPE_NAME, NODE_ATTRIBUTE_LIGHT_CLASS_NAME) => Some(FbxObjectTag::Light),
-        (NODE_ATTRIBUTE_TYPE_NAME, NODE_ATTRIBUTE_NULL_CLASS_NAME) => Some(FbxObjectTag::NullNode),
-        (NODE_ATTRIBUTE_TYPE_NAME, NODE_ATTRIBUTE_LIMB_NODE_CLASS_NAME) => {
-            Some(FbxObjectTag::LimbNode)
+    match ty {
+        MODEL_TYPE_NAME => {
+            if cls == MODEL_IK_EFFECTOR_CLASS_NAME || cls == MODEL_FK_EFFECTOR_CLASS_NAME {
+                FbxObjectTag::Unknown
+            } else {
+                FbxObjectTag::Model
+            }
         }
 
-        (MATERIAL_TYPE_NAME, MATERIAL_CLASS_NAME) => Some(FbxObjectTag::Material),
-        (TEXTURE_TYPE_NAME, TEXTURE_CLASS_NAME) => Some(FbxObjectTag::Texture),
-        (LAYERED_TEXTURE_TYPE_NAME, LAYERED_TEXTURE_CLASS_NAME) => {
-            Some(FbxObjectTag::LayeredTexture)
-        }
-        (VIDEO_TYPE_NAME, VIDEO_CLASS_NAME) => Some(FbxObjectTag::Video),
+        GEOMETRY_TYPE_NAME => match cls {
+            GEOMETRY_MESH_CLASS_NAME => FbxObjectTag::MeshGeometry,
+            GEOMETRY_LINE_CLASS_NAME => FbxObjectTag::LineGeometry,
+            GEOMETRY_SHAPE_CLASS_NAME => FbxObjectTag::ShapeGeometry,
+            _ => FbxObjectTag::UnknownGeometry,
+        },
 
-        (DEFORMER_TYPE_NAME, DEFORMER_CLUSTER_CLASS_NAME) => Some(FbxObjectTag::Cluster),
-        (DEFORMER_TYPE_NAME, DEFORMER_SKIN_CLASS_NAME) => Some(FbxObjectTag::Skin),
-        (DEFORMER_TYPE_NAME, DEFORMER_BLEND_SHAPE_CLASS_NAME) => Some(FbxObjectTag::BlendShape),
-        (DEFORMER_TYPE_NAME, DEFORMER_BLEND_SHAPE_CHANNEL_CLASS_NAME) => {
-            Some(FbxObjectTag::BlendShapeChannel)
-        }
+        NODE_ATTRIBUTE_TYPE_NAME => match cls {
+            NODE_ATTRIBUTE_CAMERA_CLASS_NAME => FbxObjectTag::Camera,
+            NODE_ATTRIBUTE_CAMERA_SWITCHER_CLASS_NAME => FbxObjectTag::CameraSwitcher,
+            NODE_ATTRIBUTE_LIGHT_CLASS_NAME => FbxObjectTag::Light,
+            NODE_ATTRIBUTE_NULL_CLASS_NAME => FbxObjectTag::NullNode,
+            NODE_ATTRIBUTE_LIMB_NODE_CLASS_NAME => FbxObjectTag::LimbNode,
+            _ => FbxObjectTag::UnknownNodeAttribute,
+        },
 
-        (ANIMATION_STACK_TYPE_NAME, ANIMATION_STACK_CLASS_NAME) => {
-            Some(FbxObjectTag::AnimationStack)
-        }
-        (ANIMATION_LAYER_TYPE_NAME, ANIMATION_LAYER_CLASS_NAME) => {
-            Some(FbxObjectTag::AnimationLayer)
-        }
-        (ANIMATION_CURVE_TYPE_NAME, ANIMATION_CURVE_CLASS_NAME) => {
-            Some(FbxObjectTag::AnimationCurve)
-        }
-        (ANIMATION_CURVE_NODE_TYPE_NAME, ANIMATION_CURVE_NODE_CLASS_NAME) => {
-            Some(FbxObjectTag::AnimationCurveNode)
-        }
+        MATERIAL_TYPE_NAME => FbxObjectTag::Material,
+        TEXTURE_TYPE_NAME => FbxObjectTag::Texture,
+        LAYERED_TEXTURE_TYPE_NAME => FbxObjectTag::LayeredTexture,
+        VIDEO_TYPE_NAME => FbxObjectTag::Video,
 
-        _ => None,
+        DEFORMER_TYPE_NAME => match cls {
+            DEFORMER_CLUSTER_CLASS_NAME => FbxObjectTag::Cluster,
+            DEFORMER_SKIN_CLASS_NAME => FbxObjectTag::Skin,
+            DEFORMER_BLEND_SHAPE_CLASS_NAME => FbxObjectTag::BlendShape,
+            DEFORMER_BLEND_SHAPE_CHANNEL_CLASS_NAME => FbxObjectTag::BlendShapeChannel,
+            _ => FbxObjectTag::UnknownDeformer,
+        },
+
+        ANIMATION_STACK_TYPE_NAME => FbxObjectTag::AnimationStack,
+        ANIMATION_LAYER_TYPE_NAME => FbxObjectTag::AnimationLayer,
+        ANIMATION_CURVE_TYPE_NAME => FbxObjectTag::AnimationCurve,
+        ANIMATION_CURVE_NODE_TYPE_NAME => FbxObjectTag::AnimationCurveNode,
+
+        _ => FbxObjectTag::Unknown,
     }
 }
 
@@ -257,66 +287,53 @@ impl TryFrom<OwnedObject> for ClassifiedFbxObject {
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
-            Some(FbxObjectTag::Model) => Ok(ClassifiedFbxObject::Model(Model::try_from(o)?)),
-            Some(FbxObjectTag::MeshGeometry) => Ok(ClassifiedFbxObject::MeshGeometry(
+            FbxObjectTag::Model => Ok(ClassifiedFbxObject::Model(Model::try_from(o)?)),
+            FbxObjectTag::MeshGeometry => Ok(ClassifiedFbxObject::MeshGeometry(
                 MeshGeometry::try_from(o)?,
             )),
-            Some(FbxObjectTag::LineGeometry) => Ok(ClassifiedFbxObject::LineGeometry(
+            FbxObjectTag::LineGeometry => Ok(ClassifiedFbxObject::LineGeometry(
                 LineGeometry::try_from(o)?,
             )),
-            Some(FbxObjectTag::ShapeGeometry) => Ok(ClassifiedFbxObject::ShapeGeometry(
+            FbxObjectTag::ShapeGeometry => Ok(ClassifiedFbxObject::ShapeGeometry(
                 ShapeGeometry::try_from(o)?,
             )),
-            Some(FbxObjectTag::Camera) => Ok(ClassifiedFbxObject::Camera(Camera::try_from(o)?)),
-            Some(FbxObjectTag::CameraSwitcher) => Ok(ClassifiedFbxObject::CameraSwitcher(
+            FbxObjectTag::UnknownGeometry => Ok(ClassifiedFbxObject::UnknownGeometry(o)),
+            FbxObjectTag::Camera => Ok(ClassifiedFbxObject::Camera(Camera::try_from(o)?)),
+            FbxObjectTag::CameraSwitcher => Ok(ClassifiedFbxObject::CameraSwitcher(
                 CameraSwitcher::try_from(o)?,
             )),
-            Some(FbxObjectTag::Light) => Ok(ClassifiedFbxObject::Light(Light::try_from(o)?)),
-            Some(FbxObjectTag::NullNode) => {
-                Ok(ClassifiedFbxObject::NullNode(NullNode::try_from(o)?))
-            }
-            Some(FbxObjectTag::LimbNode) => {
-                Ok(ClassifiedFbxObject::LimbNode(LimbNode::try_from(o)?))
-            }
-            Some(FbxObjectTag::Material) => {
-                Ok(ClassifiedFbxObject::Material(Material::try_from(o)?))
-            }
-            Some(FbxObjectTag::Texture) => Ok(ClassifiedFbxObject::Texture(Texture::try_from(o)?)),
-            Some(FbxObjectTag::LayeredTexture) => Ok(ClassifiedFbxObject::LayeredTexture(
+            FbxObjectTag::Light => Ok(ClassifiedFbxObject::Light(Light::try_from(o)?)),
+            FbxObjectTag::NullNode => Ok(ClassifiedFbxObject::NullNode(NullNode::try_from(o)?)),
+            FbxObjectTag::LimbNode => Ok(ClassifiedFbxObject::LimbNode(LimbNode::try_from(o)?)),
+            FbxObjectTag::UnknownNodeAttribute => Ok(ClassifiedFbxObject::UnknownNodeAttribute(o)),
+            FbxObjectTag::Material => Ok(ClassifiedFbxObject::Material(Material::try_from(o)?)),
+            FbxObjectTag::Texture => Ok(ClassifiedFbxObject::Texture(Texture::try_from(o)?)),
+            FbxObjectTag::LayeredTexture => Ok(ClassifiedFbxObject::LayeredTexture(
                 LayeredTexture::try_from(o)?,
             )),
-            Some(FbxObjectTag::Video) => Ok(ClassifiedFbxObject::Video(Video::try_from(o)?)),
-            Some(FbxObjectTag::Cluster) => Ok(ClassifiedFbxObject::Cluster(Cluster::try_from(o)?)),
-            Some(FbxObjectTag::Skin) => Ok(ClassifiedFbxObject::Skin(Skin::try_from(o)?)),
-            Some(FbxObjectTag::BlendShape) => {
-                Ok(ClassifiedFbxObject::BlendShape(BlendShape::try_from(o)?))
-            }
-            Some(FbxObjectTag::BlendShapeChannel) => Ok(ClassifiedFbxObject::BlendShapeChannel(
+            FbxObjectTag::Video => Ok(ClassifiedFbxObject::Video(Video::try_from(o)?)),
+            FbxObjectTag::Cluster => Ok(ClassifiedFbxObject::Cluster(Cluster::try_from(o)?)),
+            FbxObjectTag::Skin => Ok(ClassifiedFbxObject::Skin(Skin::try_from(o)?)),
+            FbxObjectTag::BlendShape => Ok(ClassifiedFbxObject::BlendShape(BlendShape::try_from(
+                o,
+            )?)),
+            FbxObjectTag::BlendShapeChannel => Ok(ClassifiedFbxObject::BlendShapeChannel(
                 BlendShapeChannel::try_from(o)?,
             )),
-            Some(FbxObjectTag::AnimationStack) => Ok(ClassifiedFbxObject::AnimationStack(
+            FbxObjectTag::UnknownDeformer => Ok(ClassifiedFbxObject::UnknownDeformer(o)),
+            FbxObjectTag::AnimationStack => Ok(ClassifiedFbxObject::AnimationStack(
                 AnimationStack::try_from(o)?,
             )),
-            Some(FbxObjectTag::AnimationLayer) => Ok(ClassifiedFbxObject::AnimationLayer(
+            FbxObjectTag::AnimationLayer => Ok(ClassifiedFbxObject::AnimationLayer(
                 AnimationLayer::try_from(o)?,
             )),
-            Some(FbxObjectTag::AnimationCurve) => Ok(ClassifiedFbxObject::AnimationCurve(
+            FbxObjectTag::AnimationCurve => Ok(ClassifiedFbxObject::AnimationCurve(
                 AnimationCurve::try_from(o)?,
             )),
-            Some(FbxObjectTag::AnimationCurveNode) => Ok(ClassifiedFbxObject::AnimationCurveNode(
+            FbxObjectTag::AnimationCurveNode => Ok(ClassifiedFbxObject::AnimationCurveNode(
                 AnimationCurveNode::try_from(o)?,
             )),
-            None => {
-                if o.type_name == GEOMETRY_TYPE_NAME {
-                    Ok(ClassifiedFbxObject::UnknownGeometry(o))
-                } else if o.type_name == NODE_ATTRIBUTE_TYPE_NAME {
-                    Ok(ClassifiedFbxObject::UnknownNodeAttribute(o))
-                } else if o.type_name == DEFORMER_TYPE_NAME {
-                    Ok(ClassifiedFbxObject::UnknownDeformer(o))
-                } else {
-                    Ok(ClassifiedFbxObject::Unknown(o))
-                }
-            }
+            FbxObjectTag::Unknown => Ok(ClassifiedFbxObject::Unknown(o)),
         }
     }
 }

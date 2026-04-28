@@ -86,7 +86,7 @@ impl TryFrom<OwnedObject> for Video {
     type Error = FbxTypeMismatch;
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
-        if fbx_object_tag(&o) != Some(FbxObjectTag::Video) {
+        if fbx_object_tag(&o) != FbxObjectTag::Video {
             return Err(FbxTypeMismatch::wrong_object_kind(o, "Video".to_string()));
         }
 

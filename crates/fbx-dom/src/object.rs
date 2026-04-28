@@ -92,6 +92,10 @@ impl<'a> Object<'a> {
         }
     }
 
+    pub fn template(&self) -> &'a Template {
+        self.template
+    }
+
     pub fn properties(&self) -> HashMap<String, Property> {
         let object_index = self.object.element_index;
         let object_handle = self

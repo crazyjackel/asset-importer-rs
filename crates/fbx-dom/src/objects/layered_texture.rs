@@ -53,7 +53,7 @@ impl TryFrom<OwnedObject> for LayeredTexture {
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
-            Some(FbxObjectTag::LayeredTexture) => {
+            FbxObjectTag::LayeredTexture => {
                 let blend_mode = match o.attributes.optional_token_case_insensitive(BLEND_MODES_ATTR) {
                     Ok(v) => v.and_then(|x| x.trim().parse::<i32>().ok()).unwrap_or(0),
                     Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),

@@ -153,7 +153,7 @@ impl TryFrom<OwnedObject> for AnimationCurveNode {
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
-            Some(FbxObjectTag::AnimationCurveNode) => Ok(AnimationCurveNode(o)),
+            FbxObjectTag::AnimationCurveNode => Ok(AnimationCurveNode(o)),
             _ => Err(FbxTypeMismatch::wrong_object_kind(
                 o,
                 "AnimationCurveNode".to_string(),

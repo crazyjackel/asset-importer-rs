@@ -214,14 +214,14 @@ fn read_connections(
         if connection_tokens.len() < 2 {
             continue;
         }
-        let connection_type = &connection_tokens[1];
+        let connection_type = &connection_tokens[0];
         match connection_type.as_str() {
             "OO" => {
-                if connection_tokens.len() != 4 {
+                if connection_tokens.len() != 3 {
                     continue;
                 }
-                let src = connection_tokens[2].parse::<u64>().unwrap_or(0);
-                let dest = connection_tokens[3].parse::<u64>().unwrap_or(0);
+                let src = connection_tokens[1].parse::<u64>().unwrap_or(0);
+                let dest = connection_tokens[2].parse::<u64>().unwrap_or(0);
                 document
                     .object_connections
                     .entry(src)
@@ -229,12 +229,12 @@ fn read_connections(
                     .push(dest);
             }
             "OP" => {
-                if connection_tokens.len() != 5 {
+                if connection_tokens.len() != 4 {
                     continue;
                 }
-                let src = connection_tokens[2].parse::<u64>().unwrap_or(0);
-                let dest = connection_tokens[3].parse::<u64>().unwrap_or(0);
-                let property = connection_tokens[4].to_string();
+                let src = connection_tokens[1].parse::<u64>().unwrap_or(0);
+                let dest = connection_tokens[2].parse::<u64>().unwrap_or(0);
+                let property = connection_tokens[3].to_string();
                 document
                     .object_property_connections
                     .entry(src)
@@ -242,13 +242,13 @@ fn read_connections(
                     .push(ObjectPropertyConnection { dest, property });
             }
             "PP" => {
-                if connection_tokens.len() != 6 {
+                if connection_tokens.len() != 5 {
                     continue;
                 }
-                let src = connection_tokens[2].parse::<u64>().unwrap_or(0);
-                let src_property = connection_tokens[3].to_string();
-                let dest = connection_tokens[4].parse::<u64>().unwrap_or(0);
-                let dest_property = connection_tokens[5].to_string();
+                let src = connection_tokens[1].parse::<u64>().unwrap_or(0);
+                let src_property = connection_tokens[2].to_string();
+                let dest = connection_tokens[3].parse::<u64>().unwrap_or(0);
+                let dest_property = connection_tokens[4].to_string();
                 document
                     .object_to_source_properties
                     .entry(src)

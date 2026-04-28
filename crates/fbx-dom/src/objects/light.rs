@@ -292,7 +292,7 @@ impl TryFrom<OwnedObject> for Light {
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
-            Some(FbxObjectTag::Light) => Ok(Light(o)),
+            FbxObjectTag::Light => Ok(Light(o)),
             _ => Err(FbxTypeMismatch::wrong_object_kind(o, "Light".to_string())),
         }
     }

@@ -63,7 +63,7 @@ impl TryFrom<OwnedObject> for MeshGeometry {
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         // Check if tagged as MeshGeometry
         match fbx_object_tag(&o) {
-            Some(FbxObjectTag::MeshGeometry) => {}
+            FbxObjectTag::MeshGeometry => {}
             _ => {
                 return Err(FbxTypeMismatch::wrong_object_kind(
                     o,

@@ -64,7 +64,7 @@ impl TryFrom<OwnedObject> for CameraSwitcher {
     type Error = FbxTypeMismatch;
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
-        if fbx_object_tag(&o) != Some(FbxObjectTag::CameraSwitcher) {
+        if fbx_object_tag(&o) != FbxObjectTag::CameraSwitcher {
             return Err(FbxTypeMismatch::wrong_object_kind(o, "CameraSwitcher".to_string()));
         }
 

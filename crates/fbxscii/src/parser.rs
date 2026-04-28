@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, io::BufRead, num::ParseIntError};
+use std::{collections::VecDeque, io::BufRead};
 
 use crate::{Token, Tokenizer, TokenizerError};
 

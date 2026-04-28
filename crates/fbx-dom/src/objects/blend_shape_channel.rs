@@ -58,7 +58,7 @@ impl TryFrom<OwnedObject> for BlendShapeChannel {
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
-            Some(FbxObjectTag::BlendShapeChannel) => {
+            FbxObjectTag::BlendShapeChannel => {
                 let percent = o
                     .attributes
                     .extract_case_insensitive(ATTR_DEFORM_PERCENT)

@@ -78,7 +78,7 @@ impl TryFrom<OwnedObject> for Texture {
     type Error = FbxTypeMismatch;
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
-        if fbx_object_tag(&o) != Some(FbxObjectTag::Texture) {
+        if fbx_object_tag(&o) != FbxObjectTag::Texture {
             return Err(FbxTypeMismatch::wrong_object_kind(o, "Texture".to_string()));
         }
 

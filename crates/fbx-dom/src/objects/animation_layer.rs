@@ -72,7 +72,7 @@ impl TryFrom<OwnedObject> for AnimationLayer {
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
-            Some(FbxObjectTag::AnimationLayer) => Ok(AnimationLayer(o)),
+            FbxObjectTag::AnimationLayer => Ok(AnimationLayer(o)),
             _ => Err(FbxTypeMismatch::wrong_object_kind(
                 o,
                 "AnimationLayer".to_string(),
