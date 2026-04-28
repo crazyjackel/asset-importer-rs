@@ -782,11 +782,11 @@ mod tests {
             })
         );
 
-        // `MeshGeometry` now validates mapping/reference fields first; this spike has an empty node.
+        // Minimal geometry node has no mesh vertex data (`Vertices` / `PolygonVertexIndex`).
         let err = ClassifiedFbxObject::try_from(owned).unwrap_err();
         assert!(matches!(
             err.reason,
-            FbxTryFromReason::MissingAttribute { ref name } if name == "MappingInformationType"
+            FbxTryFromReason::MissingAttribute { ref name } if name == "Vertices"
         ));
     }
 }

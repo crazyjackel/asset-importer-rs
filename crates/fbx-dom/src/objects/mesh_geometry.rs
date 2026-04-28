@@ -74,21 +74,6 @@ impl TryFrom<OwnedObject> for MeshGeometry {
 
         let attrs = &o.attributes;
 
-        let mapping_ty = match attrs
-            .require_token_case_insensitive(ATTR_MAPPING_INFORMATION_TYPE)
-            .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
-        {
-            Ok(s) => s,
-            Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
-        };
-        let reference_ty = match attrs
-            .require_token_case_insensitive(ATTR_REFERENCE_INFORMATION_TYPE)
-            .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
-        {
-            Ok(s) => s,
-            Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
-        };
-
         // Extract Vertices
         let verts_attr = match attrs.extract_case_insensitive(ATTR_VERTICES) {
             Some(a) => a,
@@ -129,10 +114,22 @@ impl TryFrom<OwnedObject> for MeshGeometry {
 
         let mut normals = Vec::new();
         if let Some(el) = attrs.extract_case_insensitive(ATTR_LAYER_ELEMENT_NORMAL) {
-            let map = match child_attribute_map(el) {
-                Ok(m) => m,
+            let map = el.get_children();
+            let mapping_ty = match map
+                .require_token_case_insensitive(ATTR_MAPPING_INFORMATION_TYPE)
+                .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
+            {
+                Ok(s) => s,
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
+            let reference_ty = match map
+                .require_token_case_insensitive(ATTR_REFERENCE_INFORMATION_TYPE)
+                .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
+            {
+                Ok(s) => s,
+                Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
+            };
+
             let normals_flat = match resolve_flat_f32_channel(
                 &map,
                 ResolveFlatF32ChannelParams {
@@ -158,14 +155,25 @@ impl TryFrom<OwnedObject> for MeshGeometry {
 
         let mut tangents = Vec::new();
         if let Some(el) = attrs.extract_case_insensitive(ATTR_LAYER_ELEMENT_TANGENT) {
-            let map = match child_attribute_map(el) {
-                Ok(m) => m,
-                Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
-            };
+            let map = el.get_children();
             let (data_name, index_name) = if map.extract_case_insensitive("Tangents").is_some() {
                 ("Tangents", "TangentsIndex")
             } else {
                 ("Tangent", "TangentIndex")
+            };
+            let mapping_ty = match map
+                .require_token_case_insensitive(ATTR_MAPPING_INFORMATION_TYPE)
+                .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
+            {
+                Ok(s) => s,
+                Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
+            };
+            let reference_ty = match map
+                .require_token_case_insensitive(ATTR_REFERENCE_INFORMATION_TYPE)
+                .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
+            {
+                Ok(s) => s,
+                Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
             let tangents_flat = match resolve_flat_f32_channel(
                 &map,
@@ -192,14 +200,25 @@ impl TryFrom<OwnedObject> for MeshGeometry {
 
         let mut binormals = Vec::new();
         if let Some(el) = attrs.extract_case_insensitive(ATTR_LAYER_ELEMENT_BINORMAL) {
-            let map = match child_attribute_map(el) {
-                Ok(m) => m,
-                Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
-            };
+            let map = el.get_children();
             let (data_name, index_name) = if map.extract_case_insensitive("Binormals").is_some() {
                 ("Binormals", "BinormalsIndex")
             } else {
                 ("Binormal", "BinormalIndex")
+            };
+            let mapping_ty = match map
+                .require_token_case_insensitive(ATTR_MAPPING_INFORMATION_TYPE)
+                .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
+            {
+                Ok(s) => s,
+                Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
+            };
+            let reference_ty = match map
+                .require_token_case_insensitive(ATTR_REFERENCE_INFORMATION_TYPE)
+                .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
+            {
+                Ok(s) => s,
+                Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
             let binormals_flat = match resolve_flat_f32_channel(
                 &map,
@@ -228,16 +247,27 @@ impl TryFrom<OwnedObject> for MeshGeometry {
         let mut texture_coord_names: [String; MAX_UV_CHANNELS] = Default::default();
 
         if let Some(el) = attrs.extract_case_insensitive(ATTR_LAYER_ELEMENT_UV) {
-            let map = match child_attribute_map(el) {
-                Ok(m) => m,
-                Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
-            };
+            let map = el.get_children();
             if let Ok(Some(name)) = map.optional_token_case_insensitive("Name") {
                 texture_coord_names[0] = name
                     .trim()
                     .trim_matches(|c| c == '"' || c == '\'')
                     .to_string();
             }
+            let mapping_ty = match map
+                .require_token_case_insensitive(ATTR_MAPPING_INFORMATION_TYPE)
+                .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
+            {
+                Ok(s) => s,
+                Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
+            };
+            let reference_ty = match map
+                .require_token_case_insensitive(ATTR_REFERENCE_INFORMATION_TYPE)
+                .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
+            {
+                Ok(s) => s,
+                Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
+            };
             let uv_flat = match resolve_flat_f32_channel(
                 &map,
                 ResolveFlatF32ChannelParams {
@@ -260,8 +290,19 @@ impl TryFrom<OwnedObject> for MeshGeometry {
 
         let mut vertex_colors: [Vec<[f32; 4]>; MAX_COLOR_SETS] = Default::default();
         if let Some(el) = attrs.extract_case_insensitive("LayerElementColor") {
-            let map = match child_attribute_map(el) {
-                Ok(m) => m,
+            let map = el.get_children();
+            let mapping_ty = match map
+                .require_token_case_insensitive(ATTR_MAPPING_INFORMATION_TYPE)
+                .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
+            {
+                Ok(s) => s,
+                Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
+            };
+            let reference_ty = match map
+                .require_token_case_insensitive(ATTR_REFERENCE_INFORMATION_TYPE)
+                .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
+            {
+                Ok(s) => s,
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
             let colors_flat = match resolve_flat_f32_channel(
@@ -289,8 +330,19 @@ impl TryFrom<OwnedObject> for MeshGeometry {
 
         let material_indices =
             if let Some(el) = attrs.extract_case_insensitive("LayerElementMaterial") {
-                let map = match child_attribute_map(el) {
-                    Ok(m) => m,
+                let map = el.get_children();
+                let mapping_ty = match map
+                    .require_token_case_insensitive(ATTR_MAPPING_INFORMATION_TYPE)
+                    .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
+                {
+                    Ok(s) => s,
+                    Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
+                };
+                let reference_ty = match map
+                    .require_token_case_insensitive(ATTR_REFERENCE_INFORMATION_TYPE)
+                    .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
+                {
+                    Ok(s) => s,
                     Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
                 };
                 match read_vertex_data_materials(
@@ -320,40 +372,6 @@ impl TryFrom<OwnedObject> for MeshGeometry {
             material_indices,
         })
     }
-}
-
-/// From a given ElementAttribute representing a tree, make a key-value map to direct children element attributes.
-fn child_attribute_map(
-    attr: &ElementAttribute,
-) -> Result<HashMap<String, ElementAttribute>, FbxTryFromReason> {
-    // Extract the subtree and grab the root element.
-    let ElementAttribute::SubTree(st) = attr else {
-        return Err(FbxTryFromReason::InvalidAttributeFormat {
-            name: "geometry".to_string(),
-            detail: "expected SubTree attribute".to_string(),
-        });
-    };
-    let arena = &st.amphitheatre;
-    let root = arena.get(st.root_element_index).ok_or_else(|| {
-        FbxTryFromReason::InvalidAttributeFormat {
-            name: "geometry".to_string(),
-            detail: "subtree root missing".to_string(),
-        }
-    })?;
-
-    // Create a map of key's to direct children element attributes.
-    let mut map = HashMap::new();
-    for &child_idx in &root.children {
-        let Some(sub) = arena.extract_subtree(child_idx) else {
-            continue;
-        };
-        let key = arena
-            .get(child_idx)
-            .map(|e| e.key.clone())
-            .unwrap_or_default();
-        map.insert(key, sub);
-    }
-    Ok(map)
 }
 
 fn parse_f32_array(attr: &ElementAttribute) -> Vec<f32> {
@@ -714,7 +732,9 @@ mod tests {
     use std::collections::HashMap;
     use std::convert::TryFrom;
 
-    use fbxscii::{Element, ElementAmphitheatre, ElementAttribute, LeafAttribute, SubTreeAttribute};
+    use fbxscii::{
+        Element, ElementAmphitheatre, ElementAttribute, LeafAttribute, SubTreeAttribute,
+    };
 
     use crate::OwnedObject;
 
@@ -730,9 +750,30 @@ mod tests {
         }))
     }
 
-    fn layer_element_normal(normals_csv: &str) -> ElementAttribute {
+    fn append_layer_string_child(arena: &mut ElementAmphitheatre, root_idx: usize, key: &str, token: &str) {
+        let mut el = Element::new(key.to_string());
+        el.tokens = vec![token.to_string()];
+        el.parent_index = Some(root_idx);
+        let idx = arena.insert(el);
+        arena.get_mut(root_idx).unwrap().children.push(idx);
+    }
+
+    /// Same nesting as ASCII FBX (e.g. `duck.fbx`): mapping + reference under the layer root, then data.
+    fn layer_element_normal(mapping: &str, reference: &str, normals_csv: &str) -> ElementAttribute {
         let mut arena = ElementAmphitheatre::new();
         let root_idx = arena.insert(Element::new("LayerElementNormal".into()));
+        append_layer_string_child(
+            &mut arena,
+            root_idx,
+            super::ATTR_MAPPING_INFORMATION_TYPE,
+            mapping,
+        );
+        append_layer_string_child(
+            &mut arena,
+            root_idx,
+            super::ATTR_REFERENCE_INFORMATION_TYPE,
+            reference,
+        );
         let mut normals_el = Element::new("Normals".into());
         normals_el.tokens = vec![normals_csv.to_string()];
         normals_el.parent_index = Some(root_idx);
@@ -745,10 +786,22 @@ mod tests {
         }))
     }
 
-    fn layer_element_material(materials_csv: &str) -> ElementAttribute {
+    fn layer_element_material(mapping: &str, reference: &str, materials_csv: &str) -> ElementAttribute {
         let mut arena = ElementAmphitheatre::new();
         let root_idx = arena.insert(Element::new("LayerElementMaterial".into()));
-        let mut mats_el = Element::new("Materials".into());
+        append_layer_string_child(
+            &mut arena,
+            root_idx,
+            super::ATTR_MAPPING_INFORMATION_TYPE,
+            mapping,
+        );
+        append_layer_string_child(
+            &mut arena,
+            root_idx,
+            super::ATTR_REFERENCE_INFORMATION_TYPE,
+            reference,
+        );
+        let mut mats_el = Element::new(super::ATTR_MATERIALS.into());
         mats_el.tokens = vec![materials_csv.to_string()];
         mats_el.parent_index = Some(root_idx);
         let mats_idx = arena.insert(mats_el);
@@ -774,10 +827,8 @@ mod tests {
         }
     }
 
-    fn minimal_attrs(mapping: &str, reference: &str) -> HashMap<String, ElementAttribute> {
+    fn minimal_base_attrs() -> HashMap<String, ElementAttribute> {
         let mut attrs = HashMap::new();
-        attrs.insert("MappingInformationType".into(), leaf(&[mapping]));
-        attrs.insert("ReferenceInformationType".into(), leaf(&[reference]));
         attrs.insert("Vertices".into(), leaf(&["0,0,0,1,0,0,0,1,0"]));
         attrs.insert("PolygonVertexIndex".into(), leaf(&["0,1,-3"]));
         attrs
@@ -785,7 +836,7 @@ mod tests {
 
     #[test]
     fn minimal_triangle_expands_corners() {
-        let attrs = minimal_attrs("ByPolygonVertex", "Direct");
+        let attrs = minimal_base_attrs();
         let mesh = MeshGeometry::try_from(owned_mesh(attrs)).unwrap();
         assert_eq!(mesh.vertices.len(), 3);
         assert_eq!(mesh.face_vertex_counts, vec![3u32]);
@@ -795,42 +846,62 @@ mod tests {
 
     #[test]
     fn mapping_and_reference_trim_quotes_and_lowercase_keys() {
-        let mut attrs = HashMap::new();
-        attrs.insert(
-            "mappinginformationtype".into(),
-            leaf(&["  \"ByPolygonVertex\"  "]),
+        let mut attrs = minimal_base_attrs();
+        let mut arena = ElementAmphitheatre::new();
+        let root_idx = arena.insert(Element::new("LayerElementNormal".into()));
+        append_layer_string_child(
+            &mut arena,
+            root_idx,
+            "mappinginformationtype",
+            "  \"ByPolygonVertex\"  ",
         );
-        attrs.insert(
-            "referenceinformationtype".into(),
-            leaf(&["'Direct'"]),
+        append_layer_string_child(
+            &mut arena,
+            root_idx,
+            "referenceinformationtype",
+            "'Direct'",
         );
-        attrs.insert("Vertices".into(), leaf(&["0,0,0,1,0,0,0,1,0"]));
-        attrs.insert("PolygonVertexIndex".into(), leaf(&["0,1,-3"]));
+        let mut normals_el = Element::new("Normals".into());
+        normals_el.tokens = vec!["0,0,1,0,0,1,0,0,1".to_string()];
+        normals_el.parent_index = Some(root_idx);
+        let normals_idx = arena.insert(normals_el);
+        arena.get_mut(root_idx).unwrap().children.push(normals_idx);
+        attrs.insert(
+            "LayerElementNormal".into(),
+            ElementAttribute::SubTree(Box::new(SubTreeAttribute {
+                amphitheatre: arena,
+                root_element_index: root_idx,
+            })),
+        );
         let mesh = MeshGeometry::try_from(owned_mesh(attrs)).unwrap();
         assert_eq!(mesh.vertices.len(), 3);
+        assert_eq!(mesh.normals.len(), 3);
     }
 
     #[test]
     fn normals_by_polygon_vertex_direct() {
-        let mut attrs = minimal_attrs("ByPolygonVertex", "Direct");
+        let mut attrs = minimal_base_attrs();
         attrs.insert(
             "LayerElementNormal".into(),
-            layer_element_normal("0,0,1,0,0,1,0,0,1"),
+            layer_element_normal(
+                "ByPolygonVertex",
+                "Direct",
+                "0,0,1,0,0,1,0,0,1",
+            ),
         );
         let mesh = MeshGeometry::try_from(owned_mesh(attrs)).unwrap();
-        assert_eq!(mesh.normals, vec![
-            [0.0, 0.0, 1.0],
-            [0.0, 0.0, 1.0],
-            [0.0, 0.0, 1.0],
-        ]);
+        assert_eq!(
+            mesh.normals,
+            vec![[0.0, 0.0, 1.0], [0.0, 0.0, 1.0], [0.0, 0.0, 1.0],]
+        );
     }
 
     #[test]
     fn materials_all_same_replicates_first_index() {
-        let mut attrs = minimal_attrs("AllSame", "IndexToDirect");
+        let mut attrs = minimal_base_attrs();
         attrs.insert(
             "LayerElementMaterial".into(),
-            layer_element_material("5"),
+            layer_element_material("AllSame", "IndexToDirect", "5"),
         );
         let mesh = MeshGeometry::try_from(owned_mesh(attrs)).unwrap();
         assert_eq!(mesh.material_indices, vec![5, 5, 5]);
@@ -858,10 +929,22 @@ mod tests {
 
     #[test]
     fn missing_mapping_information_type() {
-        let mut attrs = HashMap::new();
-        attrs.insert("ReferenceInformationType".into(), leaf(&["Direct"]));
-        attrs.insert("Vertices".into(), leaf(&["0,0,0,1,0,0,0,1,0"]));
-        attrs.insert("PolygonVertexIndex".into(), leaf(&["0,1,-3"]));
+        let mut attrs = minimal_base_attrs();
+        let mut arena = ElementAmphitheatre::new();
+        let root_idx = arena.insert(Element::new("LayerElementNormal".into()));
+        append_layer_string_child(&mut arena, root_idx, super::ATTR_REFERENCE_INFORMATION_TYPE, "Direct");
+        let mut normals_el = Element::new("Normals".into());
+        normals_el.tokens = vec!["0,0,1,0,0,1,0,0,1".to_string()];
+        normals_el.parent_index = Some(root_idx);
+        let normals_idx = arena.insert(normals_el);
+        arena.get_mut(root_idx).unwrap().children.push(normals_idx);
+        attrs.insert(
+            "LayerElementNormal".into(),
+            ElementAttribute::SubTree(Box::new(SubTreeAttribute {
+                amphitheatre: arena,
+                root_element_index: root_idx,
+            })),
+        );
         let err = MeshGeometry::try_from(owned_mesh(attrs)).unwrap_err();
         assert!(matches!(
             err.reason,
@@ -871,10 +954,27 @@ mod tests {
 
     #[test]
     fn missing_reference_information_type() {
-        let mut attrs = HashMap::new();
-        attrs.insert("MappingInformationType".into(), leaf(&["ByPolygonVertex"]));
-        attrs.insert("Vertices".into(), leaf(&["0,0,0,1,0,0,0,1,0"]));
-        attrs.insert("PolygonVertexIndex".into(), leaf(&["0,1,-3"]));
+        let mut attrs = minimal_base_attrs();
+        let mut arena = ElementAmphitheatre::new();
+        let root_idx = arena.insert(Element::new("LayerElementNormal".into()));
+        append_layer_string_child(
+            &mut arena,
+            root_idx,
+            super::ATTR_MAPPING_INFORMATION_TYPE,
+            "ByPolygonVertex",
+        );
+        let mut normals_el = Element::new("Normals".into());
+        normals_el.tokens = vec!["0,0,1,0,0,1,0,0,1".to_string()];
+        normals_el.parent_index = Some(root_idx);
+        let normals_idx = arena.insert(normals_el);
+        arena.get_mut(root_idx).unwrap().children.push(normals_idx);
+        attrs.insert(
+            "LayerElementNormal".into(),
+            ElementAttribute::SubTree(Box::new(SubTreeAttribute {
+                amphitheatre: arena,
+                root_element_index: root_idx,
+            })),
+        );
         let err = MeshGeometry::try_from(owned_mesh(attrs)).unwrap_err();
         assert!(matches!(
             err.reason,

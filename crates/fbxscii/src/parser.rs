@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, io::BufRead};
+use std::{collections::{HashMap, VecDeque}, io::BufRead};
 
 use crate::{Token, Tokenizer, TokenizerError};
 
@@ -424,6 +424,35 @@ impl ElementAttribute {
                     .get(sub_tree.root_element_index)
                     .expect("Root element index should exist in SubTree")
                     .tokens
+            }
+        }
+    }
+
+    /// Direct children of this attribute's root element, each as a standalone [`ElementAttribute`].
+    ///
+    /// Returns an empty vector for [`ElementAttribute::Leaf`]. For [`ElementAttribute::SubTree`],
+    /// returns one entry per direct child of the subtree root (child key paired with leaf or nested
+    /// subtree). If the subtree root index is invalid, returns an empty vector.
+    pub fn get_children(&self) -> HashMap<String, ElementAttribute> {
+        match self {
+            ElementAttribute::Leaf(_) => HashMap::new(),
+            ElementAttribute::SubTree(st) => {
+                let arena = &st.amphitheatre;
+                let Some(root) = arena.get(st.root_element_index) else {
+                    return HashMap::new();
+                };
+                let mut out = HashMap::new();
+                for &child_idx in &root.children {
+                    let Some(sub) = arena.extract_subtree(child_idx) else {
+                        continue;
+                    };
+                    let key = arena
+                        .get(child_idx)
+                        .map(|e| e.key.clone())
+                        .unwrap_or_default();
+                    out.insert(key, sub);
+                }
+                out
             }
         }
     }
