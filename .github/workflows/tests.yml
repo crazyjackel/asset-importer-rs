@@ -26,8 +26,8 @@ jobs:
       fbxscii: ${{ steps.filter.outputs.fbxscii }}
       fbx-dom: ${{ steps.filter.outputs.fbx-dom }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3.0.2
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
         id: filter
         with:
           filters: |
@@ -93,19 +93,19 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.core == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-llvm-cov
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-on-failure: true
       - name: build
-        run: cargo build -v -p asset-importer-rs-core
+        run: cargo build -v -p asset-importer-rs-core --locked
       - name: test
         run: cargo llvm-cov -v -p asset-importer-rs-core --lcov --output-path lcov-core.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-core
           path: lcov-core.info
@@ -118,19 +118,19 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.scene == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-llvm-cov
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-on-failure: true
       - name: build
-        run: cargo build -v -p asset-importer-rs-scene
+        run: cargo build -v -p asset-importer-rs-scene --locked
       - name: test
         run: cargo llvm-cov -v -p asset-importer-rs-scene --lcov --output-path lcov-scene.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-scene
           path: lcov-scene.info
@@ -143,19 +143,19 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.post-process == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-llvm-cov
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-on-failure: true
       - name: build
-        run: cargo build -v -p asset-importer-rs-post-process
+        run: cargo build -v -p asset-importer-rs-post-process --locked
       - name: test
         run: cargo llvm-cov -v -p asset-importer-rs-post-process --lcov --output-path lcov-post-process.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-post-process
           path: lcov-post-process.info
@@ -172,19 +172,19 @@ jobs:
         use_default_features: [true, false]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-llvm-cov
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-on-failure: true
       - name: build
         run: |
           if [ "${{ matrix.use_default_features }}" == "true" ]; then
-            cargo build -v -p asset-importer-rs-gltf
+            cargo build -v -p asset-importer-rs-gltf --locked
           else
-            cargo build -v --no-default-features -p asset-importer-rs-gltf
+            cargo build -v --no-default-features -p asset-importer-rs-gltf --locked
           fi
       - name: test crate
         run: |
@@ -194,7 +194,7 @@ jobs:
             cargo llvm-cov -v --no-default-features -p asset-importer-rs-gltf --lcov --output-path lcov-gltf-${{ matrix.use_default_features }}.info
           fi
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-gltf-${{ matrix.use_default_features }}
           path: lcov-gltf-${{ matrix.use_default_features }}.info
@@ -211,20 +211,20 @@ jobs:
         features: ['default', 'minimal']
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Checkout glTF Sample Assets
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           repository: KhronosGroup/glTF-Sample-Assets
           path: glTF-Sample-Assets
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-llvm-cov
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-on-failure: true
       - name: build
-        run: cargo build -v --no-default-features --features "$FEATURES"
+        run: cargo build -v --no-default-features --features "$FEATURES" --locked
         env:
           FEATURES: ${{ matrix.features }}
       - name: test
@@ -233,7 +233,7 @@ jobs:
         env:
           FEATURES: ${{ matrix.features }}
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-gltf-integration-${{ matrix.features }}
           path: lcov-gltf-integration-${{ matrix.features }}.info
@@ -250,19 +250,19 @@ jobs:
         use_default_features: [true, false]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-llvm-cov
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-on-failure: true
       - name: build
         run: |
           if [ "${{ matrix.use_default_features }}" == "true" ]; then
-            cargo build -v -p asset-importer-rs-gltf-v1
+            cargo build -v -p asset-importer-rs-gltf-v1 --locked
           else
-            cargo build -v --no-default-features -p asset-importer-rs-gltf-v1
+            cargo build -v --no-default-features -p asset-importer-rs-gltf-v1 --locked
           fi
       - name: test crate
         run: |
@@ -272,7 +272,7 @@ jobs:
             cargo llvm-cov -v --no-default-features -p asset-importer-rs-gltf-v1 --lcov --output-path lcov-gltf-v1-${{ matrix.use_default_features }}.info
           fi
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-gltf-v1-${{ matrix.use_default_features }}
           path: lcov-gltf-v1-${{ matrix.use_default_features }}.info
@@ -289,15 +289,15 @@ jobs:
         features: ['minimal', 'default', 'extras']
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-llvm-cov
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-on-failure: true
       - name: build
-        run: cargo build -v --no-default-features --features "$FEATURES"
+        run: cargo build -v --no-default-features --features "$FEATURES" --locked
         env:
           FEATURES: ${{ matrix.features }}
       - name: test integration
@@ -305,7 +305,7 @@ jobs:
         env:
           FEATURES: ${{ matrix.features }}
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-gltf-v1-integration-${{ matrix.features }}
           path: lcov-gltf-v1-integration-${{ matrix.features }}.info
@@ -318,19 +318,19 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.obj == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-llvm-cov
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-on-failure: true
       - name: build
-        run: cargo build -v -p asset-importer-rs-obj
+        run: cargo build -v -p asset-importer-rs-obj --locked
       - name: test crate
         run: cargo llvm-cov -v -p asset-importer-rs-obj --lcov --output-path lcov-obj.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-obj
           path: lcov-obj.info
@@ -347,15 +347,15 @@ jobs:
         features: ['minimal', 'default', 'extras']
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-llvm-cov
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-on-failure: true
       - name: build
-        run: cargo build -v --no-default-features --features "$FEATURES"
+        run: cargo build -v --no-default-features --features "$FEATURES" --locked
         env:
           FEATURES: ${{ matrix.features }}
       - name: test integration
@@ -363,7 +363,7 @@ jobs:
         env:
           FEATURES: ${{ matrix.features }}
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-obj-integration-${{ matrix.features }}
           path: lcov-obj-integration-${{ matrix.features }}.info
@@ -376,19 +376,19 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.fbxscii == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-llvm-cov
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-on-failure: true
       - name: build
-        run: cargo build -v -p fbxscii
+        run: cargo build -v -p fbxscii --locked
       - name: test crate
         run: cargo llvm-cov -v -p fbxscii --lcov --output-path lcov-fbxscii.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-fbxscii
           path: lcov-fbxscii.info
@@ -401,19 +401,19 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.fbx-dom == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-llvm-cov
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-on-failure: true
       - name: build
-        run: cargo build -v -p fbx-dom
+        run: cargo build -v -p fbx-dom --locked
       - name: test crate
         run: cargo llvm-cov -v -p fbx-dom --lcov --output-path lcov-fbx-dom.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-fbx-dom
           path: lcov-fbx-dom.info
@@ -426,19 +426,19 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.gltf-v1-lib == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-llvm-cov
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-on-failure: true
       - name: build
-        run: cargo build -v -p gltf-v1
+        run: cargo build -v -p gltf-v1 --locked
       - name: test
         run: cargo llvm-cov -v -p gltf-v1 --lcov --output-path lcov-gltf-v1.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-gltf-v1
           path: lcov-gltf-v1.info
@@ -451,19 +451,19 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.gltf-v1-json == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-llvm-cov
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-on-failure: true
       - name: build
-        run: cargo build -v -p gltf-v1-json
+        run: cargo build -v -p gltf-v1-json --locked
       - name: test
         run: cargo llvm-cov -v -p gltf-v1-json --lcov --output-path lcov-gltf-v1-json.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-gltf-v1-json
           path: lcov-gltf-v1-json.info
@@ -476,19 +476,19 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.gltf-v1-derive == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-llvm-cov
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
         with:
           cache-on-failure: true
       - name: build
-        run: cargo build -v -p gltf-v1-derive
+        run: cargo build -v -p gltf-v1-derive --locked
       - name: test
         run: cargo llvm-cov -v -p gltf-v1-derive --lcov --output-path lcov-gltf-v1-derive.info
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: coverage-gltf-v1-derive
           path: lcov-gltf-v1-derive.info
@@ -515,13 +515,13 @@ jobs:
       - test-gltf-v1-derive
     if: always()
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: taiki-e/install-action@cargo-llvm-cov
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
+      - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Download all coverage artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           pattern: coverage-*
           path: coverage-artifacts/
@@ -536,7 +536,7 @@ jobs:
             echo "No coverage artifacts found, creating empty coverage directory"
           fi
       - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 

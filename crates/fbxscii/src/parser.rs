@@ -728,4 +728,164 @@ FBXHeaderExtension:  {
         assert_eq!(elements.elements[1].tokens, vec!["1003"]);
         assert_eq!(elements.elements[1].parent_index, Some(0));
     }
+
+    fn arena_with_root_and_two_children() -> ElementAmphitheatre {
+        let mut arena = ElementAmphitheatre::new();
+        let root = arena.insert(Element {
+            key: "Root".into(),
+            tokens: vec!["root_tok".into()],
+            children: vec![],
+            parent_index: None,
+        });
+        let a = arena.insert(Element {
+            key: "ChildA".into(),
+            tokens: vec!["1".into()],
+            children: vec![],
+            parent_index: Some(root),
+        });
+        let b = arena.insert(Element {
+            key: "ChildB".into(),
+            tokens: vec!["2".into(), "3".into()],
+            children: vec![],
+            parent_index: Some(root),
+        });
+        arena.get_mut(root).unwrap().children = vec![a, b];
+        arena
+    }
+
+    #[test]
+    fn extract_subtree_oob_returns_none() {
+        let arena = ElementAmphitheatre::new();
+        assert!(arena.extract_subtree(0).is_none());
+    }
+
+    #[test]
+    fn extract_subtree_leaf_element_attribute() {
+        let mut arena = ElementAmphitheatre::new();
+        let idx = arena.insert(Element {
+            key: "Version".into(),
+            tokens: vec!["7500".into()],
+            children: vec![],
+            parent_index: Some(999),
+        });
+        let attr = arena.extract_subtree(idx).expect("leaf");
+        assert!(attr.is_leaf());
+        assert!(!attr.is_sub_tree());
+        assert_eq!(attr.get_key(), "Version");
+        assert_eq!(attr.get_tokens(), &["7500".to_string()]);
+        assert!(attr.get_children().is_empty());
+        match &attr {
+            ElementAttribute::Leaf(leaf) => {
+                assert_eq!(leaf.key, "Version");
+                assert_eq!(leaf.tokens, vec!["7500".to_string()]);
+            }
+            ElementAttribute::SubTree(_) => panic!("expected leaf"),
+        }
+    }
+
+    #[test]
+    fn extract_subtree_nested_yields_subtree_element_attribute() {
+        let arena = arena_with_root_and_two_children();
+        let root_handle = arena.get_handle(0).unwrap();
+        let attr = root_handle.to_attribute().expect("subtree");
+        assert!(attr.is_sub_tree());
+        assert!(!attr.is_leaf());
+        assert_eq!(attr.get_key(), "Root");
+        assert_eq!(attr.get_tokens(), &["root_tok".to_string()]);
+
+        let children = attr.get_children();
+        assert_eq!(children.len(), 2);
+        let child_a = children.get("ChildA").expect("ChildA");
+        assert!(child_a.is_leaf());
+        assert_eq!(child_a.get_key(), "ChildA");
+        assert_eq!(child_a.get_tokens(), &["1".to_string()]);
+        let child_b = children.get("ChildB").expect("ChildB");
+        assert!(child_b.is_leaf());
+        assert_eq!(child_b.get_tokens(), &["2".to_string(), "3".to_string()]);
+    }
+
+    #[test]
+    fn extract_subtree_inner_node_is_leaf_in_new_arena() {
+        let arena = arena_with_root_and_two_children();
+        let attr = arena.extract_subtree(1).expect("first child");
+        assert!(attr.is_leaf());
+        assert_eq!(attr.get_key(), "ChildA");
+    }
+
+    #[test]
+    fn extract_subtree_subtree_has_consistent_parent_child_links() {
+        let arena = arena_with_root_and_two_children();
+        let ElementAttribute::SubTree(st) = arena.extract_subtree(0).expect("root") else {
+            panic!("expected SubTree");
+        };
+        let sub = &st.amphitheatre;
+        let root = sub.get(st.root_element_index).expect("root in subtree");
+        assert_eq!(root.key, "Root");
+        assert_eq!(root.children.len(), 2);
+        for &ci in &root.children {
+            let c = sub.get(ci).expect("child");
+            assert_eq!(c.parent_index, Some(st.root_element_index));
+        }
+    }
+
+    #[test]
+    fn extract_subtree_from_parsed_fbx_header_matches_leaf_and_subtree() {
+        let input = r#"
+FBXHeaderExtension:  {
+    FBXHeaderVersion: 1003
+}"#;
+        let tokenizer = Tokenizer::new(BufReader::new(input.as_bytes()));
+        let parser = Parser::new(tokenizer);
+        let arena = parser.load().unwrap();
+
+        let leaf = arena.extract_subtree(1).expect("version leaf");
+        assert!(leaf.is_leaf());
+        assert_eq!(leaf.get_key(), "FBXHeaderVersion");
+        assert_eq!(leaf.get_tokens(), &["1003".to_string()]);
+
+        let subtree = arena.extract_subtree(0).expect("header subtree");
+        assert!(subtree.is_sub_tree());
+        assert_eq!(subtree.get_key(), "FBXHeaderExtension");
+        assert_eq!(subtree.get_tokens().len(), 0);
+        let kids = subtree.get_children();
+        assert_eq!(kids.len(), 1);
+        let nested = kids.get("FBXHeaderVersion").expect("nested");
+        assert!(nested.is_leaf());
+        assert_eq!(nested.get_tokens(), &["1003".to_string()]);
+    }
+
+    #[test]
+    fn extract_subtree_deep_chain_preserves_tokens_at_each_level() {
+        let mut arena = ElementAmphitheatre::new();
+        let i0 = arena.insert(Element {
+            key: "L0".into(),
+            tokens: vec![],
+            children: vec![],
+            parent_index: None,
+        });
+        let i1 = arena.insert(Element {
+            key: "L1".into(),
+            tokens: vec!["t1".into()],
+            children: vec![],
+            parent_index: Some(i0),
+        });
+        let i2 = arena.insert(Element {
+            key: "L2".into(),
+            tokens: vec!["t2".into()],
+            children: vec![],
+            parent_index: Some(i1),
+        });
+        arena.get_mut(i0).unwrap().children.push(i1);
+        arena.get_mut(i1).unwrap().children.push(i2);
+
+        let mid = arena.extract_subtree(i1).expect("middle subtree");
+        assert!(mid.is_sub_tree());
+        assert_eq!(mid.get_key(), "L1");
+        assert_eq!(mid.get_tokens(), &["t1".to_string()]);
+        let mid_children = mid.get_children();
+        let inner = mid_children.get("L2").expect("L2");
+        assert!(inner.is_leaf());
+        assert_eq!(inner.get_key(), "L2");
+        assert_eq!(inner.get_tokens(), &["t2".to_string()]);
+    }
 }
