@@ -43,7 +43,10 @@ impl BlendShapeChannel {
     }
 
     /// Resolve `ShapeGeometry -> BlendShapeChannel` links via owned OO connections.
-    pub fn get_shape_geometries<'a>(&'a self, document: &'a OwnedDocument) -> Vec<&'a ShapeGeometry> {
+    pub fn get_shape_geometries<'a>(
+        &'a self,
+        document: &'a OwnedDocument,
+    ) -> Vec<&'a ShapeGeometry> {
         let channel_id = self.inner().object_index;
         document
             .shape_geometries
@@ -84,7 +87,10 @@ impl TryFrom<OwnedObject> for BlendShapeChannel {
                     full_weights,
                 })
             }
-            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "BlendShapeChannel".to_string())),
+            _ => Err(FbxTypeMismatch::wrong_object_kind(
+                o,
+                "BlendShapeChannel".to_string(),
+            )),
         }
     }
 }

@@ -28,7 +28,7 @@ pub struct Object<'a> {
 
 impl<'a> Object<'a> {
     pub fn name(&self) -> &str {
-        &self.object.name   
+        &self.object.name
     }
 
     pub fn type_name(&self) -> &str {
@@ -44,7 +44,9 @@ impl<'a> Object<'a> {
     }
 
     pub fn element(&self) -> Option<&'a fbxscii::Element> {
-        self.document.object_element_amphitheatre.get(self.object.element_index)
+        self.document
+            .object_element_amphitheatre
+            .get(self.object.element_index)
     }
 
     /// Indices of objects connected from this one via `OO` rows (`C: "OO", self, dest`).
@@ -84,13 +86,21 @@ impl<'a> Object<'a> {
         let (source_object, source_property) = key;
         self.document
             .property_connections
-            .get(&ObjectPropertyConnection { dest: source_object, property: source_property.to_string() })
+            .get(&ObjectPropertyConnection {
+                dest: source_object,
+                property: source_property.to_string(),
+            })
             .map(|v| v.as_slice())
     }
 }
 
 impl<'a> Object<'a> {
-    pub fn new(document: &'a Document, template: &'a Template, object: &'a LazyObject, index: u64) -> Self {
+    pub fn new(
+        document: &'a Document,
+        template: &'a Template,
+        object: &'a LazyObject,
+        index: u64,
+    ) -> Self {
         Self {
             document,
             template,
@@ -141,7 +151,10 @@ impl<'a> Object<'a> {
             if attribute.key() == "Properties70" {
                 continue;
             }
-            let subtree = self.document.object_element_amphitheatre.extract_subtree(attribute.index());
+            let subtree = self
+                .document
+                .object_element_amphitheatre
+                .extract_subtree(attribute.index());
             if subtree.is_none() {
                 continue;
             }
@@ -210,13 +223,13 @@ pub struct Objects<'a> {
     pub(crate) document: &'a Document,
 }
 
-
 impl ExactSizeIterator for Objects<'_> {}
 impl<'a> Iterator for Objects<'a> {
     type Item = Result<Object<'a>, ObjectError>;
     fn next(&mut self) -> Option<Self::Item> {
         self.iter.next().map(|(index, object)| {
-            self.document.template_for_object(object)
+            self.document
+                .template_for_object(object)
                 .map(|template| Object::new(self.document, template, object, *index))
                 .ok_or_else(|| ObjectError::MissingTemplate(object.type_name.clone()))
         })
@@ -230,14 +243,16 @@ impl<'a> Iterator for Objects<'a> {
     fn last(self) -> Option<Self::Item> {
         let document = self.document;
         self.iter.last().map(|(index, object)| {
-            document.template_for_object(object)
+            document
+                .template_for_object(object)
                 .map(|template| Object::new(document, template, object, *index))
                 .ok_or_else(|| ObjectError::MissingTemplate(object.type_name.clone()))
         })
     }
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         self.iter.nth(n).map(|(index, object)| {
-            self.document.template_for_object(object)
+            self.document
+                .template_for_object(object)
                 .map(|template| Object::new(self.document, template, object, *index))
                 .ok_or_else(|| ObjectError::MissingTemplate(object.type_name.clone()))
         })

@@ -10,9 +10,7 @@ use fbxscii::ElementAttribute;
 
 use crate::{OwnedObject, Property, objects::AttrExtractorExt};
 
-use super::{
-    fbx_object_tag, FbxObjectTag, FbxTryFromReason, FbxTypeMismatch,
-};
+use super::{FbxObjectTag, FbxTryFromReason, FbxTypeMismatch, fbx_object_tag};
 
 const CAMERA_ID: &str = "CameraId";
 const CAMERA_NAME: &str = "CameraName";
@@ -49,10 +47,13 @@ fn parse_camera_switcher_fields(
     attrs: &HashMap<String, ElementAttribute>,
 ) -> Result<(i32, String, String), FbxTryFromReason> {
     let id_tok = attrs.require_token(&CAMERA_ID)?;
-    let camera_id = id_tok.parse::<i32>().map_err(|e| FbxTryFromReason::InvalidAttributeFormat {
-        name: CAMERA_ID.to_string(),
-        detail: e.to_string(),
-    })?;
+    let camera_id =
+        id_tok
+            .parse::<i32>()
+            .map_err(|e| FbxTryFromReason::InvalidAttributeFormat {
+                name: CAMERA_ID.to_string(),
+                detail: e.to_string(),
+            })?;
 
     let camera_name = attrs.require_token(&CAMERA_NAME)?.to_string();
     let camera_index_name = attrs.require_token(&CAMERA_INDEX_NAME)?.to_string();
@@ -65,7 +66,10 @@ impl TryFrom<OwnedObject> for CameraSwitcher {
 
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         if fbx_object_tag(&o) != FbxObjectTag::CameraSwitcher {
-            return Err(FbxTypeMismatch::wrong_object_kind(o, "CameraSwitcher".to_string()));
+            return Err(FbxTypeMismatch::wrong_object_kind(
+                o,
+                "CameraSwitcher".to_string(),
+            ));
         }
 
         match parse_camera_switcher_fields(&o.attributes) {
@@ -83,9 +87,7 @@ impl TryFrom<OwnedObject> for CameraSwitcher {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::objects::{
-        NODE_ATTRIBUTE_CAMERA_SWITCHER_CLASS_NAME, NODE_ATTRIBUTE_TYPE_NAME,
-    };
+    use crate::objects::{NODE_ATTRIBUTE_CAMERA_SWITCHER_CLASS_NAME, NODE_ATTRIBUTE_TYPE_NAME};
     use fbxscii::LeafAttribute;
     use std::collections::HashMap;
 

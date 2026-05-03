@@ -1,8 +1,8 @@
 //! Eager copy of [`crate::GlobalSettings`] accessors (axes, units, time span, frame rate) for
 //! [`crate::OwnedDocument`] without holding a full [`crate::Document`].
 
-use crate::GlobalSettings;
 use crate::FrameRate;
+use crate::GlobalSettings;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct OwnedGlobalSettings {

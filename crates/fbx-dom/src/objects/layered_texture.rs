@@ -39,7 +39,12 @@ impl LayeredTexture {
         document
             .textures
             .iter()
-            .filter(|texture| texture.inner().connected_object_ids.contains(&layered_texture_id))
+            .filter(|texture| {
+                texture
+                    .inner()
+                    .connected_object_ids
+                    .contains(&layered_texture_id)
+            })
             .collect()
     }
 
@@ -54,7 +59,10 @@ impl TryFrom<OwnedObject> for LayeredTexture {
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
             FbxObjectTag::LayeredTexture => {
-                let blend_mode = match o.attributes.optional_token_case_insensitive(BLEND_MODES_ATTR) {
+                let blend_mode = match o
+                    .attributes
+                    .optional_token_case_insensitive(BLEND_MODES_ATTR)
+                {
                     Ok(v) => v.and_then(|x| x.trim().parse::<i32>().ok()).unwrap_or(0),
                     Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
                 };
@@ -68,7 +76,10 @@ impl TryFrom<OwnedObject> for LayeredTexture {
                     alpha,
                 })
             }
-            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "LayeredTexture".to_string())),
+            _ => Err(FbxTypeMismatch::wrong_object_kind(
+                o,
+                "LayeredTexture".to_string(),
+            )),
         }
     }
 }
@@ -81,8 +92,11 @@ mod tests {
     use fbxscii::{ElementAttribute, LeafAttribute};
 
     use super::*;
-    use crate::objects::{LAYERED_TEXTURE_CLASS_NAME, LAYERED_TEXTURE_TYPE_NAME, TEXTURE_CLASS_NAME, TEXTURE_TYPE_NAME};
     use crate::Property;
+    use crate::objects::{
+        LAYERED_TEXTURE_CLASS_NAME, LAYERED_TEXTURE_TYPE_NAME, TEXTURE_CLASS_NAME,
+        TEXTURE_TYPE_NAME,
+    };
 
     fn leaf(tokens: &[&str]) -> ElementAttribute {
         ElementAttribute::Leaf(Box::new(LeafAttribute {

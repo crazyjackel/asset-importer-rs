@@ -6,10 +6,10 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use crate::{OwnedDocument, OwnedObject};
 use crate::Property;
+use crate::{OwnedDocument, OwnedObject};
 
-use super::{AnimationLayer, fbx_object_tag, FbxObjectTag, FbxTypeMismatch};
+use super::{AnimationLayer, FbxObjectTag, FbxTypeMismatch, fbx_object_tag};
 
 #[derive(Debug, PartialEq)]
 pub struct AnimationStack(pub OwnedObject);
@@ -60,7 +60,10 @@ impl AnimationStack {
     }
 
     /// Resolve incoming `AnimationLayer -> AnimationStack` OO links.
-    pub fn get_animation_layers<'a>(&'a self, document: &'a OwnedDocument) -> Vec<&'a AnimationLayer> {
+    pub fn get_animation_layers<'a>(
+        &'a self,
+        document: &'a OwnedDocument,
+    ) -> Vec<&'a AnimationLayer> {
         let stack_id = self.inner().object_index;
         document
             .animation_layers
@@ -89,7 +92,10 @@ mod tests {
     use std::collections::HashMap;
     use std::convert::TryFrom;
 
-    use crate::objects::{ANIMATION_LAYER_CLASS_NAME, ANIMATION_LAYER_TYPE_NAME, ANIMATION_STACK_CLASS_NAME, ANIMATION_STACK_TYPE_NAME, AnimationLayer};
+    use crate::objects::{
+        ANIMATION_LAYER_CLASS_NAME, ANIMATION_LAYER_TYPE_NAME, ANIMATION_STACK_CLASS_NAME,
+        ANIMATION_STACK_TYPE_NAME, AnimationLayer,
+    };
     use crate::{OwnedDocument, OwnedObject, Property};
 
     use super::AnimationStack;

@@ -5,7 +5,7 @@ use std::convert::TryFrom;
 use crate::OwnedObject;
 
 use super::AttrExtractor;
-use super::{fbx_object_tag, FbxObjectTag, FbxTryFromReason, FbxTypeMismatch};
+use super::{FbxObjectTag, FbxTryFromReason, FbxTypeMismatch, fbx_object_tag};
 
 #[derive(Debug, PartialEq)]
 pub struct LineGeometry {
@@ -30,7 +30,12 @@ impl TryFrom<OwnedObject> for LineGeometry {
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
             FbxObjectTag::LineGeometry => {}
-            _ => return Err(FbxTypeMismatch::wrong_object_kind(o, "LineGeometry".to_string())),
+            _ => {
+                return Err(FbxTypeMismatch::wrong_object_kind(
+                    o,
+                    "LineGeometry".to_string(),
+                ));
+            }
         }
 
         let attrs = &o.attributes;
@@ -92,9 +97,7 @@ mod tests {
 
     use crate::OwnedObject;
 
-    use super::super::{
-        GEOMETRY_LINE_CLASS_NAME, GEOMETRY_TYPE_NAME,
-    };
+    use super::super::{GEOMETRY_LINE_CLASS_NAME, GEOMETRY_TYPE_NAME};
     use super::LineGeometry;
 
     fn leaf(tokens: &[&str]) -> ElementAttribute {

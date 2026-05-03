@@ -6,10 +6,10 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use crate::{OwnedDocument, OwnedObject};
 use crate::Property;
+use crate::{OwnedDocument, OwnedObject};
 
-use super::{AnimationCurveNode, fbx_object_tag, FbxObjectTag, FbxTypeMismatch};
+use super::{AnimationCurveNode, FbxObjectTag, FbxTypeMismatch, fbx_object_tag};
 
 #[derive(Debug, PartialEq)]
 pub struct AnimationLayer(pub OwnedObject);
@@ -87,8 +87,8 @@ mod tests {
     use std::convert::TryFrom;
 
     use crate::objects::{
-        ANIMATION_CURVE_NODE_CLASS_NAME, ANIMATION_CURVE_NODE_TYPE_NAME, ANIMATION_LAYER_CLASS_NAME,
-        ANIMATION_LAYER_TYPE_NAME, AnimationCurveNode,
+        ANIMATION_CURVE_NODE_CLASS_NAME, ANIMATION_CURVE_NODE_TYPE_NAME,
+        ANIMATION_LAYER_CLASS_NAME, ANIMATION_LAYER_TYPE_NAME, AnimationCurveNode,
     };
     use crate::{OwnedDocument, OwnedObject, Property};
 

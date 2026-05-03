@@ -5,7 +5,7 @@ use std::convert::TryFrom;
 
 use crate::{OwnedObject, Property};
 
-use super::{fbx_object_tag, FbxObjectTag, FbxTypeMismatch};
+use super::{FbxObjectTag, FbxTypeMismatch, fbx_object_tag};
 
 /// Null / locator node attribute (`NodeAttribute` + class `Null`).
 #[derive(Debug, PartialEq)]
@@ -36,7 +36,10 @@ impl TryFrom<OwnedObject> for NullNode {
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
             FbxObjectTag::NullNode => Ok(NullNode(o)),
-            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "NullNode".to_string())),
+            _ => Err(FbxTypeMismatch::wrong_object_kind(
+                o,
+                "NullNode".to_string(),
+            )),
         }
     }
 }

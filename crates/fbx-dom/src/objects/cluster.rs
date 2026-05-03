@@ -5,7 +5,9 @@ use std::convert::TryFrom;
 
 use crate::{OwnedDocument, OwnedObject, Property};
 
-use super::{AttrExtractor, FbxObjectTag, FbxTryFromReason, FbxTypeMismatch, Model, fbx_object_tag};
+use super::{
+    AttrExtractor, FbxObjectTag, FbxTryFromReason, FbxTypeMismatch, Model, fbx_object_tag,
+};
 
 const ATTR_INDEXES: &str = "Indexes";
 const ATTR_WEIGHTS: &str = "Weights";
@@ -170,11 +172,11 @@ mod tests {
 
     use fbxscii::{ElementAttribute, LeafAttribute};
 
+    use crate::OwnedDocument;
     use crate::objects::{
         DEFORMER_CLUSTER_CLASS_NAME, DEFORMER_TYPE_NAME, FbxTryFromReason, MODEL_TYPE_NAME, Model,
     };
     use crate::{OwnedObject, Property};
-    use crate::OwnedDocument;
 
     use super::{ATTR_INDEXES, ATTR_TRANSFORM, ATTR_TRANSFORM_LINK, ATTR_WEIGHTS, Cluster};
 
@@ -235,7 +237,10 @@ mod tests {
             pp_property_targets: HashMap::new(),
         };
         let err = Cluster::try_from(o).unwrap_err();
-        assert!(matches!(err.reason, FbxTryFromReason::InvalidAttributeFormat { .. }));
+        assert!(matches!(
+            err.reason,
+            FbxTryFromReason::InvalidAttributeFormat { .. }
+        ));
     }
 
     #[test]
@@ -272,7 +277,9 @@ mod tests {
         let mut owned = OwnedDocument::default();
         owned.models = vec![model];
         assert_eq!(
-            cluster.get_target_model(&owned).map(|m| m.inner().object_index),
+            cluster
+                .get_target_model(&owned)
+                .map(|m| m.inner().object_index),
             Some(30)
         );
     }

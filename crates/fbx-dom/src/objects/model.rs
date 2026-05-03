@@ -586,9 +586,9 @@ mod tests {
 
     use crate::objects::{
         GEOMETRY_TYPE_NAME, MATERIAL_CLASS_NAME, MATERIAL_TYPE_NAME, MODEL_TYPE_NAME, Model,
-        ModelGeometryRef, ModelRotationOrder, ModelTransformInheritance, NodeAttributeRef,
-        NODE_ATTRIBUTE_LIGHT_CLASS_NAME, NODE_ATTRIBUTE_TYPE_NAME, TEXTURE_CLASS_NAME,
-        TEXTURE_TYPE_NAME,
+        ModelGeometryRef, ModelRotationOrder, ModelTransformInheritance,
+        NODE_ATTRIBUTE_LIGHT_CLASS_NAME, NODE_ATTRIBUTE_TYPE_NAME, NodeAttributeRef,
+        TEXTURE_CLASS_NAME, TEXTURE_TYPE_NAME,
     };
     use crate::{ObjectPropertyConnection, OwnedDocument, OwnedObject, Property};
 
@@ -759,6 +759,9 @@ mod tests {
         assert_eq!(attrs[0].inner().object_index, 503);
 
         let tex = mats[0].get_textures(&doc);
-        assert_eq!(tex.get("DiffuseColor").map(|t| t.inner().object_index), Some(504));
+        assert_eq!(
+            tex.get("DiffuseColor").map(|t| t.inner().object_index),
+            Some(504)
+        );
     }
 }

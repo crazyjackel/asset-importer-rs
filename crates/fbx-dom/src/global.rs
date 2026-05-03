@@ -37,7 +37,7 @@ impl<'a> GlobalSettings<'a> {
             global_settings,
         }
     }
-    
+
     pub fn document(&self) -> &'a Document {
         self.document
     }

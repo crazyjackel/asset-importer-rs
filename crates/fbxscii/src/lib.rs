@@ -6,14 +6,14 @@ pub use tokenizer::TokenData;
 pub use tokenizer::Tokenizer;
 pub use tokenizer::TokenizerError;
 
-pub use parser::Parser;
-pub use parser::ParserError;
 pub use parser::Element;
 pub use parser::ElementAmphitheatre;
-pub use parser::ElementHandle;
+pub use parser::ElementAttribute;
 pub use parser::ElementChildren;
 pub use parser::ElementChildrenByKey;
+pub use parser::ElementHandle;
 pub use parser::ElementParseError;
-pub use parser::ElementAttribute;
 pub use parser::LeafAttribute;
+pub use parser::Parser;
+pub use parser::ParserError;
 pub use parser::SubTreeAttribute;

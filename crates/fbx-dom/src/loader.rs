@@ -8,8 +8,8 @@
 use fbxscii::{ElementAmphitheatre, ElementHandle};
 
 use crate::document::{
-    Document, DocumentLoader, DocumentParseError, ImportSettings, LazyObject, ObjectPropertyConnection,
-    Property, PropertyDetails, PropertyParseError, Template,
+    Document, DocumentLoader, DocumentParseError, ImportSettings, LazyObject,
+    ObjectPropertyConnection, Property, PropertyDetails, PropertyParseError, Template,
 };
 
 pub const LOWEST_SUPPORTED_VERSION: u32 = 7100;
@@ -414,7 +414,6 @@ impl<'a> TryFrom<ElementHandle<'a>> for PropertyDetails {
     }
 }
 
-
 impl DocumentLoader for ElementAmphitheatre {
     fn load_into_document(
         self,
@@ -478,5 +477,4 @@ FBXHeaderExtension:  {
             DocumentParseError::RequiredElementNotFound("FBXHeaderExtension".to_string())
         );
     }
-
 }

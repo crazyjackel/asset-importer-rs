@@ -15,7 +15,10 @@ fn count_element_key(arena: &ElementAmphitheatre, key: &str) -> usize {
     arena.iter().filter(|e| e.key == key).count()
 }
 
-fn first_element_with_key<'a>(arena: &'a ElementAmphitheatre, key: &str) -> Option<&'a fbxscii::Element> {
+fn first_element_with_key<'a>(
+    arena: &'a ElementAmphitheatre,
+    key: &str,
+) -> Option<&'a fbxscii::Element> {
     arena.iter().find(|e| e.key == key)
 }
 
@@ -81,7 +84,11 @@ fn duck_fbx_fixture_semantics_match_fbx_dom_asset() {
         3,
         "Objects: three Model nodes (LOD3sp, camera1, directionalLight1)"
     );
-    assert_eq!(count_element_key(&arena, "Geometry"), 1, "Objects: one Mesh geometry");
+    assert_eq!(
+        count_element_key(&arena, "Geometry"),
+        1,
+        "Objects: one Mesh geometry"
+    );
     assert_eq!(
         count_element_key(&arena, "Material"),
         1,

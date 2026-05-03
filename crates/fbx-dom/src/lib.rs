@@ -23,8 +23,8 @@ mod document;
 mod global;
 mod loader;
 mod object;
-mod owned_document;
 pub mod objects;
+mod owned_document;
 
 pub use document::Document;
 pub use document::DocumentParseError;
@@ -49,7 +49,6 @@ pub use objects::{
     AnimationCurve, AnimationCurveNode, AnimationLayer, AnimationStack, BlendShape,
     BlendShapeChannel, Camera, CameraSwitcher, ClassifiedFbxObject, Cluster, FbxTryFromReason,
     FbxTypeMismatch, LayeredTexture, Light, LightDecay, LightType, LimbNode, LineGeometry,
-    Material, MeshGeometry, Model, ModelGeometryRef, ModelRotationOrder,
-    ModelTransformInheritance, NodeAttributeRef,
-    NullNode, ShapeGeometry, Skin, Texture, Video,
+    Material, MeshGeometry, Model, ModelGeometryRef, ModelRotationOrder, ModelTransformInheritance,
+    NodeAttributeRef, NullNode, ShapeGeometry, Skin, Texture, Video,
 };

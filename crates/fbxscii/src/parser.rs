@@ -1,4 +1,7 @@
-use std::{collections::{HashMap, VecDeque}, io::BufRead};
+use std::{
+    collections::{HashMap, VecDeque},
+    io::BufRead,
+};
 
 use crate::{Token, Tokenizer, TokenizerError};
 

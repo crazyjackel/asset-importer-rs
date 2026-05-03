@@ -5,7 +5,7 @@ use std::convert::TryFrom;
 
 use crate::{OwnedObject, Property};
 
-use super::{fbx_object_tag, FbxObjectTag, FbxTypeMismatch};
+use super::{FbxObjectTag, FbxTypeMismatch, fbx_object_tag};
 
 const PROP_COLOR: &str = "Color";
 const PROP_LIGHT_TYPE: &str = "LightType";

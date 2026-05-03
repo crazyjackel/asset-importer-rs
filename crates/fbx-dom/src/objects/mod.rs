@@ -172,14 +172,9 @@ pub enum FbxTryFromReason {
         got_class_name: String,
     },
     /// A required non-`Properties70` child (FBX element under the object) was missing.
-    MissingAttribute {
-        name: String,
-    },
+    MissingAttribute { name: String },
     /// A child was present but had no usable value or failed to parse.
-    InvalidAttributeFormat {
-        name: String,
-        detail: String,
-    },
+    InvalidAttributeFormat { name: String, detail: String },
 }
 
 /// Returned when [`TryFrom`]`<`[`OwnedObject`]`>` fails for a typed FBX wrapper.
@@ -324,9 +319,9 @@ impl TryFrom<OwnedObject> for ClassifiedFbxObject {
             FbxObjectTag::Video => Ok(ClassifiedFbxObject::Video(Video::try_from(o)?)),
             FbxObjectTag::Cluster => Ok(ClassifiedFbxObject::Cluster(Cluster::try_from(o)?)),
             FbxObjectTag::Skin => Ok(ClassifiedFbxObject::Skin(Skin::try_from(o)?)),
-            FbxObjectTag::BlendShape => Ok(ClassifiedFbxObject::BlendShape(BlendShape::try_from(
-                o,
-            )?)),
+            FbxObjectTag::BlendShape => {
+                Ok(ClassifiedFbxObject::BlendShape(BlendShape::try_from(o)?))
+            }
             FbxObjectTag::BlendShapeChannel => Ok(ClassifiedFbxObject::BlendShapeChannel(
                 BlendShapeChannel::try_from(o)?,
             )),

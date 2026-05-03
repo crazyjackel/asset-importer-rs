@@ -36,7 +36,12 @@ impl BlendShape {
         document
             .blend_shape_channels
             .iter()
-            .filter(|channel| channel.inner().connected_object_ids.contains(&blend_shape_id))
+            .filter(|channel| {
+                channel
+                    .inner()
+                    .connected_object_ids
+                    .contains(&blend_shape_id)
+            })
             .collect()
     }
 }
@@ -47,7 +52,10 @@ impl TryFrom<OwnedObject> for BlendShape {
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
             FbxObjectTag::BlendShape => Ok(BlendShape(o)),
-            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "BlendShape".to_string())),
+            _ => Err(FbxTypeMismatch::wrong_object_kind(
+                o,
+                "BlendShape".to_string(),
+            )),
         }
     }
 }
@@ -58,8 +66,8 @@ mod tests {
     use std::convert::TryFrom;
 
     use crate::objects::{
-        BlendShapeChannel, DEFORMER_BLEND_SHAPE_CHANNEL_CLASS_NAME, DEFORMER_BLEND_SHAPE_CLASS_NAME,
-        DEFORMER_TYPE_NAME,
+        BlendShapeChannel, DEFORMER_BLEND_SHAPE_CHANNEL_CLASS_NAME,
+        DEFORMER_BLEND_SHAPE_CLASS_NAME, DEFORMER_TYPE_NAME,
     };
     use crate::{OwnedDocument, OwnedObject, Property};
 

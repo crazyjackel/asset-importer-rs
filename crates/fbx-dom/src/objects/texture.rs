@@ -3,12 +3,12 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use crate::{OwnedDocument, OwnedObject};
 use crate::Property;
 use crate::objects::AttrExtractorExt;
 use crate::objects::AttrExtractorParseExt;
+use crate::{OwnedDocument, OwnedObject};
 
-use super::{Video, fbx_object_tag, FbxObjectTag, FbxTypeMismatch};
+use super::{FbxObjectTag, FbxTypeMismatch, Video, fbx_object_tag};
 
 const TYPE_ATTR: &str = "Type";
 const FILE_NAME_ATTR: &str = "FileName";
@@ -85,16 +85,16 @@ impl TryFrom<OwnedObject> for Texture {
         let attrs = &o.attributes;
         let props = &o.properties;
 
-        let texture_type = match attrs.optional_token_case_insensitive( &TYPE_ATTR) {
+        let texture_type = match attrs.optional_token_case_insensitive(&TYPE_ATTR) {
             Ok(s) => s.map(|s| s.to_string()).unwrap_or_default(),
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         };
-        let file_name = match attrs.optional_token_case_insensitive( &FILE_NAME_ATTR) {
+        let file_name = match attrs.optional_token_case_insensitive(&FILE_NAME_ATTR) {
             Ok(s) => s.map(|s| s.to_string()).unwrap_or_default(),
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         };
         let relative_file_name =
-            match attrs.optional_token_case_insensitive( &RELATIVE_FILENAME_ATTR) {
+            match attrs.optional_token_case_insensitive(&RELATIVE_FILENAME_ATTR) {
                 Ok(r) => r.map(|s| s.to_string()),
                 Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
             };
@@ -104,25 +104,30 @@ impl TryFrom<OwnedObject> for Texture {
         let mut uv_rotation = 0.0f32;
         let mut cropping = [0i32; 4];
 
-        match attrs.optional_two_f32( &MODEL_UV_TRANSLATION) {
+        match attrs.optional_two_f32(&MODEL_UV_TRANSLATION) {
             Ok(Some(t)) => uv_translation = t,
             Ok(None) => {}
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         }
-        match attrs.optional_two_f32_case_insensitive( &MODEL_UV_SCALING) {
+        match attrs.optional_two_f32_case_insensitive(&MODEL_UV_SCALING) {
             Ok(Some(t)) => uv_scaling = t,
             Ok(None) => {}
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         }
-        match attrs.optional_four_i32_case_insensitive( &CROPPING) {
+        match attrs.optional_four_i32_case_insensitive(&CROPPING) {
             Ok(Some(c)) => cropping = c,
             Ok(None) => {}
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         }
 
-        apply_texture_property_uv_overrides(props, &mut uv_translation, &mut uv_scaling, &mut uv_rotation);
+        apply_texture_property_uv_overrides(
+            props,
+            &mut uv_translation,
+            &mut uv_scaling,
+            &mut uv_rotation,
+        );
 
-        let alpha_source = match attrs.optional_token_case_insensitive( &TEXTURE_ALPHA_SOURCE) {
+        let alpha_source = match attrs.optional_token_case_insensitive(&TEXTURE_ALPHA_SOURCE) {
             Ok(s) => s.map(|s| s.to_string()).unwrap_or_default(),
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         };
@@ -147,8 +152,10 @@ mod tests {
     use std::convert::TryFrom;
 
     use super::Texture;
-    use crate::objects::{TEXTURE_CLASS_NAME, TEXTURE_TYPE_NAME, VIDEO_CLASS_NAME, VIDEO_TYPE_NAME, Video};
     use crate::OwnedDocument;
+    use crate::objects::{
+        TEXTURE_CLASS_NAME, TEXTURE_TYPE_NAME, VIDEO_CLASS_NAME, VIDEO_TYPE_NAME, Video,
+    };
 
     #[test]
     fn resolves_media_video_connection() {
@@ -193,6 +200,11 @@ mod tests {
         .unwrap();
         let mut doc = OwnedDocument::default();
         doc.videos = vec![video];
-        assert_eq!(texture.get_media_video(&doc).map(|v| v.inner().object_index), Some(701));
+        assert_eq!(
+            texture
+                .get_media_video(&doc)
+                .map(|v| v.inner().object_index),
+            Some(701)
+        );
     }
 }

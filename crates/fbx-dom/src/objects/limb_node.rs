@@ -5,7 +5,7 @@ use std::convert::TryFrom;
 
 use crate::{OwnedObject, Property};
 
-use super::{fbx_object_tag, FbxObjectTag, FbxTypeMismatch};
+use super::{FbxObjectTag, FbxTypeMismatch, fbx_object_tag};
 
 const PROP_LIMB_LENGTH: &str = "LimbLength";
 const PROP_SIZE: &str = "Size";
@@ -54,7 +54,10 @@ impl TryFrom<OwnedObject> for LimbNode {
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
             FbxObjectTag::LimbNode => Ok(LimbNode(o)),
-            _ => Err(FbxTypeMismatch::wrong_object_kind(o, "LimbNode".to_string())),
+            _ => Err(FbxTypeMismatch::wrong_object_kind(
+                o,
+                "LimbNode".to_string(),
+            )),
         }
     }
 }
@@ -85,7 +88,10 @@ mod tests {
             pp_property_targets: HashMap::new(),
         };
         let limb_node = LimbNode::try_from(o).unwrap();
-        assert_eq!(limb_node.property("LimbLength"), Some(&Property::Float(10.0)));
+        assert_eq!(
+            limb_node.property("LimbLength"),
+            Some(&Property::Float(10.0))
+        );
         assert_eq!(limb_node.properties().len(), 1);
     }
 

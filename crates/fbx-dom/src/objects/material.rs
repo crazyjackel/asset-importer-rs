@@ -35,7 +35,10 @@ impl Material {
     }
 
     /// Resolve incoming `Texture -> Material` OP links keyed by destination property name.
-    pub fn get_textures<'a>(&'a self, document: &'a OwnedDocument) -> HashMap<&'a str, &'a Texture> {
+    pub fn get_textures<'a>(
+        &'a self,
+        document: &'a OwnedDocument,
+    ) -> HashMap<&'a str, &'a Texture> {
         let material_id = self.inner().object_index;
         let mut out = HashMap::new();
         for texture in &document.textures {
@@ -106,8 +109,8 @@ mod tests {
 
     use crate::ObjectPropertyConnection;
     use crate::objects::{
-        LAYERED_TEXTURE_CLASS_NAME, LAYERED_TEXTURE_TYPE_NAME, MATERIAL_CLASS_NAME, MATERIAL_TYPE_NAME, TEXTURE_CLASS_NAME,
-        TEXTURE_TYPE_NAME,
+        LAYERED_TEXTURE_CLASS_NAME, LAYERED_TEXTURE_TYPE_NAME, MATERIAL_CLASS_NAME,
+        MATERIAL_TYPE_NAME, TEXTURE_CLASS_NAME, TEXTURE_TYPE_NAME,
     };
     use crate::{OwnedDocument, OwnedObject};
 
@@ -181,7 +184,10 @@ mod tests {
 
         let textures = material.get_textures(&owned);
         assert_eq!(textures.len(), 1);
-        assert_eq!(textures.get("DiffuseColor").map(|t| t.inner().object_index), Some(801));
+        assert_eq!(
+            textures.get("DiffuseColor").map(|t| t.inner().object_index),
+            Some(801)
+        );
 
         let layered_textures = material.get_layered_textures(&owned);
         assert_eq!(layered_textures.len(), 1);

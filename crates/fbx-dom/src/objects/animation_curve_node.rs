@@ -6,10 +6,12 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
-use crate::{ObjectPropertyConnection, OwnedDocument, OwnedObject};
 use crate::Property;
+use crate::{ObjectPropertyConnection, OwnedDocument, OwnedObject};
 
-use super::{AnimationCurve, Model, NodeAttributeRef, fbx_object_tag, FbxObjectTag, FbxTypeMismatch};
+use super::{
+    AnimationCurve, FbxObjectTag, FbxTypeMismatch, Model, NodeAttributeRef, fbx_object_tag,
+};
 
 #[derive(Debug, PartialEq)]
 pub struct AnimationCurveNode(pub OwnedObject);
@@ -94,7 +96,10 @@ impl AnimationCurveNode {
             .map(NodeAttributeRef::Unknown)
     }
 
-    pub fn get_target_deformer<'a>(&'a self, document: &'a OwnedDocument) -> Option<&'a OwnedObject> {
+    pub fn get_target_deformer<'a>(
+        &'a self,
+        document: &'a OwnedDocument,
+    ) -> Option<&'a OwnedObject> {
         let target = self.get_target_property_connection()?;
         if let Some(v) = document
             .clusters
@@ -168,8 +173,9 @@ mod tests {
     use std::convert::TryFrom;
 
     use crate::objects::{
-        ANIMATION_CURVE_CLASS_NAME, ANIMATION_CURVE_NODE_CLASS_NAME, ANIMATION_CURVE_NODE_TYPE_NAME,
-        ANIMATION_CURVE_TYPE_NAME, DEFORMER_TYPE_NAME, MODEL_TYPE_NAME, NodeAttributeRef,
+        ANIMATION_CURVE_CLASS_NAME, ANIMATION_CURVE_NODE_CLASS_NAME,
+        ANIMATION_CURVE_NODE_TYPE_NAME, ANIMATION_CURVE_TYPE_NAME, DEFORMER_TYPE_NAME,
+        MODEL_TYPE_NAME, NodeAttributeRef,
     };
     use crate::{ObjectPropertyConnection, OwnedDocument, OwnedObject, Property};
 
@@ -260,7 +266,11 @@ mod tests {
         owned.models = vec![model];
         owned.animation_curves = vec![curve];
 
-        assert_eq!(node.get_target_model(&owned).map(|m| m.inner().object_index), Some(3001));
+        assert_eq!(
+            node.get_target_model(&owned)
+                .map(|m| m.inner().object_index),
+            Some(3001)
+        );
         let curves = node.get_curves(&owned);
         assert_eq!(curves.len(), 1);
         assert_eq!(

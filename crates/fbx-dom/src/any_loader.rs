@@ -757,16 +757,17 @@ mod tests {
                 property: "DiffuseColor".to_string(),
             }]
         );
-        assert_eq!(object.pp_source_property_names(), &["SourceProp".to_string()]);
+        assert_eq!(
+            object.pp_source_property_names(),
+            &["SourceProp".to_string()]
+        );
         assert_eq!(
             object.pp_targets((101, "SourceProp")),
             Some(
-                &[
-                    ObjectPropertyConnection {
-                        dest: 0,
-                        property: "DestProp".to_string(),
-                    }
-                ][..],
+                &[ObjectPropertyConnection {
+                    dest: 0,
+                    property: "DestProp".to_string(),
+                }][..],
             )
         );
 

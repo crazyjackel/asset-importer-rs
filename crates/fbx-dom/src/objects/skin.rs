@@ -47,12 +47,7 @@ impl Skin {
         document
             .clusters
             .iter()
-            .filter(|cluster| {
-                cluster
-                    .inner()
-                    .connected_object_ids
-                    .contains(&skin_id)
-            })
+            .filter(|cluster| cluster.inner().connected_object_ids.contains(&skin_id))
             .collect()
     }
 }
@@ -69,7 +64,10 @@ impl TryFrom<OwnedObject> for Skin {
                     .and_then(|a| a.get_tokens().first())
                     .and_then(|t| t.trim().parse::<f32>().ok())
                     .unwrap_or(0.0);
-                Ok(Skin { object: o, accuracy })
+                Ok(Skin {
+                    object: o,
+                    accuracy,
+                })
             }
             _ => Err(FbxTypeMismatch::wrong_object_kind(o, "Skin".to_string())),
         }
@@ -83,7 +81,9 @@ mod tests {
 
     use fbxscii::{ElementAttribute, LeafAttribute};
 
-    use crate::objects::{Cluster, DEFORMER_CLUSTER_CLASS_NAME, DEFORMER_SKIN_CLASS_NAME, DEFORMER_TYPE_NAME};
+    use crate::objects::{
+        Cluster, DEFORMER_CLUSTER_CLASS_NAME, DEFORMER_SKIN_CLASS_NAME, DEFORMER_TYPE_NAME,
+    };
     use crate::{OwnedDocument, OwnedObject, Property};
 
     use super::{ATTR_LINK_DEFORM_ACURACY, Skin};

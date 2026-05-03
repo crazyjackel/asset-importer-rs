@@ -1,15 +1,18 @@
 use std::{fs::File, io::BufReader, path::Path};
 
-use fbxscii::{Parser, Tokenizer};
 use fbx_dom::{
     Document, ImportSettings, ModelGeometryRef, NodeAttributeRef, OwnedDocument, OwnedObject,
     Property,
 };
+use fbxscii::{Parser, Tokenizer};
 
 #[test]
 fn test_load_duck_fbx() {
     let path = Path::new("assets/duck.fbx");
-    assert!(path.exists(), "duck.fbx file does not exist at assets/duck.fbx");
+    assert!(
+        path.exists(),
+        "duck.fbx file does not exist at assets/duck.fbx"
+    );
 
     let file = File::open(path).unwrap();
     let tokenizer = Tokenizer::new(BufReader::new(file));
@@ -264,21 +267,33 @@ fn test_load_collision_track_straight_fbx() {
 
     let document = document.unwrap();
     assert!(document.version() > 0, "FBX version should be set");
+    assert!(!document.creator().is_empty(), "Creator should be set");
+
+    let loadable_rows = document.objects().filter(|r| r.is_ok()).count();
     assert!(
-        !document.creator().is_empty(),
-        "Creator should be set"
+        loadable_rows > 0,
+        "expected at least one Objects row with a template"
     );
 
-    let objects = document.objects();
-    for result in objects {
-        if let Ok(object) = result {
-            let owned_object: OwnedObject = object.into();
-            println!("Object: {}", owned_object.name);
-            println!("Type Name: {}", owned_object.type_name);
-            println!("Class Name: {}", owned_object.class_name);
-            println!("Properties: {:?}", owned_object.properties);
-            println!("Attributes: {:?}", owned_object.attributes);
-        }
-    }
-}
+    let owned = OwnedDocument::from(document);
 
+    assert!(
+        owned.fbx_version > 0,
+        "header version carried into OwnedDocument"
+    );
+    assert!(
+        !owned.creator.is_empty(),
+        "creator copied into OwnedDocument"
+    );
+
+    assert_eq!(
+        owned_duck_row_count(&owned),
+        loadable_rows,
+        "each template-resolved Object row lands in exactly one OwnedDocument bucket"
+    );
+
+    assert!(
+        !owned.models.is_empty() || !owned.mesh_geometries.is_empty(),
+        "Kenney track asset should include at least models or mesh geometries"
+    );
+}

@@ -283,7 +283,7 @@ impl<R: BufRead> Iterator for Tokenizer<R> {
                 read_start = 0;
             }
             let line = self.char_buffer_queue.front().unwrap();
-            // Read Start is guarenteed to be in bounds. 
+            // Read Start is guarenteed to be in bounds.
             for (index, char) in line[read_start..].iter().enumerate() {
                 match char {
                     c if c.is_whitespace() => {}

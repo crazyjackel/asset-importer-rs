@@ -14,13 +14,13 @@
 
 use crate::Document;
 use crate::object::OwnedObject;
+use crate::objects::ClassifiedFbxObject;
 use crate::objects::{
     AnimationCurve, AnimationCurveNode, AnimationLayer, AnimationStack, BlendShape,
     BlendShapeChannel, Camera, CameraSwitcher, Cluster, LayeredTexture, Light, LimbNode,
-    LineGeometry, Material, MeshGeometry, Model, NullNode, OwnedGlobalSettings, ShapeGeometry, Skin,
-    Texture, Video,
+    LineGeometry, Material, MeshGeometry, Model, NullNode, OwnedGlobalSettings, ShapeGeometry,
+    Skin, Texture, Video,
 };
-use crate::objects::ClassifiedFbxObject;
 
 /// Fully owned FBX DOM view: header, definitions, globals, connection graph, and typed object rows.
 #[derive(Debug, Default, PartialEq)]
@@ -42,7 +42,7 @@ pub struct OwnedDocument {
     pub null_nodes: Vec<NullNode>,
     pub limb_nodes: Vec<LimbNode>,
     pub unknown_node_attributes: Vec<OwnedObject>,
-    
+
     pub materials: Vec<Material>,
     pub textures: Vec<Texture>,
     pub layered_textures: Vec<LayeredTexture>,
