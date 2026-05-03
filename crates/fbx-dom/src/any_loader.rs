@@ -23,14 +23,12 @@ fn fbx_version_to_u32(version: FbxVersion) -> u32 {
     (version.major() * 1000) + (version.minor() * 100)
 }
 
-/// Lossy conversion of a single FBX binary attribute to a UTF-8 string when the value is scalar or textual.
-trait IntoAttributeString {
-    /// Returns a string representation, or `None` for array and opaque binary payloads.
-    fn into_attribute_string(&self) -> Option<String>;
+trait AttributeInto<T> {
+    fn into_attribute(&self) -> Option<T>;
 }
 
-impl IntoAttributeString for AttributeValue {
-    fn into_attribute_string(&self) -> Option<String> {
+impl AttributeInto<String> for AttributeValue {
+    fn into_attribute(&self) -> Option<String> {
         match self {
             AttributeValue::String(value) => Some(value.to_owned()),
             AttributeValue::I16(value) => Some(value.to_string()),
@@ -50,13 +48,8 @@ impl IntoAttributeString for AttributeValue {
 }
 
 /// Reads a single attribute as `u32` when it is stored as a numeric scalar in the binary tree.
-trait IntoAttributeU32 {
-    /// Parses integer-like scalars; returns `None` for strings, arrays, and non-integer types.
-    fn into_attribute_u32(&self) -> Option<u32>;
-}
-
-impl IntoAttributeU32 for AttributeValue {
-    fn into_attribute_u32(&self) -> Option<u32> {
+impl AttributeInto<u32> for AttributeValue {
+    fn into_attribute(&self) -> Option<u32> {
         match self {
             AttributeValue::I16(value) => Some(*value as u32),
             AttributeValue::I32(value) => Some(*value as u32),
@@ -76,13 +69,8 @@ impl IntoAttributeU32 for AttributeValue {
 }
 
 /// Reads a single attribute as `u64` when it is stored as a numeric scalar in the binary tree.
-trait IntoAttributeU64 {
-    /// Parses integer-like scalars; returns `None` for strings, arrays, and non-integer types.
-    fn into_attribute_u64(&self) -> Option<u64>;
-}
-
-impl IntoAttributeU64 for AttributeValue {
-    fn into_attribute_u64(&self) -> Option<u64> {
+impl AttributeInto<u64> for AttributeValue {
+    fn into_attribute(&self) -> Option<u64> {
         match self {
             AttributeValue::I16(value) => Some(*value as u64),
             AttributeValue::I32(value) => Some(*value as u64),
@@ -97,6 +85,40 @@ impl IntoAttributeU64 for AttributeValue {
             | AttributeValue::ArrF32(_)
             | AttributeValue::ArrF64(_)
             | AttributeValue::String(_) => None,
+        }
+    }
+}
+
+impl AttributeInto<i32> for AttributeValue {
+    fn into_attribute(&self) -> Option<i32> {
+        match self {
+            AttributeValue::I16(value) => Some(*value as i32),
+            AttributeValue::I32(value) => Some(*value as i32),
+            AttributeValue::I64(value) => Some(*value as i32),
+            _ => None,
+        }
+    }
+}
+
+impl AttributeInto<i64> for AttributeValue {
+    fn into_attribute(&self) -> Option<i64> {
+        match self {
+            AttributeValue::I16(value) => Some(i64::from(*value)),
+            AttributeValue::I32(value) => Some(i64::from(*value)),
+            AttributeValue::I64(value) => Some(*value),
+            _ => None,
+        }
+    }
+}
+
+impl AttributeInto<bool> for AttributeValue {
+    fn into_attribute(&self) -> Option<bool> {
+        match self {
+            AttributeValue::Bool(value) => Some(*value),
+            AttributeValue::I16(value) => Some(*value != 0),
+            AttributeValue::I32(value) => Some(*value != 0),
+            AttributeValue::I64(value) => Some(*value != 0),
+            _ => None,
         }
     }
 }
@@ -118,7 +140,7 @@ fn read_header_from_tree(
         .ok_or_else(missing)?
         .attributes()
         .get(0)
-        .and_then(|v| v.into_attribute_u32())
+        .and_then(|v| v.into_attribute())
         .ok_or_else(missing)?;
 
     if document.fbx_version < LOWEST_SUPPORTED_VERSION {
@@ -141,7 +163,7 @@ fn read_header_from_tree(
         .ok_or_else(missing)?
         .attributes()
         .get(0)
-        .and_then(|value| value.into_attribute_string())
+        .and_then(|value| AttributeInto::<String>::into_attribute(value))
         .ok_or_else(missing)?
         .to_owned();
 
@@ -158,7 +180,7 @@ fn read_header_from_tree(
         .and_then(|node| {
             node.attributes()
                 .get(0)
-                .and_then(|value| value.into_attribute_u32())
+                .and_then(|value| value.into_attribute())
         })
         .ok_or_else(|| missing_child("Year"))?;
     let month = creation_date_element
@@ -166,7 +188,7 @@ fn read_header_from_tree(
         .and_then(|node| {
             node.attributes()
                 .get(0)
-                .and_then(|value| value.into_attribute_u32())
+                .and_then(|value| value.into_attribute())
         })
         .ok_or_else(|| missing_child("Month"))?;
     let day = creation_date_element
@@ -174,7 +196,7 @@ fn read_header_from_tree(
         .and_then(|node| {
             node.attributes()
                 .get(0)
-                .and_then(|value| value.into_attribute_u32())
+                .and_then(|value| value.into_attribute())
         })
         .ok_or_else(|| missing_child("Day"))?;
     let hour = creation_date_element
@@ -182,7 +204,7 @@ fn read_header_from_tree(
         .and_then(|node| {
             node.attributes()
                 .get(0)
-                .and_then(|value| value.into_attribute_u32())
+                .and_then(|value| value.into_attribute())
         })
         .ok_or_else(|| missing_child("Hour"))?;
     let minute = creation_date_element
@@ -190,7 +212,7 @@ fn read_header_from_tree(
         .and_then(|node| {
             node.attributes()
                 .get(0)
-                .and_then(|value| value.into_attribute_u32())
+                .and_then(|value| value.into_attribute())
         })
         .ok_or_else(|| missing_child("Minute"))?;
     let second = creation_date_element
@@ -198,7 +220,7 @@ fn read_header_from_tree(
         .and_then(|node| {
             node.attributes()
                 .get(0)
-                .and_then(|value| value.into_attribute_u32())
+                .and_then(|value| value.into_attribute())
         })
         .ok_or_else(|| missing_child("Second"))?;
     let millisecond = creation_date_element
@@ -206,7 +228,7 @@ fn read_header_from_tree(
         .and_then(|node| {
             node.attributes()
                 .get(0)
-                .and_then(|value| value.into_attribute_u32())
+                .and_then(|value| value.into_attribute())
         })
         .ok_or_else(|| missing_child("Millisecond"))?;
 
@@ -221,44 +243,34 @@ fn read_property_details_from_tree(node: NodeHandle<'_>) -> Option<PropertyDetai
         return None;
     }
 
-    let property_name = attributes
-        .get(0)
-        .and_then(|value| value.into_attribute_string())?;
-    let property_type = attributes
-        .get(1)
-        .and_then(|value| value.into_attribute_string())?;
+    let property_name: String = attributes.get(0).and_then(|value| value.into_attribute())?;
+    let property_type: String = attributes.get(1).and_then(|value| value.into_attribute())?;
     let property = match property_type.as_str() {
-        "KString" => Property::String(
-            attributes
-                .get(4)
-                .and_then(|value| value.into_attribute_string())?,
-        ),
+        "KString" => Property::String(attributes.get(4).and_then(|value| value.into_attribute())?),
         "bool" | "Bool" => {
             let value = attributes
                 .get(4)
-                .and_then(|value| value.into_attribute_u32())
+                .and_then(|value| value.into_attribute())
                 .unwrap_or_default();
-            Property::Bool(value != 0)
+            Property::Bool(value)
         }
         "int" | "Int" | "enum" | "Enum" | "Integer" => {
             let value = attributes
                 .get(4)
-                .and_then(|value| value.into_attribute_u32())
-                .and_then(|v| i32::try_from(v).ok())
+                .and_then(|value| value.into_attribute())
                 .unwrap_or_default();
             Property::Int(value)
         }
         "ULongLong" => Property::ULongLong(
             attributes
                 .get(4)
-                .and_then(|value| value.into_attribute_u64())
+                .and_then(|value| value.into_attribute())
                 .unwrap_or_default(),
         ),
         "KTime" => {
             let value = attributes
                 .get(4)
-                .and_then(|value| value.into_attribute_u64())
-                .and_then(|v| i64::try_from(v).ok())
+                .and_then(|value| value.into_attribute())
                 .unwrap_or_default();
             Property::ILongLong(value)
         }
@@ -326,7 +338,7 @@ fn read_definitions_from_tree(
         let Some(object_name) = object_type
             .attributes()
             .get(0)
-            .and_then(|value| value.into_attribute_string())
+            .and_then(|value| AttributeInto::<String>::into_attribute(value))
         else {
             continue;
         };
@@ -334,7 +346,7 @@ fn read_definitions_from_tree(
             let Some(property_name) = property_template
                 .attributes()
                 .get(0)
-                .and_then(|value| value.into_attribute_string())
+                .and_then(|value| AttributeInto::<String>::into_attribute(value))
             else {
                 continue;
             };
@@ -398,7 +410,7 @@ fn attribute_value_to_ascii_token(value: &AttributeValue) -> String {
         AttributeValue::F32(v) => format!("{v}"),
         AttributeValue::F64(v) => format!("{v}"),
         AttributeValue::String(s) => s.clone(),
-        AttributeValue::Binary(bytes) => String::from_utf8_lossy(bytes).into_owned(),
+        AttributeValue::Binary(bytes) => base64::encode(bytes),
         AttributeValue::ArrBool(values) => values
             .iter()
             .map(|b| if *b { "1" } else { "0" })
@@ -488,19 +500,19 @@ fn read_objects_from_tree(
         }
         let Some(object_index) = attributes
             .get(0)
-            .and_then(|value| value.into_attribute_u64())
+            .and_then(|value| AttributeInto::<u64>::into_attribute(value))
         else {
             continue;
         };
         let Some(name) = attributes
             .get(1)
-            .and_then(|value| value.into_attribute_string())
+            .and_then(|value| AttributeInto::<String>::into_attribute(value))
         else {
             continue;
         };
         let Some(class_name) = attributes
             .get(2)
-            .and_then(|value| value.into_attribute_string())
+            .and_then(|value| AttributeInto::<String>::into_attribute(value))
         else {
             continue;
         };
@@ -543,22 +555,16 @@ fn read_connections_from_tree(
         let attributes = connection.attributes();
         let Some(connection_type) = attributes
             .get(0)
-            .and_then(|value| value.into_attribute_string())
+            .and_then(|value| AttributeInto::<String>::into_attribute(value))
         else {
             continue;
         };
         match connection_type.as_str() {
             "OO" => {
-                let Some(src) = attributes
-                    .get(1)
-                    .and_then(|value| value.into_attribute_u64())
-                else {
+                let Some(src) = attributes.get(1).and_then(|value| value.into_attribute()) else {
                     continue;
                 };
-                let Some(dest) = attributes
-                    .get(2)
-                    .and_then(|value| value.into_attribute_u64())
-                else {
+                let Some(dest) = attributes.get(2).and_then(|value| value.into_attribute()) else {
                     continue;
                 };
                 document
@@ -568,21 +574,13 @@ fn read_connections_from_tree(
                     .push(dest);
             }
             "OP" => {
-                let Some(src) = attributes
-                    .get(1)
-                    .and_then(|value| value.into_attribute_u64())
-                else {
+                let Some(src) = attributes.get(1).and_then(|value| value.into_attribute()) else {
                     continue;
                 };
-                let Some(dest) = attributes
-                    .get(2)
-                    .and_then(|value| value.into_attribute_u64())
-                else {
+                let Some(dest) = attributes.get(2).and_then(|value| value.into_attribute()) else {
                     continue;
                 };
-                let Some(property) = attributes
-                    .get(3)
-                    .and_then(|value| value.into_attribute_string())
+                let Some(property) = attributes.get(3).and_then(|value| value.into_attribute())
                 else {
                     continue;
                 };
@@ -593,27 +591,20 @@ fn read_connections_from_tree(
                     .push(ObjectPropertyConnection { dest, property });
             }
             "PP" => {
-                let Some(src) = attributes
-                    .get(1)
-                    .and_then(|value| value.into_attribute_u64())
-                else {
+                let Some(src) = attributes.get(1).and_then(|value| value.into_attribute()) else {
                     continue;
                 };
                 let Some(src_property) = attributes
                     .get(2)
-                    .and_then(|value| value.into_attribute_string())
+                    .and_then(|value| AttributeInto::<String>::into_attribute(value))
                 else {
                     continue;
                 };
-                let Some(dest) = attributes
-                    .get(3)
-                    .and_then(|value| value.into_attribute_u64())
-                else {
+                let Some(dest) = attributes.get(3).and_then(|value| value.into_attribute()) else {
                     continue;
                 };
-                let Some(dest_property) = attributes
-                    .get(4)
-                    .and_then(|value| value.into_attribute_string())
+                let Some(dest_property) =
+                    attributes.get(4).and_then(|value| value.into_attribute())
                 else {
                     continue;
                 };

@@ -15,6 +15,9 @@
   <a href="https://deepwiki.com/crazyjackel/asset-importer-rs">
     <img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki">
   </a>
+  <a href="https://coderabbit.ai">
+    <img src="https://img.shields.io/coderabbit/prs/github/crazyjackel/asset-importer-rs?utm_source=oss&utm_medium=github&utm_campaign=crazyjackel%2Fasset-importer-rs&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews" alt="CodeRabbit Pull Request Reviews">
+  </a>
 </p>
 <p align="center">
   <a href="https://sonarcloud.io/summary/new_code?id=crazyjackel_asset-importer-rs">
@@ -41,6 +44,7 @@
   <a href="https://sonarcloud.io/summary/new_code?id=crazyjackel_asset-importer-rs">
     <img src="https://sonarcloud.io/api/project_badges/measure?project=crazyjackel_asset-importer-rs&metric=vulnerabilities" alt="Vulnerabilities">
   </a>
+  
 </p>
 <!-- TABLE OF CONTENTS -->
 <h2 id="table-of-contents"> :book: Table of Contents</h2>

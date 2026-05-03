@@ -17,7 +17,9 @@ use fbxcel::tree::any::AnyTree;
 use fbxscii::{ElementAmphitheatre, ElementParseError, Parser, ParserError};
 use std::{
     collections::HashMap,
+    fmt::{Display, Formatter, Result as FmtResult},
     io::{BufRead, Read, Seek},
+    result::Result,
 };
 
 use crate::{Object, global::GlobalSettings, object::Objects};
@@ -59,7 +61,31 @@ pub struct PropertyDetails {
 pub enum PropertyParseError {
     InvalidTokenLength(usize, Option<String>),
     MissingPropertyType(String),
+    TokenParseError(String, String),
 }
+
+
+impl Display for PropertyParseError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        match self {
+            PropertyParseError::InvalidTokenLength(len, property_type) => write!(
+                f,
+                "Invalid token length: {} for property type: {}",
+                len,
+                property_type.as_ref().unwrap_or(&String::new())
+            ),
+            PropertyParseError::MissingPropertyType(property_type) => {
+                write!(f, "Missing property type: {}", property_type)
+            }
+            PropertyParseError::TokenParseError(property_type, token) => write!(
+                f,
+                "Token parse does not match property type: {} for token: {}",
+                property_type, token
+            ),
+        }
+    }
+}
+impl std::error::Error for PropertyParseError {}
 
 pub type Template = HashMap<String, Property>;
 

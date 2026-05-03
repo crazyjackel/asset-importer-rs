@@ -227,8 +227,12 @@ fn read_connections(
                 if connection_tokens.len() != 3 {
                     continue;
                 }
-                let src = connection_tokens[1].parse::<u64>().unwrap_or(0);
-                let dest = connection_tokens[2].parse::<u64>().unwrap_or(0);
+                let Ok(src) = connection_tokens[1].parse::<u64>() else {
+                    continue;
+                };
+                let Ok(dest) = connection_tokens[2].parse::<u64>() else {
+                    continue;
+                };
                 document
                     .object_connections
                     .entry(src)
@@ -239,8 +243,12 @@ fn read_connections(
                 if connection_tokens.len() != 4 {
                     continue;
                 }
-                let src = connection_tokens[1].parse::<u64>().unwrap_or(0);
-                let dest = connection_tokens[2].parse::<u64>().unwrap_or(0);
+                let Ok(src) = connection_tokens[1].parse::<u64>() else {
+                    continue;
+                };
+                let Ok(dest) = connection_tokens[2].parse::<u64>() else {
+                    continue;
+                };
                 let property = connection_tokens[3].to_string();
                 document
                     .object_property_connections
@@ -252,9 +260,13 @@ fn read_connections(
                 if connection_tokens.len() != 5 {
                     continue;
                 }
-                let src = connection_tokens[1].parse::<u64>().unwrap_or(0);
+                let Ok(src) = connection_tokens[1].parse::<u64>() else {
+                    continue;
+                };
                 let src_property = connection_tokens[2].to_string();
-                let dest = connection_tokens[3].parse::<u64>().unwrap_or(0);
+                let Ok(dest) = connection_tokens[3].parse::<u64>() else {
+                    continue;
+                };
                 let dest_property = connection_tokens[4].to_string();
                 document
                     .object_to_source_properties
@@ -336,7 +348,12 @@ impl<'a> TryFrom<ElementHandle<'a>> for PropertyDetails {
                         Some(property_type.to_string()),
                     ));
                 }
-                let val = tokens[4].parse::<i32>().unwrap_or(0);
+                let Ok(val) = tokens[4].parse::<i32>() else {
+                    return Err(PropertyParseError::TokenParseError(
+                        property_type.to_string(),
+                        tokens[4].to_string(),
+                    ));
+                };
                 Property::Bool(val != 0)
             }
             "int" | "Int" | "enum" | "Enum" | "Integer" => {
@@ -346,7 +363,12 @@ impl<'a> TryFrom<ElementHandle<'a>> for PropertyDetails {
                         Some(property_type.to_string()),
                     ));
                 }
-                let val = tokens[4].parse::<i32>().unwrap_or(0);
+                let Ok(val) = tokens[4].parse::<i32>() else {
+                    return Err(PropertyParseError::TokenParseError(
+                        property_type.to_string(),
+                        tokens[4].to_string(),
+                    ));
+                };
                 Property::Int(val)
             }
             "ULongLong" => {
@@ -356,7 +378,12 @@ impl<'a> TryFrom<ElementHandle<'a>> for PropertyDetails {
                         Some(property_type.to_string()),
                     ));
                 }
-                let val = tokens[4].parse::<u64>().unwrap_or(0);
+                let Ok(val) = tokens[4].parse::<u64>() else {
+                    return Err(PropertyParseError::TokenParseError(
+                        property_type.to_string(),
+                        tokens[4].to_string(),
+                    ));
+                };
                 Property::ULongLong(val)
             }
             "KTime" => {
@@ -366,7 +393,12 @@ impl<'a> TryFrom<ElementHandle<'a>> for PropertyDetails {
                         Some(property_type.to_string()),
                     ));
                 }
-                let val = tokens[4].parse::<i64>().unwrap_or(0);
+                let Ok(val) = tokens[4].parse::<i64>() else {
+                    return Err(PropertyParseError::TokenParseError(
+                        property_type.to_string(),
+                        tokens[4].to_string(),
+                    ));
+                };
                 Property::ILongLong(val)
             }
             "double" | "Number" | "float" | "Float" | "FieldOfView" | "UnitScaleFactor" => {
@@ -376,7 +408,12 @@ impl<'a> TryFrom<ElementHandle<'a>> for PropertyDetails {
                         Some(property_type.to_string()),
                     ));
                 }
-                let val = tokens[4].parse::<f32>().unwrap_or(0.0);
+                let Ok(val) = tokens[4].parse::<f32>() else {
+                    return Err(PropertyParseError::TokenParseError(
+                        property_type.to_string(),
+                        tokens[4].to_string(),
+                    ));
+                };
                 Property::Float(val)
             }
             "Vector3D" | "Vector" | "Color" | "ColorRGB" | "Lcl Translation" | "Lcl Rotation"
@@ -387,9 +424,24 @@ impl<'a> TryFrom<ElementHandle<'a>> for PropertyDetails {
                         Some(property_type.to_string()),
                     ));
                 }
-                let x = tokens[4].parse::<f32>().unwrap_or(0.0);
-                let y = tokens[5].parse::<f32>().unwrap_or(0.0);
-                let z = tokens[6].parse::<f32>().unwrap_or(0.0);
+                let Ok(x) = tokens[4].parse::<f32>() else {
+                    return Err(PropertyParseError::TokenParseError(
+                        property_type.to_string(),
+                        tokens[4].to_string(),
+                    ));
+                };
+                let Ok(y) = tokens[5].parse::<f32>() else {
+                    return Err(PropertyParseError::TokenParseError(
+                        property_type.to_string(),
+                        tokens[5].to_string(),
+                    ));
+                };
+                let Ok(z) = tokens[6].parse::<f32>() else {
+                    return Err(PropertyParseError::TokenParseError(
+                        property_type.to_string(),
+                        tokens[6].to_string(),
+                    ));
+                };
                 Property::Vec3([x, y, z])
             }
             "ColorAndAlpha" => {
@@ -399,10 +451,30 @@ impl<'a> TryFrom<ElementHandle<'a>> for PropertyDetails {
                         Some(property_type.to_string()),
                     ));
                 }
-                let r = tokens[4].parse::<f32>().unwrap_or(0.0);
-                let g = tokens[5].parse::<f32>().unwrap_or(0.0);
-                let b = tokens[6].parse::<f32>().unwrap_or(0.0);
-                let a = tokens[7].parse::<f32>().unwrap_or(0.0);
+                let Ok(r) = tokens[4].parse::<f32>() else {
+                    return Err(PropertyParseError::TokenParseError(
+                        property_type.to_string(),
+                        tokens[4].to_string(),
+                    ));
+                };
+                let Ok(g) = tokens[5].parse::<f32>() else {
+                    return Err(PropertyParseError::TokenParseError(
+                        property_type.to_string(),
+                        tokens[5].to_string(),
+                    ));
+                };
+                let Ok(b) = tokens[6].parse::<f32>() else {
+                    return Err(PropertyParseError::TokenParseError(
+                        property_type.to_string(),
+                        tokens[6].to_string(),
+                    ));
+                };
+                let Ok(a) = tokens[7].parse::<f32>() else {
+                    return Err(PropertyParseError::TokenParseError(
+                        property_type.to_string(),
+                        tokens[7].to_string(),
+                    ));
+                };
                 Property::Vec4([r, g, b, a])
             }
             value => return Err(PropertyParseError::MissingPropertyType(value.to_string())),
