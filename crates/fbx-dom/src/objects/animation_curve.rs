@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::num::{ParseFloatError, ParseIntError};
 
 use crate::OwnedObject;
 use crate::Property;
@@ -66,14 +67,23 @@ impl TryFrom<OwnedObject> for AnimationCurve {
                 ));
             }
         };
-        let keys: Vec<i64> = key_time_el
+        let keys_result: Result<Vec<i64>, ParseIntError> = key_time_el
             .get_tokens()
             .iter()
             .flat_map(|t| t.split(','))
             .map(|t| t.trim())
             .filter(|t| !t.is_empty())
-            .filter_map(|t| t.parse::<i64>().ok())
+            .map(|t| t.parse::<i64>())
             .collect();
+        let Ok(keys) = keys_result else {
+            return Err(FbxTypeMismatch::new(
+                o,
+                FbxTryFromReason::InvalidAttributeFormat {
+                    name: ATTR_KEY_TIME.to_string(),
+                    detail: format!("invalid int token: {}", keys_result.unwrap_err()),
+                },
+            ));
+        };
 
         // Extract KeyValueFloat in values
         let key_value_el = match attrs.extract_case_insensitive(ATTR_KEY_VALUE_FLOAT) {
@@ -87,14 +97,23 @@ impl TryFrom<OwnedObject> for AnimationCurve {
                 ));
             }
         };
-        let values: Vec<f32> = key_value_el
+        let values_result: Result<Vec<f32>, ParseFloatError> = key_value_el
             .get_tokens()
             .iter()
             .flat_map(|t| t.split(','))
             .map(|t| t.trim())
             .filter(|t| !t.is_empty())
-            .filter_map(|t| t.parse::<f32>().ok())
+            .map(|t| t.parse::<f32>())
             .collect();
+        let Ok(values) = values_result else {
+            return Err(FbxTypeMismatch::new(
+                o,
+                FbxTryFromReason::InvalidAttributeFormat {
+                    name: ATTR_KEY_VALUE_FLOAT.to_string(),
+                    detail: format!("invalid float token: {}", values_result.unwrap_err()),
+                },
+            ));
+        };
 
         // Check if the number of keys and values match
         if keys.len() != values.len() {
@@ -130,7 +149,7 @@ impl TryFrom<OwnedObject> for AnimationCurve {
         }
 
         // Extract KeyAttrDataFloat in attributes
-        let attributes = attrs
+        let attributes_result: Result<Vec<f32>, ParseFloatError> = attrs
             .extract_case_insensitive(ATTR_KEY_ATTR_DATA_FLOAT)
             .map(|a| a.get_tokens())
             .unwrap_or(&Vec::new())
@@ -138,11 +157,20 @@ impl TryFrom<OwnedObject> for AnimationCurve {
             .flat_map(|t| t.split(','))
             .map(|t| t.trim())
             .filter(|t| !t.is_empty())
-            .filter_map(|t| t.parse::<f32>().ok())
+            .map(|t| t.parse::<f32>())
             .collect();
+        let Ok(attributes) = attributes_result else {
+            return Err(FbxTypeMismatch::new(
+                o,
+                FbxTryFromReason::InvalidAttributeFormat {
+                    name: ATTR_KEY_ATTR_DATA_FLOAT.to_string(),
+                    detail: format!("invalid float token: {}", attributes_result.unwrap_err()),
+                },
+            ));
+        };
 
         // Extract KeyAttrFlags in flags
-        let flags = attrs
+        let flags_result: Result<Vec<u32>, ParseIntError> = attrs
             .extract_case_insensitive(ATTR_KEY_ATTR_FLAGS)
             .map(|a| a.get_tokens())
             .unwrap_or(&Vec::new())
@@ -150,8 +178,17 @@ impl TryFrom<OwnedObject> for AnimationCurve {
             .flat_map(|t| t.split(','))
             .map(|t| t.trim())
             .filter(|t| !t.is_empty())
-            .filter_map(|t| t.parse::<u32>().ok())
+            .map(|t| t.parse::<u32>())
             .collect();
+        let Ok(flags) = flags_result else {
+            return Err(FbxTypeMismatch::new(
+                o,
+                FbxTryFromReason::InvalidAttributeFormat {
+                    name: ATTR_KEY_ATTR_FLAGS.to_string(),
+                    detail: format!("invalid int token: {}", flags_result.unwrap_err()),
+                },
+            ));
+        };
 
         Ok(AnimationCurve {
             object: o,

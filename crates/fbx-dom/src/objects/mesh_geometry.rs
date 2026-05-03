@@ -11,6 +11,8 @@
 
 use std::collections::HashMap;
 use std::convert::TryFrom;
+use std::num::ParseFloatError;
+use std::num::ParseIntError;
 
 use crate::OwnedObject;
 use fbxscii::ElementAttribute;
@@ -98,7 +100,14 @@ impl TryFrom<OwnedObject> for MeshGeometry {
             }
         };
         // Parse Vertices
-        let vertices = parse_f32_array(verts_attr)
+        let vertices_result = parse_f32_array(verts_attr);
+        let Ok(vertices) = vertices_result else {
+            return Err(FbxTypeMismatch::new(o, FbxTryFromReason::InvalidAttributeFormat {
+                name: ATTR_VERTICES.to_string(),
+                detail: format!("invalid float token: {}", vertices_result.unwrap_err()),
+            }));
+        };
+        let vertices = vertices
             .chunks_exact(3)
             .map(|c| [c[0], c[1], c[2]])
             .collect::<Vec<[f32; 3]>>();
@@ -115,7 +124,13 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                 ));
             }
         };
-        let temp_faces = parse_i32_array(poly_attr);
+        let temp_faces_result = parse_i32_array(poly_attr);
+        let Ok(temp_faces) = temp_faces_result else {
+            return Err(FbxTypeMismatch::new(o, FbxTryFromReason::InvalidAttributeFormat {
+                name: ATTR_POLYGON_VERTEX_INDEX.to_string(),
+                detail: format!("invalid int token: {}", temp_faces_result.unwrap_err()),
+            }));
+        };
 
         let (vertices, face_vertex_counts, mapping_counts, mapping_offsets, mappings) =
             match expand_mesh_polygon_vertices(&vertices, &temp_faces) {
@@ -387,7 +402,7 @@ impl TryFrom<OwnedObject> for MeshGeometry {
 }
 
 /// Comma-separated float list from `attr` tokens, after optional ASCII **`a:`** child (see `ACCESSOR_KEY`).
-fn parse_f32_array(attr: &ElementAttribute) -> Vec<f32> {
+fn parse_f32_array(attr: &ElementAttribute) -> Result<Vec<f32>, ParseFloatError> {
     let children = attr.get_children();
     let payload = children.get(ACCESSOR_KEY).unwrap_or(attr);
     let tokens = payload.get_tokens();
@@ -396,12 +411,12 @@ fn parse_f32_array(attr: &ElementAttribute) -> Vec<f32> {
         .flat_map(|t| t.split(','))
         .map(|t| t.trim())
         .filter(|t| !t.is_empty())
-        .filter_map(|t| t.parse::<f32>().ok())
+        .map(|t| t.parse::<f32>())
         .collect()
 }
 
 /// Comma-separated `i32` list; same `a:` drill-down as [`parse_f32_array`].
-fn parse_i32_array(attr: &ElementAttribute) -> Vec<i32> {
+fn parse_i32_array(attr: &ElementAttribute) -> Result<Vec<i32>, ParseIntError> {
     let children = attr.get_children();
     let payload = children.get(ACCESSOR_KEY).unwrap_or(attr);
     let tokens = payload.get_tokens();
@@ -410,7 +425,7 @@ fn parse_i32_array(attr: &ElementAttribute) -> Vec<i32> {
         .flat_map(|t| t.split(','))
         .map(|t| t.trim())
         .filter(|t| !t.is_empty())
-        .filter_map(|t| t.parse::<i32>().ok())
+        .map(|t| t.parse::<i32>())
         .collect()
 }
 
@@ -578,7 +593,13 @@ fn resolve_flat_f32_channel(
                 detail: "data channel not found".to_string(),
             },
         )?;
-        let channel_data = parse_f32_array(&channel_attribute);
+        let channel_data_result = parse_f32_array(&channel_attribute);
+        let Ok(channel_data) = channel_data_result else {
+            return Err(FbxTryFromReason::InvalidAttributeFormat {
+                name: params.data_name.to_string(),
+                detail: format!("invalid float token: {}", channel_data_result.unwrap_err()),
+            });
+        };
         if channel_data.len() != params.mapping_offsets.len() * params.components {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
                 name: params.data_name.to_string(),
@@ -610,14 +631,26 @@ fn resolve_flat_f32_channel(
                 detail: "data channel not found".to_string(),
             },
         )?;
-        let channel_data = parse_f32_array(&channel_attribute);
+        let channel_data_result = parse_f32_array(&channel_attribute);
+        let Ok(channel_data) = channel_data_result else {
+            return Err(FbxTryFromReason::InvalidAttributeFormat {
+                name: params.data_name.to_string(),
+                detail: format!("invalid float token: {}", channel_data_result.unwrap_err()),
+            });
+        };
         let channel_index_attribute = source.extract_case_insensitive(params.index_name).ok_or(
             FbxTryFromReason::InvalidAttributeFormat {
                 name: params.index_name.to_string(),
                 detail: "index channel not found".to_string(),
             },
         )?;
-        let channel_index_data = parse_i32_array(&channel_index_attribute);
+        let channel_index_data_result = parse_i32_array(&channel_index_attribute);
+        let Ok(channel_index_data) = channel_index_data_result else {
+            return Err(FbxTryFromReason::InvalidAttributeFormat {
+                name: params.index_name.to_string(),
+                detail: format!("invalid int token: {}", channel_index_data_result.unwrap_err()),
+            });
+        };
         if channel_index_data.len() != params.mapping_offsets.len() {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
                 name: params.index_name.to_string(),
@@ -644,7 +677,13 @@ fn resolve_flat_f32_channel(
                 detail: "data channel not found".to_string(),
             },
         )?;
-        let channel_data = parse_f32_array(&channel_attribute);
+        let channel_data_result = parse_f32_array(&channel_attribute);
+        let Ok(channel_data) = channel_data_result else {
+            return Err(FbxTryFromReason::InvalidAttributeFormat {
+                name: params.data_name.to_string(),
+                detail: format!("invalid float token: {}", channel_data_result.unwrap_err()),
+            });
+        };
         if channel_data.len() != params.vertex_count * params.components {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
                 name: params.data_name.to_string(),
@@ -671,14 +710,26 @@ fn resolve_flat_f32_channel(
                 detail: "data channel not found".to_string(),
             },
         )?;
-        let channel_data = parse_f32_array(&channel_attribute);
+        let channel_data_result = parse_f32_array(&channel_attribute);
+        let Ok(channel_data) = channel_data_result else {
+            return Err(FbxTryFromReason::InvalidAttributeFormat {
+                name: params.data_name.to_string(),
+                detail: format!("invalid float token: {}", channel_data_result.unwrap_err()),
+            });
+        };
         let channel_index_attribute = source.extract_case_insensitive(params.index_name).ok_or(
             FbxTryFromReason::InvalidAttributeFormat {
                 name: params.index_name.to_string(),
                 detail: "index channel not found".to_string(),
             },
         )?;
-        let mut channel_index_data = parse_i32_array(&channel_index_attribute);
+        let channel_index_data_result = parse_i32_array(&channel_index_attribute);
+        let Ok(mut channel_index_data) = channel_index_data_result else {
+            return Err(FbxTryFromReason::InvalidAttributeFormat {
+                name: params.index_name.to_string(),
+                detail: format!("invalid int token: {}", channel_index_data_result.unwrap_err()),
+            });
+        };
         // Truncate the index data if it's longer than the vertex count.
         if channel_index_data.len() > params.vertex_count {
             channel_index_data.truncate(params.vertex_count);
@@ -731,7 +782,13 @@ fn read_vertex_data_materials(
     let Some(mat_el) = source.extract_case_insensitive("Materials") else {
         return Ok(Vec::new());
     };
-    let materials_out = parse_i32_array(mat_el);
+    let materials_out_result = parse_i32_array(mat_el);
+    let Ok(materials_out) = materials_out_result else {
+        return Err(FbxTryFromReason::InvalidAttributeFormat {
+            name: ATTR_MATERIALS.to_string(),
+            detail: format!("invalid int token: {}", materials_out_result.unwrap_err()),
+        });
+    };
 
     if mapping_ty.eq_ignore_ascii_case(MAPPING_ALL_SAME) {
         // Case 1: Map type is AllSame
