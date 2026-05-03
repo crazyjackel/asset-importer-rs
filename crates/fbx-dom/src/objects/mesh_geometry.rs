@@ -141,7 +141,7 @@ impl TryFrom<OwnedObject> for MeshGeometry {
 
         let mut normals = Vec::new();
         if let Some(el) = attrs.extract_case_insensitive(ATTR_LAYER_ELEMENT_NORMAL) {
-            let map = el.get_children();
+            let map = el.get_children_distinct();
             let mapping_ty = match map
                 .require_token_case_insensitive(ATTR_MAPPING_INFORMATION_TYPE)
                 .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
@@ -182,7 +182,7 @@ impl TryFrom<OwnedObject> for MeshGeometry {
 
         let mut tangents = Vec::new();
         if let Some(el) = attrs.extract_case_insensitive(ATTR_LAYER_ELEMENT_TANGENT) {
-            let map = el.get_children();
+            let map = el.get_children_distinct();
             let (data_name, index_name) = if map.extract_case_insensitive("Tangents").is_some() {
                 ("Tangents", "TangentsIndex")
             } else {
@@ -227,7 +227,7 @@ impl TryFrom<OwnedObject> for MeshGeometry {
 
         let mut binormals = Vec::new();
         if let Some(el) = attrs.extract_case_insensitive(ATTR_LAYER_ELEMENT_BINORMAL) {
-            let map = el.get_children();
+            let map = el.get_children_distinct();
             let (data_name, index_name) = if map.extract_case_insensitive("Binormals").is_some() {
                 ("Binormals", "BinormalsIndex")
             } else {
@@ -274,7 +274,7 @@ impl TryFrom<OwnedObject> for MeshGeometry {
         let mut texture_coord_names: [String; MAX_UV_CHANNELS] = Default::default();
 
         if let Some(el) = attrs.extract_case_insensitive(ATTR_LAYER_ELEMENT_UV) {
-            let map = el.get_children();
+            let map = el.get_children_distinct();
             if let Ok(Some(name)) = map.optional_token_case_insensitive("Name") {
                 texture_coord_names[0] = name
                     .trim()
@@ -317,7 +317,7 @@ impl TryFrom<OwnedObject> for MeshGeometry {
 
         let mut vertex_colors: [Vec<[f32; 4]>; MAX_COLOR_SETS] = Default::default();
         if let Some(el) = attrs.extract_case_insensitive("LayerElementColor") {
-            let map = el.get_children();
+            let map = el.get_children_distinct();
             let mapping_ty = match map
                 .require_token_case_insensitive(ATTR_MAPPING_INFORMATION_TYPE)
                 .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
@@ -357,7 +357,7 @@ impl TryFrom<OwnedObject> for MeshGeometry {
 
         let material_indices =
             if let Some(el) = attrs.extract_case_insensitive("LayerElementMaterial") {
-                let map = el.get_children();
+                let map = el.get_children_distinct();
                 let mapping_ty = match map
                     .require_token_case_insensitive(ATTR_MAPPING_INFORMATION_TYPE)
                     .map(|s| s.trim().trim_matches(|c| c == '"' || c == '\''))
@@ -403,7 +403,7 @@ impl TryFrom<OwnedObject> for MeshGeometry {
 
 /// Comma-separated float list from `attr` tokens, after optional ASCII **`a:`** child (see `ACCESSOR_KEY`).
 fn parse_f32_array(attr: &ElementAttribute) -> Result<Vec<f32>, ParseFloatError> {
-    let children = attr.get_children();
+    let children = attr.get_children_distinct();
     let payload = children.get(ACCESSOR_KEY).unwrap_or(attr);
     let tokens = payload.get_tokens();
     tokens
@@ -417,7 +417,7 @@ fn parse_f32_array(attr: &ElementAttribute) -> Result<Vec<f32>, ParseFloatError>
 
 /// Comma-separated `i32` list; same `a:` drill-down as [`parse_f32_array`].
 fn parse_i32_array(attr: &ElementAttribute) -> Result<Vec<i32>, ParseIntError> {
-    let children = attr.get_children();
+    let children = attr.get_children_distinct();
     let payload = children.get(ACCESSOR_KEY).unwrap_or(attr);
     let tokens = payload.get_tokens();
     tokens

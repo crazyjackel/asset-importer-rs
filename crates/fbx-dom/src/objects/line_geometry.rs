@@ -1,6 +1,8 @@
 //! FBX `Geometry` / `Line` — Assimp [`LineGeometry`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXMeshGeometry.cpp).
 
 use std::convert::TryFrom;
+use std::num::ParseFloatError;
+use std::num::ParseIntError;
 
 use crate::OwnedObject;
 
@@ -51,13 +53,23 @@ impl TryFrom<OwnedObject> for LineGeometry {
                 ));
             }
         };
-        let points = points_tokens
+        let points_result = points_tokens
             .iter()
             .flat_map(|t| t.split(','))
             .map(|t| t.trim())
             .filter(|t| !t.is_empty())
-            .filter_map(|t| t.parse::<f32>().ok())
-            .collect::<Vec<f32>>()
+            .map(|t| t.parse::<f32>())
+            .collect::<Result<Vec<f32>, ParseFloatError>>();
+        let Ok(points_unchunked) = points_result else {
+            return Err(FbxTypeMismatch::new(
+                o,
+                FbxTryFromReason::InvalidAttributeFormat {
+                    name: "Points".to_string(),
+                    detail: format!("invalid float token: {}", points_result.unwrap_err()),
+                },
+            ));
+        };
+        let points = points_unchunked
             .chunks_exact(3)
             .map(|c| [c[0], c[1], c[2]])
             .collect::<Vec<[f32; 3]>>();
@@ -73,13 +85,22 @@ impl TryFrom<OwnedObject> for LineGeometry {
                 ));
             }
         };
-        let point_indices = idx_tokens
+        let point_indices_result = idx_tokens
             .iter()
             .flat_map(|t| t.split(','))
             .map(|t| t.trim())
             .filter(|t| !t.is_empty())
-            .filter_map(|t| t.parse::<i32>().ok())
-            .collect();
+            .map(|t| t.parse::<i32>())
+            .collect::<Result<Vec<i32>, ParseIntError>>();
+        let Ok(point_indices) = point_indices_result else {
+            return Err(FbxTypeMismatch::new(
+                o,
+                FbxTryFromReason::InvalidAttributeFormat {
+                    name: "PointsIndex".to_string(),
+                    detail: format!("invalid int token: {}", point_indices_result.unwrap_err()),
+                },
+            ));
+        };
 
         Ok(LineGeometry {
             object: o,

@@ -178,6 +178,7 @@ impl ElementAmphitheatre {
             // Insert the element into the subtree.
             let index = subtree.insert(element);
             let element = subtree.get_mut(index)?;
+            element.parent_index = parent_index;
             // Add the children to the queue.
             for child_index in &element.children {
                 let child = self.get(*child_index)?.clone();
@@ -431,12 +432,45 @@ impl ElementAttribute {
         }
     }
 
+    /// All children of this attribute's root element, each as a standalone [`ElementAttribute`].
+    ///
+    /// Returns an empty map for [`ElementAttribute::Leaf`]. For [`ElementAttribute::SubTree`],
+    /// returns one entry per direct child of the subtree root (child key paired with vector of leaf or nested
+    /// subtree). If the subtree root index is invalid, returns an empty map.
+    ///
+    /// If you only want the distinct and want to use less memory, use [get_children_distinct] instead.
+    pub fn get_children(&self) -> HashMap<String, Vec<ElementAttribute>> {
+        match self {
+            ElementAttribute::Leaf(_) => HashMap::new(),
+            ElementAttribute::SubTree(st) => {
+                let arena = &st.amphitheatre;
+                let Some(root) = arena.get(st.root_element_index) else {
+                    return HashMap::new();
+                };
+                let mut out = HashMap::new();
+                for &child_idx in &root.children {
+                    let Some(sub) = arena.extract_subtree(child_idx) else {
+                        continue;
+                    };
+                    let key = arena
+                        .get(child_idx)
+                        .map(|e| e.key.clone())
+                        .unwrap_or_default();
+                    out.entry(key).or_insert(Vec::new()).push(sub);
+                }
+                out
+            }
+        }
+    }
+
     /// Direct children of this attribute's root element, each as a standalone [`ElementAttribute`].
     ///
     /// Returns an empty vector for [`ElementAttribute::Leaf`]. For [`ElementAttribute::SubTree`],
     /// returns one entry per direct child of the subtree root (child key paired with leaf or nested
     /// subtree). If the subtree root index is invalid, returns an empty vector.
-    pub fn get_children(&self) -> HashMap<String, ElementAttribute> {
+    ///
+    /// Some Element's might have multiple children with the same key, use [get_children] instead.
+    pub fn get_children_distinct(&self) -> HashMap<String, ElementAttribute> {
         match self {
             ElementAttribute::Leaf(_) => HashMap::new(),
             ElementAttribute::SubTree(st) => {
@@ -773,7 +807,7 @@ FBXHeaderExtension:  {
         assert!(!attr.is_sub_tree());
         assert_eq!(attr.get_key(), "Version");
         assert_eq!(attr.get_tokens(), &["7500".to_string()]);
-        assert!(attr.get_children().is_empty());
+        assert!(attr.get_children_distinct().is_empty());
         match &attr {
             ElementAttribute::Leaf(leaf) => {
                 assert_eq!(leaf.key, "Version");
@@ -793,7 +827,7 @@ FBXHeaderExtension:  {
         assert_eq!(attr.get_key(), "Root");
         assert_eq!(attr.get_tokens(), &["root_tok".to_string()]);
 
-        let children = attr.get_children();
+        let children = attr.get_children_distinct();
         assert_eq!(children.len(), 2);
         let child_a = children.get("ChildA").expect("ChildA");
         assert!(child_a.is_leaf());
@@ -847,7 +881,7 @@ FBXHeaderExtension:  {
         assert!(subtree.is_sub_tree());
         assert_eq!(subtree.get_key(), "FBXHeaderExtension");
         assert_eq!(subtree.get_tokens().len(), 0);
-        let kids = subtree.get_children();
+        let kids = subtree.get_children_distinct();
         assert_eq!(kids.len(), 1);
         let nested = kids.get("FBXHeaderVersion").expect("nested");
         assert!(nested.is_leaf());
@@ -882,7 +916,7 @@ FBXHeaderExtension:  {
         assert!(mid.is_sub_tree());
         assert_eq!(mid.get_key(), "L1");
         assert_eq!(mid.get_tokens(), &["t1".to_string()]);
-        let mid_children = mid.get_children();
+        let mid_children = mid.get_children_distinct();
         let inner = mid_children.get("L2").expect("L2");
         assert!(inner.is_leaf());
         assert_eq!(inner.get_key(), "L2");
