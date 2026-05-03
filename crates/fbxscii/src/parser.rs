@@ -606,7 +606,9 @@ impl<R: BufRead> Parser<R> {
 
     pub fn load(mut self) -> Result<ElementAmphitheatre, ParserError> {
         let mut iter = self.iter();
-        while let Some(_result) = iter.next() {}
+        while let Some(result) = iter.next() {
+            result?;
+        }
         Ok(self.element_arena)
     }
 
