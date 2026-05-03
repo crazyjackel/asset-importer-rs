@@ -1,6 +1,7 @@
 //! FBX `Geometry` / `Shape` — Assimp [`ShapeGeometry`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXMeshGeometry.cpp).
 
 use std::convert::TryFrom;
+use std::num::ParseFloatError;
 
 use crate::OwnedObject;
 
@@ -71,29 +72,42 @@ impl TryFrom<OwnedObject> for ShapeGeometry {
                 ));
             }
         };
-        let vertices = verts_tokens
+        let vertices_result = verts_tokens
             .iter()
             .flat_map(|t| t.split(','))
             .map(|t| t.trim())
             .filter(|t| !t.is_empty())
-            .filter_map(|t| t.parse::<f32>().ok())
-            .collect::<Vec<f32>>()
+            .map(|t| t.parse::<f32>())
+            .collect::<Result<Vec<f32>, ParseFloatError>>();
+        let Ok(vertices_unchunked) = vertices_result else {
+            return Err(FbxTypeMismatch::new(
+                o,
+                FbxTryFromReason::InvalidAttributeFormat {
+                    name: "Vertices".to_string(),
+                    detail: format!("invalid float token: {}", vertices_result.unwrap_err()),
+                },
+            ));
+        };
+        let vertices = vertices_unchunked
             .chunks_exact(3)
             .map(|c| [c[0], c[1], c[2]])
             .collect::<Vec<[f32; 3]>>();
 
         let normals = if let Some(n_attr) = attrs.extract_case_insensitive("Normals") {
             let n_tokens = n_attr.get_tokens();
-            n_tokens
+            let normals_result = n_tokens
                 .iter()
                 .flat_map(|t| t.split(','))
                 .map(|t| t.trim())
                 .filter(|t| !t.is_empty())
-                .filter_map(|t| t.parse::<f32>().ok())
-                .collect::<Vec<f32>>()
+                .map(|t| t.parse::<f32>())
+                .collect::<Result<Vec<f32>, ParseFloatError>>()
+                .unwrap_or_default(); // If the parse fails, return an empty vector. This is intentional.
+            let normals = normals_result
                 .chunks_exact(3)
                 .map(|c| [c[0], c[1], c[2]])
-                .collect::<Vec<[f32; 3]>>()
+                .collect::<Vec<[f32; 3]>>();
+            normals
         } else {
             Vec::new()
         };
