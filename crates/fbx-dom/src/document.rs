@@ -1,3 +1,18 @@
+//! Parsed FBX file as header metadata, an element arena for `Objects` rows, and connection graphs.
+//!
+//! ## Connections (ASCII `Connections` section)
+//!
+//! - **`OO`** — Object → object. Stored in [`Document::object_connections`]: `source_id → [dest_id, …]`.
+//!   Typical: `Model` → `Geometry`, `Model` → `Material`.
+//! - **`OP`** — Object → object property. [`Document::object_property_connections`]:
+//!   `source_id → [{ dest, property }]`. Example: texture linked to material’s `DiffuseColor`.
+//! - **`PP`** — Property → property. [`Document::property_connections`] maps a **source**
+//!   `(object_id, property_name)` (packed as [`ObjectPropertyConnection`] with `dest` = source id)
+//!   to one or more destination [`ObjectPropertyConnection`] rows.
+//!
+//! [`DocumentLoader`] is implemented by ASCII element lists and by the binary tree adapter so both
+//! ingress paths share the same in-memory shape.
+
 use fbxcel::tree::any::AnyTree;
 use fbxscii::{ElementAmphitheatre, ElementParseError, Parser, ParserError};
 use std::{
@@ -53,14 +68,18 @@ pub struct LazyObject {
     pub name: String,
     pub type_name: String,
     pub class_name: String,
-    /// Index of this object’s root element in [`Document::object_element_amphitheatre`].
+    /// Index of this object’s root element in the document’s object element arena.
     ///
-    /// Populated by both ASCII and binary loaders. [`Object::element_index`](crate::Object::element_index)
-    /// exposes the same value for materialization passes that walk the arena while a [`Document`]
-    /// is still live.
+    /// Populated by both ASCII and binary loaders. [`crate::Object::element`] resolves this index
+    /// while a [`Document`] is still live.
     pub element_index: usize,
 }
 
+/// Endpoint for `OP` / `PP` rows: **destination** object id and property name on that object.
+///
+/// For **`PP`** map **keys**, Assimp/FBX use the source side: [`ObjectPropertyConnection::dest`] is
+/// the **source** object id and `property` the **source** property name; values are the actual
+/// destination links. See [`crate::Object::pp_targets`].
 #[derive(Debug, PartialEq, Clone, Hash, Eq)]
 pub struct ObjectPropertyConnection {
     pub dest: u64,

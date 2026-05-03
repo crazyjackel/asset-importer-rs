@@ -1,3 +1,10 @@
+//! ASCII FBX → [`crate::Document`]: parse [`fbxscii`] tree, read header/definitions/objects/connections,
+//! and populate [`crate::document::Document`].
+//!
+//! Object rows in `Objects` are keyed by id; each row’s subtree is extracted into
+//! [`Document::object_element_amphitheatre`]. `C:` connection rows fill the `OO` / `OP` / `PP`
+//! maps. Version bounds apply when [`ImportSettings::strict`] is relevant (see header handling).
+
 use fbxscii::{ElementAmphitheatre, ElementHandle};
 
 use crate::document::{

@@ -1,3 +1,9 @@
+//! Binary FBX (fbxcel **v7400** tree) → same [`crate::Document`] fields as ASCII.
+//!
+//! Node walks mirror the ASCII loader: header, definitions, `Objects`, `Connections`. Attribute
+//! values are coerced to [`crate::document::Property`] where possible; connection rows become
+//! `OO` / `OP` / `PP` entries. See [`crate::document`] for semantics.
+
 use fbxcel::{
     low::{FbxVersion, v7400::AttributeValue},
     tree::{any::AnyTree, v7400::NodeHandle},

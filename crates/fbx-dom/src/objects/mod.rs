@@ -1,8 +1,18 @@
-//! Owned FBX DOM object wrappers aligned with Assimp’s [`FBXDocument`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXDocument.h)
-//! [`LazyObject::Get`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXDocument.cpp) dispatch (`type_name` + `class_name` on [`crate::OwnedObject`]).
+//! Typed FBX object wrappers aligned with Assimp’s [`FBXDocument`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXDocument.h)
+//! and [`LazyObject::Get`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXDocument.cpp)-style dispatch.
 //!
-//! Each type is a newtype over [`crate::OwnedObject`] (or a small struct for parsed kinds) with
-//! [`TryFrom`] for narrowing. Use [`ClassifiedFbxObject::try_from`] for discriminated classification.
+//! ## Dispatch (`fbx_object_tag` / [`ClassifiedFbxObject`])
+//!
+//! - **`type_name`** is the FBX object class family (`Geometry`, `Model`, `Material`, …).
+//! - **`class_name`** narrows within the family (`Mesh`, `Camera`, `Skin`, …).
+//! - Materials, textures, video, and animation types are keyed by **`type_name` only** so varied
+//!   SDK `class_name` strings still classify.
+//! - Unknown `Geometry` / `NodeAttribute` / `Deformer` classes become explicit `Unknown*` variants
+//!   instead of the generic [`ClassifiedFbxObject::Unknown`].
+//!
+//! Each concrete type is a newtype over [`crate::OwnedObject`] (or a small struct) with
+//! [`TryFrom<OwnedObject>`] for narrowing. Prefer [`ClassifiedFbxObject::try_from`] when the kind is
+//! not known upfront.
 
 mod animation_curve;
 mod animation_curve_node;
@@ -155,7 +165,7 @@ pub const ANIMATION_CURVE_NODE_CLASS_NAME: &str = "AnimationCurveNode";
 /// Why [`TryFrom`]`<`[`OwnedObject`]`>` failed for a typed FBX wrapper.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FbxTryFromReason {
-    /// `(type_name, class_name)` does not match the target wrapper (see [`wrong_object_kind`]).
+    /// `(type_name, class_name)` does not match the target wrapper (factory: `FbxTypeMismatch::wrong_object_kind`).
     WrongObjectKind {
         expected: String,
         got_type_name: String,
@@ -338,7 +348,9 @@ impl TryFrom<OwnedObject> for ClassifiedFbxObject {
     }
 }
 
-/// Discriminated owned FBX object, mirroring Assimp’s typed DOM classes.
+/// Success result of classifying an [`OwnedObject`]: a concrete wrapper or an explicit unknown bucket.
+///
+/// Use [`ClassifiedFbxObject::inner`] to recover the underlying [`OwnedObject`] and connections.
 #[derive(Debug, PartialEq)]
 pub enum ClassifiedFbxObject {
     Model(Model),

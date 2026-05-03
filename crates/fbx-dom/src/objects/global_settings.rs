@@ -1,4 +1,5 @@
-//! Eager copy of the fields exposed by [`crate::GlobalSettings`] from `GlobalSettings.Properties70`.
+//! Eager copy of [`crate::GlobalSettings`] accessors (axes, units, time span, frame rate) for
+//! [`crate::OwnedDocument`] without holding a full [`crate::Document`].
 
 use crate::GlobalSettings;
 use crate::FrameRate;

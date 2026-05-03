@@ -1,3 +1,9 @@
+//! Lookup helpers for [`fbxscii::ElementAttribute`] maps on [`crate::OwnedObject::attributes`] and
+//! per-layer child maps in [`crate::objects::mesh_geometry`].
+//!
+//! [`AttrExtractorExt`] implements FBX-style “first token” accessors for scalar properties; large
+//! float/int arrays use the mesh layer’s parsers (comma-split tokens, optional `a:` child).
+
 use std::collections::HashMap;
 
 use fbxscii::ElementAttribute;

@@ -1,8 +1,16 @@
-//! Eager-owned snapshot of a loaded FBX [`crate::Document`]: typed object rows, templates, globals,
-//! and the full connection graph in FBX object-id space.
+//! Eager-owned snapshot produced by [`From<Document>`]: typed `Vec`s of meshes, materials, animation,
+//! etc., plus catch-all buckets for unclassified rows.
 //!
-//! Building an [`OwnedDocument`] from a live [`crate::Document`] (classification, remap tables) is
-//! left to a materializer; this module defines the storage shape only.
+//! ## `From<Document>` behavior
+//!
+//! Iterates every object in document order via [`crate::object::Objects`], converts each to
+//! [`OwnedObject`], then [`ClassifiedFbxObject::try_from`]. Successful variants append to the
+//! matching typed list; failures go to [`OwnedDocument::unknown_objects`] (or geometry/node/deformer
+//! “unknown kind” variants when `type_name` matches but `class_name` is unsupported).
+//!
+//! **Note:** This conversion does **not** retain the full [`Document`] connection graph on
+//! [`OwnedDocument`] itself; each [`OwnedObject`] still carries its own outgoing `OO` / `OP` / `PP`
+//! lists copied at materialization time.
 
 use crate::Document;
 use crate::object::OwnedObject;
@@ -52,6 +60,8 @@ pub struct OwnedDocument {
 }
 
 impl From<Document> for OwnedDocument {
+    /// Classifies every `Objects` row; header and [`crate::objects::OwnedGlobalSettings`] are copied;
+    /// connection maps are only preserved per-[`OwnedObject`], not on this struct.
     fn from(document: Document) -> Self {
         let mut models = Vec::new();
         let mut mesh_geometries = Vec::new();

@@ -1,3 +1,5 @@
+//! Typed accessors over [`Document::global_settings`] (`GlobalSettings` section / `Properties70`).
+
 use crate::document::{Document, Property};
 use std::collections::HashMap;
 

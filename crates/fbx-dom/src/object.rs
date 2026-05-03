@@ -1,3 +1,9 @@
+//! Borrowed view of one FBX `Objects` row: [`Object`] (needs [`Document`]) and eager [`OwnedObject`].
+//!
+//! [`Object`] resolves the row’s subtree in [`Document::object_element_amphitheatre`] and merges
+//! [`Template`] defaults where applicable. [`OwnedObject`] is the detached form used by
+//! [`crate::objects::ClassifiedFbxObject`].
+
 use fbxscii::ElementAttribute;
 
 use crate::document::{
@@ -10,12 +16,13 @@ pub enum ObjectError {
     MissingTemplate(String),
 }
 
-/// Object is a wrapper around a LazyObject that provides access to the object's properties and attributes.
+/// One FBX object id: metadata from [`LazyObject`], template from definitions, subtree from arena.
 #[derive(Debug)]
 pub struct Object<'a> {
     document: &'a Document,
     template: &'a Template,
     object: &'a LazyObject,
+    /// Same as FBX `Objects` row id and keys in [`Document::object_connections`].
     index: u64,
 }
 
@@ -145,9 +152,10 @@ impl<'a> Object<'a> {
     }
 }
 
-/// OwnedObject is an object with its properties extracted from the document.
-/// This is useful for accessing the object's properties and attributes
-/// without having to search the document for the object's properties and attributes.
+/// Detached FBX object: typed [`Property`] map from `Properties70`, non-property subtree as
+/// [`ElementAttribute`] map (mesh `Vertices`, layer elements, etc.), and outgoing connection edges.
+///
+/// Built from [`Object`] via [`From`]; used as input to [`crate::objects::ClassifiedFbxObject`].
 #[derive(Debug, PartialEq)]
 pub struct OwnedObject {
     /// FBX object id from the `Objects` section (same as [`Object::object_index`]).

@@ -1,4 +1,13 @@
 //! FBX `Geometry` / `Mesh` — Assimp [`MeshGeometry`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXMeshGeometry.h) / [`FBXMeshGeometry.cpp`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXMeshGeometry.cpp).
+//!
+//! ## Layout
+//!
+//! - **Control points** — `Vertices` / `PolygonVertexIndex` on the geometry root; ASCII stores large
+//!   arrays as `Name: *N { a: … }`; `parse_f32_array` / `parse_i32_array` read the optional **`a`**
+//!   child or fall back to tokens on the node (unit tests).
+//! - **Layers** — `LayerElementNormal`, `LayerElementUV`, … each hold `MappingInformationType`,
+//!   `ReferenceInformationType`, and channel arrays. `expand_mesh_polygon_vertices` duplicates
+//!   positions per corner and builds `mapping_*` tables for `resolve_flat_f32_channel`.
 
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -32,6 +41,8 @@ const ATTR_LAYER_ELEMENT_TANGENT: &str = "LayerElementTangent";
 const ATTR_LAYER_ELEMENT_BINORMAL: &str = "LayerElementBinormal";
 const ATTR_LAYER_ELEMENT_UV: &str = "LayerElementUV";
 const ATTR_MATERIALS: &str = "Materials";
+
+const ACCESSOR_KEY: &str = "a";
 
 #[derive(Debug, PartialEq)]
 pub struct MeshGeometry {
@@ -74,7 +85,7 @@ impl TryFrom<OwnedObject> for MeshGeometry {
 
         let attrs = &o.attributes;
 
-        // Extract Vertices
+        // Extract Vertices (ASCII: `Vertices: *N { a: ... }`; tests may use a leaf with tokens only).
         let verts_attr = match attrs.extract_case_insensitive(ATTR_VERTICES) {
             Some(a) => a,
             None => {
@@ -86,6 +97,7 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                 ));
             }
         };
+        // Parse Vertices
         let vertices = parse_f32_array(verts_attr)
             .chunks_exact(3)
             .map(|c| [c[0], c[1], c[2]])
@@ -374,31 +386,80 @@ impl TryFrom<OwnedObject> for MeshGeometry {
     }
 }
 
+/// Comma-separated float list from `attr` tokens, after optional ASCII **`a:`** child (see `ACCESSOR_KEY`).
 fn parse_f32_array(attr: &ElementAttribute) -> Vec<f32> {
-    let tokens = attr.get_tokens();
-    let parsed = tokens
+    let children = attr.get_children();
+    let payload = children.get(ACCESSOR_KEY).unwrap_or(attr);
+    let tokens = payload.get_tokens();
+    tokens
         .iter()
         .flat_map(|t| t.split(','))
         .map(|t| t.trim())
         .filter(|t| !t.is_empty())
         .filter_map(|t| t.parse::<f32>().ok())
-        .collect();
-    parsed
+        .collect()
 }
 
+/// Comma-separated `i32` list; same `a:` drill-down as [`parse_f32_array`].
 fn parse_i32_array(attr: &ElementAttribute) -> Vec<i32> {
-    let tokens = attr.get_tokens();
-    let parsed = tokens
+    let children = attr.get_children();
+    let payload = children.get(ACCESSOR_KEY).unwrap_or(attr);
+    let tokens = payload.get_tokens();
+    tokens
         .iter()
         .flat_map(|t| t.split(','))
         .map(|t| t.trim())
         .filter(|t| !t.is_empty())
         .filter_map(|t| t.parse::<i32>().ok())
-        .collect();
-    parsed
+        .collect()
 }
 
-/// Assimp [`MeshGeometry` ctor](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXMeshGeometry.cpp): expand to per-corner vertices and face sizes.
+/// Expand FBX mesh indices into a **per-polygon-vertex** (“corner”) linear layout and build tables to
+/// remap **per-corner** data from FBX’s indexed vertex pool.
+///
+/// Mirrors Assimp [`FBXMeshGeometry`](https://github.com/assimp/assimp/blob/master/code/AssetLib/FBX/FBXMeshGeometry.cpp)
+/// (`MeshGeometry` ctor after `ParseVectorDataArray`).
+///
+/// ## FBX encoding (`PolygonVertexIndex`)
+///
+/// Indices reference rows in `Vertices` (the control-point / vertex pool). The **last** index of each
+/// polygon is **negative**; its absolute value is still `absi = (-index - 1)`, marking the end of that
+/// face. Non-final corners use non-negative indices. Example triangle `0, 1, -3` uses pool vertices
+/// 0, 1, and 2 (`-3` → abs index 2).
+///
+/// ## Why expand?
+///
+/// Layer data (normals, UVs, …) is often stored **ByPolygonVertex** or **ByVertice** with a different
+/// indexing than the raw pool. Assimp duplicates pool positions so each **corner** gets its own row in
+/// `expanded_vertices` (length = number of polygon corners = `temp_faces.len()` in well-formed files).
+/// We must also know, for each pool index `i`, which contiguous slice of “corner slots” belongs to
+/// that pool vertex so channels can be scattered into the expanded order.
+///
+/// ## Outputs
+///
+/// - **`expanded_vertices`**: `temp_verts[absi]` appended once per corner, in `temp_faces` order
+///   (ignoring sign on the last index of each face).
+/// - **`face_vertex_counts`**: number of corners per polygon (from running `count` reset on each
+///   negative index).
+/// - **`mapping_offsets[i]`**: start offset in corner space for pool vertex `i` (prefix sum of how
+///   many corners reference pool vertex `i`).
+/// - **`mapping_counts`**: after this function returns, again the number of corners referencing each
+///   pool vertex `i` (same as after pass 1; rebuilt during pass 3).
+/// - **`mappings`**: length = corner count. For each corner in `temp_faces` order (global corner
+///   index `cursor`), `mappings[slot] = cursor` where `slot` is the next free slot in the slice
+///   `[mapping_offsets[absi] ..)` reserved for pool vertex `absi`. So `mappings` ties pool-vertex
+///   corner slots to the global expanded corner index for channel gather/scatter in
+///   [`resolve_flat_f32_channel`].
+///
+/// ## Three passes (same as Assimp)
+///
+/// 1. **Walk `temp_faces` once**: append expanded positions; increment `mapping_counts[absi]` per
+///    reference; accumulate polygon sizes into `face_vertex_counts` when hitting a negative index.
+/// 2. **Prefix-sum `mapping_counts` → `mapping_offsets`**, then zero `mapping_counts` (slots will be
+///    filled in pass 3).
+/// 3. **Walk `temp_faces` again**: for each corner, assign `mappings[mapping_offsets[absi] +
+///    mapping_counts[absi]++] = global_corner_index` so each pool vertex’s corners occupy a stable,
+///    contiguous block in corner index space.
 fn expand_mesh_polygon_vertices(
     temp_verts: &[[f32; 3]],
     temp_faces: &[i32],
@@ -409,8 +470,7 @@ fn expand_mesh_polygon_vertices(
     let mut face_vertex_counts = Vec::new();
     let mut count = 0u32;
 
-    // FBX Indexing uses a indexing system whereby negative indices are used to help compress representation.
-    // We need to expand these indices to get the proper model representation.
+    // Pass 1 — see module-level docs on [`expand_mesh_polygon_vertices`].
     for &index in temp_faces {
         // Get absolute index
         let absi = if index < 0 {
@@ -437,7 +497,7 @@ fn expand_mesh_polygon_vertices(
     }
 
     let polygon_vertex_count = expanded_vertices.len();
-    // Create a mapping of offsets for each vertex.
+    // Pass 2 — prefix sums into mapping_offsets; clear mapping_counts for pass 3 slot filling.
     let mut mapping_offsets = vec![0u32; vertex_count];
     let mut cursor = 0u32;
     for i in 0..vertex_count {
@@ -446,7 +506,7 @@ fn expand_mesh_polygon_vertices(
         mapping_counts[i] = 0;
     }
 
-    // Create a mapping of face index to expanded vertex index
+    // Pass 3 — for each corner in order, assign stable slot in per-pool-vertex ranges (see doc above).
     let mut mappings = vec![0u32; polygon_vertex_count];
     cursor = 0;
     for &index in temp_faces {
@@ -750,7 +810,12 @@ mod tests {
         }))
     }
 
-    fn append_layer_string_child(arena: &mut ElementAmphitheatre, root_idx: usize, key: &str, token: &str) {
+    fn append_layer_string_child(
+        arena: &mut ElementAmphitheatre,
+        root_idx: usize,
+        key: &str,
+        token: &str,
+    ) {
         let mut el = Element::new(key.to_string());
         el.tokens = vec![token.to_string()];
         el.parent_index = Some(root_idx);
@@ -786,7 +851,11 @@ mod tests {
         }))
     }
 
-    fn layer_element_material(mapping: &str, reference: &str, materials_csv: &str) -> ElementAttribute {
+    fn layer_element_material(
+        mapping: &str,
+        reference: &str,
+        materials_csv: &str,
+    ) -> ElementAttribute {
         let mut arena = ElementAmphitheatre::new();
         let root_idx = arena.insert(Element::new("LayerElementMaterial".into()));
         append_layer_string_child(
@@ -855,12 +924,7 @@ mod tests {
             "mappinginformationtype",
             "  \"ByPolygonVertex\"  ",
         );
-        append_layer_string_child(
-            &mut arena,
-            root_idx,
-            "referenceinformationtype",
-            "'Direct'",
-        );
+        append_layer_string_child(&mut arena, root_idx, "referenceinformationtype", "'Direct'");
         let mut normals_el = Element::new("Normals".into());
         normals_el.tokens = vec!["0,0,1,0,0,1,0,0,1".to_string()];
         normals_el.parent_index = Some(root_idx);
@@ -883,11 +947,7 @@ mod tests {
         let mut attrs = minimal_base_attrs();
         attrs.insert(
             "LayerElementNormal".into(),
-            layer_element_normal(
-                "ByPolygonVertex",
-                "Direct",
-                "0,0,1,0,0,1,0,0,1",
-            ),
+            layer_element_normal("ByPolygonVertex", "Direct", "0,0,1,0,0,1,0,0,1"),
         );
         let mesh = MeshGeometry::try_from(owned_mesh(attrs)).unwrap();
         assert_eq!(
@@ -932,7 +992,12 @@ mod tests {
         let mut attrs = minimal_base_attrs();
         let mut arena = ElementAmphitheatre::new();
         let root_idx = arena.insert(Element::new("LayerElementNormal".into()));
-        append_layer_string_child(&mut arena, root_idx, super::ATTR_REFERENCE_INFORMATION_TYPE, "Direct");
+        append_layer_string_child(
+            &mut arena,
+            root_idx,
+            super::ATTR_REFERENCE_INFORMATION_TYPE,
+            "Direct",
+        );
         let mut normals_el = Element::new("Normals".into());
         normals_el.tokens = vec!["0,0,1,0,0,1,0,0,1".to_string()];
         normals_el.parent_index = Some(root_idx);
