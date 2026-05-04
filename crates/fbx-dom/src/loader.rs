@@ -162,9 +162,8 @@ fn read_definitions(
                     .or_insert(Template::default());
                 for property_detail in property_table_handle.children() {
                     let r: Result<PropertyDetails, _> = property_detail.try_into();
-                    if let Ok(property_details) = r {
-                        template.insert(property_details.name, property_details.property);
-                    }
+                    let property_details = r.map_err(DocumentParseError::PropertyParseError)?;
+                    template.insert(property_details.name, property_details.property);
                 }
             }
         }
@@ -451,30 +450,10 @@ impl<'a> TryFrom<ElementHandle<'a>> for PropertyDetails {
                         Some(property_type.to_string()),
                     ));
                 }
-                let Ok(r) = tokens[4].parse::<f32>() else {
-                    return Err(PropertyParseError::TokenParseError(
-                        property_type.to_string(),
-                        tokens[4].to_string(),
-                    ));
-                };
-                let Ok(g) = tokens[5].parse::<f32>() else {
-                    return Err(PropertyParseError::TokenParseError(
-                        property_type.to_string(),
-                        tokens[5].to_string(),
-                    ));
-                };
-                let Ok(b) = tokens[6].parse::<f32>() else {
-                    return Err(PropertyParseError::TokenParseError(
-                        property_type.to_string(),
-                        tokens[6].to_string(),
-                    ));
-                };
-                let Ok(a) = tokens[7].parse::<f32>() else {
-                    return Err(PropertyParseError::TokenParseError(
-                        property_type.to_string(),
-                        tokens[7].to_string(),
-                    ));
-                };
+                let r = tokens[4].parse::<f32>().unwrap_or(0.0);
+                let g = tokens[5].parse::<f32>().unwrap_or(0.0);
+                let b = tokens[6].parse::<f32>().unwrap_or(0.0);
+                let a = tokens[7].parse::<f32>().unwrap_or(0.0);
                 Property::Vec4([r, g, b, a])
             }
             value => return Err(PropertyParseError::MissingPropertyType(value.to_string())),

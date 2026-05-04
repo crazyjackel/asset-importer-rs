@@ -330,9 +330,9 @@ fn read_definitions_from_tree(
     root: NodeHandle<'_>,
     document: &mut Document,
 ) -> Result<(), DocumentParseError> {
-    let definitions = root.first_child_by_name("Definitions").ok_or(
-        DocumentParseError::RequiredElementNotFound("Definitions".to_string()),
-    )?;
+    let Some(definitions) = root.first_child_by_name("Definitions") else {
+        return Ok(());
+    };
 
     for object_type in definitions.children_by_name("ObjectType") {
         let Some(object_name) = object_type
@@ -378,9 +378,12 @@ fn read_global_settings_from_tree(
     root: NodeHandle<'_>,
     document: &mut Document,
 ) -> Result<(), DocumentParseError> {
-    let global_settings = root.first_child_by_name("GlobalSettings").ok_or(
-        DocumentParseError::RequiredElementNotFound("GlobalSettings".to_string()),
-    )?;
+    // Global Settings is optional
+    let Some(global_settings) = root.first_child_by_name("GlobalSettings") else {
+        return Ok(());
+    };
+
+    // If there is a Global Settings, there must be a Properties70
     let properties70 = global_settings.first_child_by_name("Properties70").ok_or(
         DocumentParseError::RequiredElementNotFound("GlobalSettings.Properties70".to_string()),
     )?;
@@ -482,11 +485,9 @@ fn read_objects_from_tree(
     root: NodeHandle<'_>,
     document: &mut Document,
 ) -> Result<(), DocumentParseError> {
-    let objects =
-        root.first_child_by_name("Objects")
-            .ok_or(DocumentParseError::RequiredElementNotFound(
-                "Objects".to_string(),
-            ))?;
+    let Some(objects) = root.first_child_by_name("Objects") else {
+        return Ok(());
+    };
 
     let objects_parent_idx = {
         let arena = &mut document.object_element_amphitheatre;
@@ -547,9 +548,9 @@ fn read_connections_from_tree(
     root: NodeHandle<'_>,
     document: &mut Document,
 ) -> Result<(), DocumentParseError> {
-    let connections = root.first_child_by_name("Connections").ok_or(
-        DocumentParseError::RequiredElementNotFound("Connections".to_string()),
-    )?;
+    let Some(connections) = root.first_child_by_name("Connections") else {
+        return Ok(());
+    };
 
     for connection in connections.children() {
         let attributes = connection.attributes();

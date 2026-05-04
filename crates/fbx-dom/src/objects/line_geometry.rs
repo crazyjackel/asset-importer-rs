@@ -42,8 +42,8 @@ impl TryFrom<OwnedObject> for LineGeometry {
 
         let attrs = &o.attributes;
 
-        let points_tokens = match attrs.extract_case_insensitive("Points") {
-            Some(a) => a.get_tokens(),
+        let points_tokens_attr = match attrs.extract_case_insensitive("Points") {
+            Some(a) => a,
             None => {
                 return Err(FbxTypeMismatch::new(
                     o,
@@ -53,6 +53,9 @@ impl TryFrom<OwnedObject> for LineGeometry {
                 ));
             }
         };
+        let children = points_tokens_attr.get_children_distinct();
+        let payload = children.get("a").unwrap_or(points_tokens_attr);
+        let points_tokens = payload.get_tokens();
         let points_result = points_tokens
             .iter()
             .flat_map(|t| t.split(','))
@@ -75,7 +78,7 @@ impl TryFrom<OwnedObject> for LineGeometry {
             .collect::<Vec<[f32; 3]>>();
 
         let idx_tokens = match attrs.extract_case_insensitive("PointsIndex") {
-            Some(a) => a.get_tokens(),
+            Some(a) => a,
             None => {
                 return Err(FbxTypeMismatch::new(
                     o,
@@ -85,6 +88,9 @@ impl TryFrom<OwnedObject> for LineGeometry {
                 ));
             }
         };
+        let children = idx_tokens.get_children_distinct();
+        let payload = children.get("a").unwrap_or(idx_tokens);
+        let idx_tokens = payload.get_tokens();
         let point_indices_result = idx_tokens
             .iter()
             .flat_map(|t| t.split(','))

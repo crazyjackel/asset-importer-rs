@@ -102,10 +102,13 @@ impl TryFrom<OwnedObject> for MeshGeometry {
         // Parse Vertices
         let vertices_result = parse_f32_array(verts_attr);
         let Ok(vertices) = vertices_result else {
-            return Err(FbxTypeMismatch::new(o, FbxTryFromReason::InvalidAttributeFormat {
-                name: ATTR_VERTICES.to_string(),
-                detail: format!("invalid float token: {}", vertices_result.unwrap_err()),
-            }));
+            return Err(FbxTypeMismatch::new(
+                o,
+                FbxTryFromReason::InvalidAttributeFormat {
+                    name: ATTR_VERTICES.to_string(),
+                    detail: format!("invalid float token: {}", vertices_result.unwrap_err()),
+                },
+            ));
         };
         let vertices = vertices
             .chunks_exact(3)
@@ -126,10 +129,13 @@ impl TryFrom<OwnedObject> for MeshGeometry {
         };
         let temp_faces_result = parse_i32_array(poly_attr);
         let Ok(temp_faces) = temp_faces_result else {
-            return Err(FbxTypeMismatch::new(o, FbxTryFromReason::InvalidAttributeFormat {
-                name: ATTR_POLYGON_VERTEX_INDEX.to_string(),
-                detail: format!("invalid int token: {}", temp_faces_result.unwrap_err()),
-            }));
+            return Err(FbxTypeMismatch::new(
+                o,
+                FbxTryFromReason::InvalidAttributeFormat {
+                    name: ATTR_POLYGON_VERTEX_INDEX.to_string(),
+                    detail: format!("invalid int token: {}", temp_faces_result.unwrap_err()),
+                },
+            ));
         };
 
         let (vertices, face_vertex_counts, mapping_counts, mapping_offsets, mappings) =
@@ -677,7 +683,10 @@ fn resolve_flat_f32_channel(
         let Ok(channel_index_data) = channel_index_data_result else {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
                 name: params.index_name.to_string(),
-                detail: format!("invalid int token: {}", channel_index_data_result.unwrap_err()),
+                detail: format!(
+                    "invalid int token: {}",
+                    channel_index_data_result.unwrap_err()
+                ),
             });
         };
         if channel_index_data.len() != params.mapping_offsets.len() {
@@ -691,10 +700,11 @@ fn resolve_flat_f32_channel(
             let src = idx * params.components; // element `idx` in the direct table
             let istart = params.mapping_offsets[i] as usize;
             let iend = istart + params.mapping_counts[i] as usize;
-            for j in istart..iend { 
+            for j in istart..iend {
                 let dst = params.mappings[j] as usize * params.components;
                 if src + params.components > channel_data.len()
-                    || dst + params.components > vertex_out.len() {
+                    || dst + params.components > vertex_out.len()
+                {
                     return Err(FbxTryFromReason::InvalidAttributeFormat {
                         name: params.data_name.to_string(),
                         detail: format!("length mismatch for {MAPPING_BY_VERTICE}"),
@@ -765,7 +775,10 @@ fn resolve_flat_f32_channel(
         let Ok(mut channel_index_data) = channel_index_data_result else {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
                 name: params.index_name.to_string(),
-                detail: format!("invalid int token: {}", channel_index_data_result.unwrap_err()),
+                detail: format!(
+                    "invalid int token: {}",
+                    channel_index_data_result.unwrap_err()
+                ),
             });
         };
         if channel_index_data.len() > params.vertex_count {

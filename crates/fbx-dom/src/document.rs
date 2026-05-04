@@ -64,7 +64,6 @@ pub enum PropertyParseError {
     TokenParseError(String, String),
 }
 
-
 impl Display for PropertyParseError {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         match self {
