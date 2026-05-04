@@ -653,6 +653,159 @@ mod tests {
     }
 
     #[test]
+    fn model_typed_property_getters_cover_most_fields() {
+        let props: HashMap<String, Property> = HashMap::from([
+            ("QuaternionInterpolate".into(), Property::Int(1)),
+            ("RotationOffset".into(), Property::Vec3([0.1, 0.2, 0.3])),
+            ("RotationPivot".into(), Property::Vec3([0.4, 0.5, 0.6])),
+            ("ScalingOffset".into(), Property::Vec3([0.7, 0.8, 0.9])),
+            ("ScalingPivot".into(), Property::Vec3([1.0, 1.1, 1.2])),
+            ("TranslationActive".into(), Property::Bool(true)),
+            ("TranslationMin".into(), Property::Vec3([1.0, 2.0, 3.0])),
+            ("TranslationMax".into(), Property::Vec3([4.0, 5.0, 6.0])),
+            ("TranslationMinX".into(), Property::Bool(true)),
+            ("TranslationMaxX".into(), Property::Bool(false)),
+            ("TranslationMinY".into(), Property::Bool(false)),
+            ("TranslationMaxY".into(), Property::Bool(true)),
+            ("TranslationMinZ".into(), Property::Bool(true)),
+            ("TranslationMaxZ".into(), Property::Bool(false)),
+            ("RotationOrder".into(), Property::Int(6)),
+            ("RotationSpaceForLimitOnly".into(), Property::Bool(true)),
+            ("RotationStiffnessX".into(), Property::Float(0.11)),
+            ("RotationStiffnessY".into(), Property::Float(0.22)),
+            ("RotationStiffnessZ".into(), Property::Float(0.33)),
+            ("AxisLen".into(), Property::Float(9.5)),
+            ("PreRotation".into(), Property::Vec3([10.0, 20.0, 30.0])),
+            ("PostRotation".into(), Property::Vec3([40.0, 50.0, 60.0])),
+            ("RotationActive".into(), Property::Bool(true)),
+            ("RotationMin".into(), Property::Vec3([-1.0, -2.0, -3.0])),
+            ("RotationMax".into(), Property::Vec3([1.0, 2.0, 3.0])),
+            ("RotationMinX".into(), Property::Bool(true)),
+            ("RotationMaxX".into(), Property::Bool(false)),
+            ("RotationMinY".into(), Property::Bool(false)),
+            ("RotationMaxY".into(), Property::Bool(true)),
+            ("RotationMinZ".into(), Property::Bool(true)),
+            ("RotationMaxZ".into(), Property::Bool(false)),
+            ("InheritType".into(), Property::Int(1)),
+            ("ScalingActive".into(), Property::Bool(true)),
+            ("ScalingMin".into(), Property::Vec3([0.5, 0.6, 0.7])),
+            ("ScalingMax".into(), Property::Vec3([2.0, 2.5, 3.0])),
+            ("ScalingMinX".into(), Property::Bool(true)),
+            ("ScalingMaxX".into(), Property::Bool(false)),
+            ("ScalingMinY".into(), Property::Bool(false)),
+            ("ScalingMaxY".into(), Property::Bool(true)),
+            ("ScalingMinZ".into(), Property::Bool(true)),
+            ("ScalingMaxZ".into(), Property::Bool(false)),
+            ("GeometricTranslation".into(), Property::Vec3([7.0, 8.0, 9.0])),
+            ("GeometricRotation".into(), Property::Vec3([0.01, 0.02, 0.03])),
+            ("GeometricScaling".into(), Property::Vec3([1.5, 2.5, 3.5])),
+            ("MinDampRangeX".into(), Property::Float(0.1)),
+            ("MinDampRangeY".into(), Property::Float(0.2)),
+            ("MinDampRangeZ".into(), Property::Float(0.3)),
+            ("MaxDampRangeX".into(), Property::Float(0.4)),
+            ("MaxDampRangeY".into(), Property::Float(0.5)),
+            ("MaxDampRangeZ".into(), Property::Float(0.6)),
+            ("MinDampStrengthX".into(), Property::Float(0.7)),
+            ("MinDampStrengthY".into(), Property::Float(0.8)),
+            ("MinDampStrengthZ".into(), Property::Float(0.9)),
+            ("MaxDampStrengthX".into(), Property::Float(1.1)),
+            ("MaxDampStrengthY".into(), Property::Float(1.2)),
+            ("MaxDampStrengthZ".into(), Property::Float(1.3)),
+            ("PreferredAngleX".into(), Property::Float(2.1)),
+            ("PreferredAngleY".into(), Property::Float(2.2)),
+            ("PreferredAngleZ".into(), Property::Float(2.3)),
+            ("Show".into(), Property::Bool(false)),
+            ("LODBox".into(), Property::Bool(true)),
+            ("Freeze".into(), Property::Bool(true)),
+        ]);
+
+        let o = OwnedObject {
+            object_index: 600,
+            name: "Model::Props".into(),
+            type_name: MODEL_TYPE_NAME.into(),
+            class_name: "Mesh".into(),
+            properties: props,
+            attributes: HashMap::new(),
+            connected_object_ids: vec![],
+            object_property_targets: vec![],
+            pp_property_targets: HashMap::new(),
+        };
+
+        let m = Model::try_from(o).unwrap();
+        assert_eq!(m.inner().object_index, 600);
+        assert!(m.property("QuaternionInterpolate").is_some());
+        assert!(m.property("missing").is_none());
+        assert_eq!(m.properties().len(), 62);
+
+        assert_eq!(m.quaternion_interpolate(), 1);
+        assert_eq!(m.rotation_offset(), [0.1, 0.2, 0.3]);
+        assert_eq!(m.rotation_pivot(), [0.4, 0.5, 0.6]);
+        assert_eq!(m.scaling_offset(), [0.7, 0.8, 0.9]);
+        assert_eq!(m.scaling_pivot(), [1.0, 1.1, 1.2]);
+        assert_eq!(m.translation_active(), true);
+        assert_eq!(m.translation_min(), [1.0, 2.0, 3.0]);
+        assert_eq!(m.translation_max(), [4.0, 5.0, 6.0]);
+        assert_eq!(m.translation_min_x(), true);
+        assert_eq!(m.translation_max_x(), false);
+        assert_eq!(m.translation_min_y(), false);
+        assert_eq!(m.translation_max_y(), true);
+        assert_eq!(m.translation_min_z(), true);
+        assert_eq!(m.translation_max_z(), false);
+        assert_eq!(m.rotation_order(), ModelRotationOrder::SphericXYZ);
+        assert_eq!(m.rotation_space_for_limit_only(), true);
+        assert_eq!(m.rotation_stiffness_x(), 0.11);
+        assert_eq!(m.rotation_stiffness_y(), 0.22);
+        assert_eq!(m.rotation_stiffness_z(), 0.33);
+        assert_eq!(m.axis_len(), 9.5);
+        assert_eq!(m.pre_rotation(), [10.0, 20.0, 30.0]);
+        assert_eq!(m.post_rotation(), [40.0, 50.0, 60.0]);
+        assert_eq!(m.rotation_active(), true);
+        assert_eq!(m.rotation_min(), [-1.0, -2.0, -3.0]);
+        assert_eq!(m.rotation_max(), [1.0, 2.0, 3.0]);
+        assert_eq!(m.rotation_min_x(), true);
+        assert_eq!(m.rotation_max_x(), false);
+        assert_eq!(m.rotation_min_y(), false);
+        assert_eq!(m.rotation_max_y(), true);
+        assert_eq!(m.rotation_min_z(), true);
+        assert_eq!(m.rotation_max_z(), false);
+        assert_eq!(m.inherit_type(), ModelTransformInheritance::RSrs);
+        assert_eq!(m.scaling_active(), true);
+        assert_eq!(m.scaling_min(), [0.5, 0.6, 0.7]);
+        assert_eq!(m.scaling_max(), [2.0, 2.5, 3.0]);
+        assert_eq!(m.scaling_min_x(), true);
+        assert_eq!(m.scaling_max_x(), false);
+        assert_eq!(m.scaling_min_y(), false);
+        assert_eq!(m.scaling_max_y(), true);
+        assert_eq!(m.scaling_min_z(), true);
+        assert_eq!(m.scaling_max_z(), false);
+        assert_eq!(m.geometric_translation(), [7.0, 8.0, 9.0]);
+        assert_eq!(m.geometric_rotation(), [0.01, 0.02, 0.03]);
+        assert_eq!(m.geometric_scaling(), [1.5, 2.5, 3.5]);
+        assert_eq!(m.min_damp_range_x(), 0.1);
+        assert_eq!(m.min_damp_range_y(), 0.2);
+        assert_eq!(m.min_damp_range_z(), 0.3);
+        assert_eq!(m.max_damp_range_x(), 0.4);
+        assert_eq!(m.max_damp_range_y(), 0.5);
+        assert_eq!(m.max_damp_range_z(), 0.6);
+        assert_eq!(m.min_damp_strength_x(), 0.7);
+        assert_eq!(m.min_damp_strength_y(), 0.8);
+        assert_eq!(m.min_damp_strength_z(), 0.9);
+        assert_eq!(m.max_damp_strength_x(), 1.1);
+        assert_eq!(m.max_damp_strength_y(), 1.2);
+        assert_eq!(m.max_damp_strength_z(), 1.3);
+        assert_eq!(m.preferred_angle_x(), 2.1);
+        assert_eq!(m.preferred_angle_y(), 2.2);
+        assert_eq!(m.preferred_angle_z(), 2.3);
+        assert_eq!(m.show(), false);
+        assert_eq!(m.lod_box(), true);
+        assert_eq!(m.freeze(), true);
+
+        let inner = m.into_inner();
+        assert_eq!(inner.object_index, 600);
+        assert_eq!(inner.name, "Model::Props");
+    }
+
+    #[test]
     fn resolves_incoming_material_geometry_and_node_attribute_oo_links() {
         let model = Model::try_from(OwnedObject {
             object_index: 500,
