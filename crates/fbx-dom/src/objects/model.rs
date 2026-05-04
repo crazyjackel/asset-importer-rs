@@ -696,8 +696,14 @@ mod tests {
             ("ScalingMaxY".into(), Property::Bool(true)),
             ("ScalingMinZ".into(), Property::Bool(true)),
             ("ScalingMaxZ".into(), Property::Bool(false)),
-            ("GeometricTranslation".into(), Property::Vec3([7.0, 8.0, 9.0])),
-            ("GeometricRotation".into(), Property::Vec3([0.01, 0.02, 0.03])),
+            (
+                "GeometricTranslation".into(),
+                Property::Vec3([7.0, 8.0, 9.0]),
+            ),
+            (
+                "GeometricRotation".into(),
+                Property::Vec3([0.01, 0.02, 0.03]),
+            ),
             ("GeometricScaling".into(), Property::Vec3([1.5, 2.5, 3.5])),
             ("MinDampRangeX".into(), Property::Float(0.1)),
             ("MinDampRangeY".into(), Property::Float(0.2)),
