@@ -14,9 +14,14 @@ use crate::document::{
     ObjectPropertyConnection, Property, PropertyDetails, PropertyParseError, Template,
 };
 
+/// Minimum `FBXVersion` supported by the ASCII loader (below this → [`DocumentParseError::UnsupportedVersion`]).
 pub const LOWEST_SUPPORTED_VERSION: u32 = 7100;
+/// `FBXVersion` above this is rejected when [`ImportSettings::strict`] is true.
 pub const UPPER_SUPPORTED_VERSION: u32 = 7400;
 
+/// Fills [`Document::fbx_version`], creator string, and creation timestamp from `FBXHeaderExtension`.
+///
+/// Enforces [`LOWEST_SUPPORTED_VERSION`] always, and [`UPPER_SUPPORTED_VERSION`] when `settings.strict`.
 fn read_header(
     amphitheatre: &ElementAmphitheatre,
     document: &mut Document,
@@ -120,6 +125,10 @@ fn read_header(
     Ok(())
 }
 
+/// Loads `Definitions` → per-object-type default templates and full template maps from each
+/// `PropertyTemplate`’s `Properties70` children.
+///
+/// Rows that fail [`PropertyDetails::try_from`] are skipped after a `log::debug!` (e.g. unsupported `"object"` types in shipped files).
 fn read_definitions(
     amphitheatre: &ElementAmphitheatre,
     document: &mut Document,
@@ -184,6 +193,7 @@ fn read_definitions(
     Ok(())
 }
 
+/// Parses `GlobalSettings.Properties70` into [`Document::global_settings`] (all entries required to parse).
 fn read_global_settings(
     amphitheatre: &ElementAmphitheatre,
     document: &mut Document,
@@ -207,6 +217,14 @@ fn read_global_settings(
     Ok(())
 }
 
+/// Reads `Connections` children: each row’s tokens are `[kind, …]` where `kind` is `OO`, `OP`, or `PP`.
+///
+/// - **`OO`** — `src, dest` → [`Document::object_connections`].
+/// - **`OP`** — `src, dest, property` → [`Document::object_property_connections`].
+/// - **`PP`** — `src, src_property, dest, dest_property` → [`Document::property_connections`] and
+///   [`Document::object_to_source_properties`].
+///
+/// Malformed rows (wrong arity or non-numeric ids) are skipped.
 fn read_connections(
     amphitheatre: &ElementAmphitheatre,
     document: &mut Document,
@@ -216,17 +234,6 @@ fn read_connections(
         return Ok(());
     }
     let connections_handle = connections_handle_opt.unwrap();
-    // Read Object Connections
-    // Connections of the following format:
-    // C: "OO",40530896,0
-    // First token is always "C"
-    // Second token is the connection type ("OO" or "OP" or "PP") (Object to Object, Object to Property, Property to Property)
-    // If the connection is OO, it should have 2 more tokens:
-    // the source object index, and the destination object index.
-    // If the connection is OP, it should have 3 more tokens:
-    // the source object index, the destination object index, and the property name.
-    // If the connection is PP, it should have 4 more tokens:
-    // the source object index, the source property name, the destination object index, and the destination property name.
     for connection_handle in connections_handle.children() {
         let connection_tokens = connection_handle.tokens();
         if connection_tokens.len() < 2 {
@@ -301,6 +308,10 @@ fn read_connections(
     }
     Ok(())
 }
+
+/// Inserts each `Objects` child into [`Document::objects`] by numeric id; stores the element index for later subtree resolution.
+///
+/// Expects three tokens per row: `id`, `name`, `class_name`. The element **key** becomes [`LazyObject::type_name`].
 fn read_objects(
     amphitheatre: &ElementAmphitheatre,
     document: &mut Document,
@@ -332,6 +343,9 @@ fn read_objects(
     Ok(())
 }
 
+/// Parses one ASCII `P:` row (`Properties70` child): tokens `[name, type, …, value…]` into [`PropertyDetails`].
+///
+/// Supported `type` strings mirror common FBX SDK property kinds; unknown types return [`PropertyParseError::MissingPropertyType`].
 impl<'a> TryFrom<ElementHandle<'a>> for PropertyDetails {
     type Error = PropertyParseError;
 
@@ -478,6 +492,7 @@ impl<'a> TryFrom<ElementHandle<'a>> for PropertyDetails {
 }
 
 impl DocumentLoader for ElementAmphitheatre {
+    /// ASCII ingress: header → definitions → global settings → objects → connections, then stores `self` as the object arena.
     fn load_into_document(
         self,
         document: &mut Document,
@@ -497,10 +512,59 @@ impl DocumentLoader for ElementAmphitheatre {
 #[cfg(test)]
 mod tests {
 
-    use fbxscii::{Parser, Tokenizer};
+    use std::convert::TryFrom;
     use std::io::BufReader;
 
-    use crate::document::{Document, DocumentParseError, ImportSettings};
+    use fbxscii::{ElementAmphitheatre, ElementHandle, Parser, Tokenizer};
+
+    use crate::document::{
+        Document, DocumentParseError, ImportSettings, ObjectPropertyConnection, Property,
+        PropertyDetails, PropertyParseError,
+    };
+
+    /// Minimal ASCII FBX (7.2) with required header + `GlobalSettings.Properties70` body + tail.
+    fn minimal_ascii_fbx_7200(global_properties70_body: &str, tail: &str) -> String {
+        format!(
+            r#"; test
+FBXHeaderExtension:  {{
+	FBXHeaderVersion: 1003
+	FBXVersion: 7200
+	CreationTimeStamp:  {{
+		Version: 1000
+		Year: 2012
+		Month: 6
+		Day: 28
+		Hour: 16
+		Minute: 32
+		Second: 53
+		Millisecond: 433
+	}}
+	Creator: "test"
+}}
+GlobalSettings:  {{
+	Properties70:  {{
+{global_properties70_body}
+	}}
+}}
+{tail}"#
+        )
+    }
+
+    /// Parses `src` into an [`ElementAmphitheatre`] (tests only).
+    fn load_arena(src: &str) -> ElementAmphitheatre {
+        let tokenizer = Tokenizer::new(BufReader::new(src.as_bytes()));
+        let parser = Parser::new(tokenizer);
+        parser.load().expect("parse ASCII FBX")
+    }
+
+    /// First `P` element under `GlobalSettings` → `Properties70` (tests only).
+    fn first_p_child_properties70(arena: &ElementAmphitheatre) -> ElementHandle<'_> {
+        let gs = arena
+            .get_handle_by_key("GlobalSettings")
+            .expect("GlobalSettings");
+        let p70 = gs.first_child_by_key("Properties70").expect("Properties70");
+        p70.children().next().expect("at least one P row")
+    }
 
     #[test]
     fn test_header_parse() {
@@ -538,6 +602,170 @@ FBXHeaderExtension:  {
         assert_eq!(
             document.unwrap_err(),
             DocumentParseError::RequiredElementNotFound("FBXHeaderExtension".to_string())
+        );
+    }
+
+    #[test]
+    fn connections_pp_ascii_populates_property_maps() {
+        let src = minimal_ascii_fbx_7200(
+            r#"		P: "UpAxis", "int", "", "",1
+"#,
+            r#"Definitions:  {
+	ObjectType: "Geometry" {
+		PropertyTemplate: "FbxMesh" {
+			Properties70:  {
+				P: "UnitScaleFactor", "double", "", "",1
+			}
+		}
+	}
+}
+Objects:  {
+	Geometry: 101, "A", "Mesh" {
+	}
+	Geometry: 202, "B", "Mesh" {
+	}
+}
+Connections:  {
+	C: "PP",101,"SrcProp",202,"DstProp"
+}
+"#,
+        );
+        let tokenizer = Tokenizer::new(BufReader::new(src.as_bytes()));
+        let parser = Parser::new(tokenizer);
+        let document = Document::from_parser(parser, ImportSettings::default()).unwrap();
+
+        let obj = document.object_by_index(101).expect("object 101");
+        assert_eq!(obj.pp_source_property_names(), &["SrcProp".to_string()]);
+        assert_eq!(
+            obj.pp_targets((101, "SrcProp")),
+            Some(
+                &[ObjectPropertyConnection {
+                    dest: 202,
+                    property: "DstProp".to_string(),
+                }][..],
+            )
+        );
+    }
+
+    #[test]
+    fn connections_pp_ascii_appends_multiple_destinations_for_same_source() {
+        let src = minimal_ascii_fbx_7200(
+            r#"		P: "UpAxis", "int", "", "",1
+"#,
+            r#"Definitions:  {
+	ObjectType: "Geometry" {
+		PropertyTemplate: "FbxMesh" {
+			Properties70:  {
+				P: "UnitScaleFactor", "double", "", "",1
+			}
+		}
+	}
+}
+Objects:  {
+	Geometry: 101, "A", "Mesh" {
+	}
+	Geometry: 202, "B", "Mesh" {
+	}
+	Geometry: 303, "C", "Mesh" {
+	}
+}
+Connections:  {
+	C: "PP",101,"SrcProp",202,"DstA"
+	C: "PP",101,"SrcProp",303,"DstB"
+}
+"#,
+        );
+        let tokenizer = Tokenizer::new(BufReader::new(src.as_bytes()));
+        let parser = Parser::new(tokenizer);
+        let document = Document::from_parser(parser, ImportSettings::default()).unwrap();
+
+        let obj = document.object_by_index(101).expect("object 101");
+        // One list entry per `PP` row (same name repeated when multiple rows share the source key).
+        assert_eq!(
+            obj.pp_source_property_names(),
+            &["SrcProp".to_string(), "SrcProp".to_string()]
+        );
+        let targets = obj.pp_targets((101, "SrcProp")).expect("PP targets");
+        assert_eq!(targets.len(), 2);
+        assert!(targets.contains(&ObjectPropertyConnection {
+            dest: 202,
+            property: "DstA".to_string(),
+        }));
+        assert!(targets.contains(&ObjectPropertyConnection {
+            dest: 303,
+            property: "DstB".to_string(),
+        }));
+    }
+
+    #[test]
+    fn property_details_try_from_int_kstring_and_vector3d() {
+        let src = minimal_ascii_fbx_7200(
+            r#"		P: "UpAxis", "int", "", "",2
+		P: "LayerName", "KString", "", "", "hello"
+		P: "Point", "Vector3D", "Vector", "",0,1,2
+"#,
+            "",
+        );
+        let arena = load_arena(&src);
+        let gs = arena.get_handle_by_key("GlobalSettings").unwrap();
+        let p70 = gs.first_child_by_key("Properties70").unwrap();
+        let mut it = p70.children();
+        let d0: PropertyDetails = PropertyDetails::try_from(it.next().unwrap()).unwrap();
+        assert_eq!(d0.name, "UpAxis");
+        assert_eq!(d0.property, Property::Int(2));
+        let d1: PropertyDetails = PropertyDetails::try_from(it.next().unwrap()).unwrap();
+        assert_eq!(d1.name, "LayerName");
+        assert_eq!(d1.property, Property::String("hello".to_string()));
+        let d2: PropertyDetails = PropertyDetails::try_from(it.next().unwrap()).unwrap();
+        assert_eq!(d2.name, "Point");
+        assert_eq!(d2.property, Property::Vec3([0.0, 1.0, 2.0]));
+    }
+
+    #[test]
+    fn property_details_try_from_missing_property_type_object() {
+        let src = minimal_ascii_fbx_7200(
+            r#"		P: "SourceObject", "object", "", ""
+"#,
+            "",
+        );
+        let arena = load_arena(&src);
+        let p = first_p_child_properties70(&arena);
+        let err = PropertyDetails::try_from(p).unwrap_err();
+        assert_eq!(
+            err,
+            PropertyParseError::MissingPropertyType("object".to_string())
+        );
+    }
+
+    #[test]
+    fn property_details_try_from_invalid_token_length() {
+        let src = minimal_ascii_fbx_7200(
+            r#"		P: "Short", "int"
+"#,
+            "",
+        );
+        let arena = load_arena(&src);
+        let p = first_p_child_properties70(&arena);
+        let err = PropertyDetails::try_from(p).unwrap_err();
+        assert_eq!(
+            err,
+            PropertyParseError::InvalidTokenLength(2, Some("int".to_string()))
+        );
+    }
+
+    #[test]
+    fn property_details_try_from_token_parse_error() {
+        let src = minimal_ascii_fbx_7200(
+            r#"		P: "BadInt", "int", "", "", "not_an_int"
+"#,
+            "",
+        );
+        let arena = load_arena(&src);
+        let p = first_p_child_properties70(&arena);
+        let err = PropertyDetails::try_from(p).unwrap_err();
+        assert_eq!(
+            err,
+            PropertyParseError::TokenParseError("int".to_string(), "not_an_int".to_string())
         );
     }
 }

@@ -103,6 +103,19 @@ impl TryFrom<OwnedObject> for ShapeGeometry {
             .map(|c| [c[0], c[1], c[2]])
             .collect::<Vec<[f32; 3]>>();
 
+        // Validate that no index is out of bounds
+        for index in indices.iter() {
+            if *index >= vertices.len() as u32 {
+                return Err(FbxTypeMismatch::new(
+                    o,
+                    FbxTryFromReason::InvalidAttributeFormat {
+                        name: "Indexes".to_string(),
+                        detail: format!("index out of bounds: {}", *index),
+                    },
+                ));
+            }
+        }
+
         let normals = if let Some(n_attr) = attrs.extract_case_insensitive("Normals") {
             let n_tokens = n_attr.get_tokens();
             let normals_result = n_tokens
