@@ -5,6 +5,8 @@
 //! [`Document::object_element_amphitheatre`]. `C:` connection rows fill the `OO` / `OP` / `PP`
 //! maps. Version bounds apply when [`ImportSettings::strict`] is relevant (see header handling).
 
+use std::convert::TryFrom;
+
 use fbxscii::{ElementAmphitheatre, ElementHandle};
 
 use crate::document::{
@@ -158,12 +160,22 @@ fn read_definitions(
                     .or_insert_with(|| template_name.clone());
                 let template = document
                     .templates
-                    .entry(template_name)
-                    .or_insert(Template::default());
+                    .entry(template_name.clone())
+                    .or_insert_with(Template::default);
                 for property_detail in property_table_handle.children() {
-                    let r: Result<PropertyDetails, _> = property_detail.try_into();
-                    let property_details = r.map_err(DocumentParseError::PropertyParseError)?;
-                    template.insert(property_details.name, property_details.property);
+                    match PropertyDetails::try_from(property_detail) {
+                        Ok(property_details) => {
+                            template.insert(property_details.name, property_details.property);
+                        }
+                        Err(e) => {
+                            log::debug!(
+                                target: "fbx_dom",
+                                "skipped Properties70 default-template entry (template={}, error={})",
+                                template_name,
+                                e
+                            );
+                        }
+                    }
                 }
             }
         }

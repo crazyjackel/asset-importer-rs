@@ -378,6 +378,7 @@ dependencies = [
  "base64",
  "fbxcel",
  "fbxscii",
+ "log",
 ]
 
 [[package]]

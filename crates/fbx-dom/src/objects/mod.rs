@@ -390,7 +390,7 @@ impl ClassifiedFbxObject {
             ClassifiedFbxObject::MeshGeometry(x) => x.inner(),
             ClassifiedFbxObject::LineGeometry(x) => x.inner(),
             ClassifiedFbxObject::ShapeGeometry(x) => x.inner(),
-            ClassifiedFbxObject::Camera(x) => &x.inner(),
+            ClassifiedFbxObject::Camera(x) => x.inner(),
             ClassifiedFbxObject::CameraSwitcher(x) => x.inner(),
             ClassifiedFbxObject::Light(x) => x.inner(),
             ClassifiedFbxObject::NullNode(x) => x.inner(),

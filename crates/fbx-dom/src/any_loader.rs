@@ -51,9 +51,9 @@ impl AttributeInto<String> for AttributeValue {
 impl AttributeInto<u32> for AttributeValue {
     fn into_attribute(&self) -> Option<u32> {
         match self {
-            AttributeValue::I16(value) => Some(*value as u32),
-            AttributeValue::I32(value) => Some(*value as u32),
-            AttributeValue::I64(value) => Some(*value as u32),
+            AttributeValue::I16(value) => (*value).try_into().ok(),
+            AttributeValue::I32(value) => (*value).try_into().ok(),
+            AttributeValue::I64(value) => (*value).try_into().ok(),
             AttributeValue::F32(value) => Some(*value as u32),
             AttributeValue::F64(value) => Some(*value as u32),
             AttributeValue::Bool(_)
@@ -72,9 +72,9 @@ impl AttributeInto<u32> for AttributeValue {
 impl AttributeInto<u64> for AttributeValue {
     fn into_attribute(&self) -> Option<u64> {
         match self {
-            AttributeValue::I16(value) => Some(*value as u64),
-            AttributeValue::I32(value) => Some(*value as u64),
-            AttributeValue::I64(value) => Some(*value as u64),
+            AttributeValue::I16(value) => (*value).try_into().ok(),
+            AttributeValue::I32(value) => (*value).try_into().ok(),
+            AttributeValue::I64(value) => (*value).try_into().ok(),
             AttributeValue::F32(value) => Some(*value as u64),
             AttributeValue::F64(value) => Some(*value as u64),
             AttributeValue::Bool(_)

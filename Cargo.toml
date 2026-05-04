@@ -54,6 +54,7 @@ image = { version = "0.25.5", features = [
 ], default-features = false }
 indexmap = "2.7.1"
 inflections = "1.1"
+log = "0.4"
 num_enum = "0.7.3"
 urlencoding = "2.1"
 tobj = "4.0.3"
