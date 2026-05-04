@@ -557,6 +557,18 @@ pub struct ResolveFlatF32ChannelParams<'a> {
     reference_ty: &'a str,
 }
 
+/// Turn one mesh layer attribute (e.g. normals, UVs) into a flat `f32` slice **one scalar wide per
+/// expanded corner × `components`**, matching Assimp-style expanded mesh layout.
+///
+/// FBX combines **mapping** and **reference** (see `mapping_ty` / `reference_ty`):
+/// - **ByVertice** — one logical value per **pool** vertex; we scatter it to every expanded corner
+///   that references that pool vertex using `mapping_offsets` / `mapping_counts` / `mappings`.
+/// - **ByPolygonVertex** — one value per polygon corner; output order is already corner-linear.
+/// - **Direct** — floats live in the data array in mapping order.
+/// - **IndexToDirect** — a parallel `i32` index array picks **which element** (group of `components`
+///   floats) to copy from the data array; index `-1` means “no value” (zeros for that corner’s group).
+///
+/// All copies use `src..src+components` and `dst..dst+components` so multi-component channels stay aligned.
 fn resolve_flat_f32_channel(
     source: &HashMap<String, ElementAttribute>,
     params: ResolveFlatF32ChannelParams<'_>,
@@ -567,6 +579,7 @@ fn resolve_flat_f32_channel(
         .eq_ignore_ascii_case(REFERENCE_INDEX_TO_DIRECT);
     let has_data = source.extract_case_insensitive(params.data_name).is_some();
     let has_index = source.extract_case_insensitive(params.index_name).is_some();
+    // Some files declare IndexToDirect but omit the index channel; treat as Direct (Assimp-style).
     if is_index_to_direct && !has_index {
         is_direct = true;
         is_index_to_direct = false;
@@ -575,6 +588,7 @@ fn resolve_flat_f32_channel(
     if params.components == 0 {
         return Ok(Vec::new());
     }
+    // Linear layout: corner `k` occupies `vertex_out[k*components .. (k+1)*components)`.
     let mut vertex_out = vec![0f32; params.vertex_count * params.components];
 
     let by_vertice = params.mapping_ty.eq_ignore_ascii_case(MAPPING_BY_VERTICE);
@@ -583,7 +597,8 @@ fn resolve_flat_f32_channel(
         .eq_ignore_ascii_case(MAPPING_BY_POLYGON_VERTEX);
 
     if by_vertice && is_direct {
-        // Case 1: Map type is ByVertice and reference type is Direct
+        // Case 1: ByVertice + Direct — `channel_data` is one vector per pool vertex; broadcast each
+        // to every expanded corner slot that references that pool vertex.
         if !has_data {
             return Ok(Vec::new());
         }
@@ -613,14 +628,28 @@ fn resolve_flat_f32_channel(
             });
         }
         for i in 0..params.mapping_offsets.len() {
+            // Pool vertex `i` owns `channel_data[i*components ..)`; copy that block to each corner.
+            let src = i * params.components;
             let istart = params.mapping_offsets[i] as usize;
             let iend = istart + params.mapping_counts[i] as usize;
             for j in istart..iend {
-                vertex_out[params.mappings[j] as usize] = channel_data[i];
+                // `mappings[j]` is the global expanded-corner index for this use of pool vertex `i`.
+                let dst = params.mappings[j] as usize * params.components;
+                if src + params.components > channel_data.len()
+                    || dst + params.components > vertex_out.len()
+                {
+                    return Err(FbxTryFromReason::InvalidAttributeFormat {
+                        name: params.data_name.to_string(),
+                        detail: format!("length mismatch for {MAPPING_BY_VERTICE}"),
+                    });
+                }
+                vertex_out[dst..dst + params.components]
+                    .copy_from_slice(&channel_data[src..src + params.components]);
             }
         }
     } else if by_vertice && is_index_to_direct {
-        // Case 2: Map type is ByVertice and reference type is IndexToDirect
+        // Case 2: ByVertice + IndexToDirect — same scatter as case 1, but each pool vertex picks a
+        // data element index first (`channel_index_data[i]`); that element is a `components`-wide slice.
         if !has_data || !has_index {
             return Ok(Vec::new());
         }
@@ -657,17 +686,26 @@ fn resolve_flat_f32_channel(
                 detail: format!("length mismatch for {MAPPING_BY_VERTICE}"),
             });
         }
-        // Remap the vertex data to the new vertex positions, based on the index data.
         for i in 0..params.mapping_offsets.len() {
             let idx = channel_index_data[i] as usize;
+            let src = idx * params.components; // element `idx` in the direct table
             let istart = params.mapping_offsets[i] as usize;
             let iend = istart + params.mapping_counts[i] as usize;
-            for j in istart..iend {
-                vertex_out[params.mappings[j] as usize] = channel_data[idx];
+            for j in istart..iend { 
+                let dst = params.mappings[j] as usize * params.components;
+                if src + params.components > channel_data.len()
+                    || dst + params.components > vertex_out.len() {
+                    return Err(FbxTryFromReason::InvalidAttributeFormat {
+                        name: params.data_name.to_string(),
+                        detail: format!("length mismatch for {MAPPING_BY_VERTICE}"),
+                    });
+                }
+                vertex_out[dst..dst + params.components]
+                    .copy_from_slice(&channel_data[src..src + params.components]);
             }
         }
     } else if by_polygon_vertex && is_direct {
-        // Case 3: Map type is ByPolygonVertex and reference type is Direct
+        // Case 3: ByPolygonVertex + Direct — floats are already in expanded-corner order; one memcpy.
         if !has_data {
             return Ok(Vec::new());
         }
@@ -691,15 +729,15 @@ fn resolve_flat_f32_channel(
                     "{} {}: expected {} floats, got {}",
                     MAPPING_BY_POLYGON_VERTEX,
                     REFERENCE_DIRECT,
-                    params.vertex_count,
+                    params.vertex_count * params.components,
                     channel_data.len()
                 ),
             });
         }
-        // Copy the channel data to the vertex output.
         vertex_out = channel_data;
     } else if by_polygon_vertex && is_index_to_direct {
-        // Case 4: Map type is ByPolygonVertex and reference type is IndexToDirect
+        // Case 4: ByPolygonVertex + IndexToDirect — one index per corner; each index selects a
+        // `components`-wide slice in `channel_data`, laid out at `slot * components` in `vertex_out`.
         if !has_data || !has_index {
             return Ok(Vec::new());
         }
@@ -730,11 +768,10 @@ fn resolve_flat_f32_channel(
                 detail: format!("invalid int token: {}", channel_index_data_result.unwrap_err()),
             });
         };
-        // Truncate the index data if it's longer than the vertex count.
         if channel_index_data.len() > params.vertex_count {
             channel_index_data.truncate(params.vertex_count);
         }
-        // Make sure the index data matches the vertex count.
+        // After optional truncation, require exactly one index per expanded corner.
         if channel_index_data.len() != params.vertex_count {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
                 name: params.index_name.to_string(),
@@ -747,18 +784,30 @@ fn resolve_flat_f32_channel(
                 ),
             });
         }
-        let mut next_index = 0;
-        for &i in channel_index_data.iter() {
+        for (slot, &i) in channel_index_data.iter().enumerate() {
+            let dst = slot * params.components; // corner `slot` in expanded order
+            if dst + params.components > vertex_out.len() {
+                return Err(FbxTryFromReason::InvalidAttributeFormat {
+                    name: params.data_name.to_string(),
+                    detail: format!("length mismatch for {MAPPING_BY_POLYGON_VERTEX}"),
+                });
+            }
             if i == -1 {
-                vertex_out[next_index] = 0f32;
-                next_index += 1;
+                vertex_out[dst..dst + params.components].fill(0.0);
                 continue;
             }
-            vertex_out[next_index] = channel_data[i as usize];
-            next_index += 1;
+            let src = i as usize * params.components; // direct-table element `i`
+            if src + params.components > channel_data.len() {
+                return Err(FbxTryFromReason::InvalidAttributeFormat {
+                    name: params.data_name.to_string(),
+                    detail: format!("length mismatch for {MAPPING_BY_POLYGON_VERTEX}"),
+                });
+            }
+            vertex_out[dst..dst + params.components]
+                .copy_from_slice(&channel_data[src..src + params.components]);
         }
     } else {
-        // Case 5: Map type is not ByVertice or ByPolygonVertex, or reference type is not Direct or IndexToDirect
+        // Case 5: Unsupported mapping/reference pair — caller gets empty channel (Assimp skips similarly).
         return Ok(Vec::new());
     }
     Ok(vertex_out)

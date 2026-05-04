@@ -2,6 +2,7 @@
 
 use std::convert::TryFrom;
 use std::num::ParseFloatError;
+use std::num::ParseIntError;
 
 use crate::OwnedObject;
 
@@ -53,13 +54,22 @@ impl TryFrom<OwnedObject> for ShapeGeometry {
                 ));
             }
         };
-        let indices = idx_tokens
+        let indices_result = idx_tokens
             .iter()
             .flat_map(|t| t.split(','))
             .map(|t| t.trim())
             .filter(|t| !t.is_empty())
-            .filter_map(|t| t.parse::<u32>().ok())
-            .collect();
+            .map(|t| t.parse::<u32>())
+            .collect::<Result<Vec<u32>, ParseIntError>>();
+        let Ok(indices) = indices_result else {
+            return Err(FbxTypeMismatch::new(
+                o,
+                FbxTryFromReason::InvalidAttributeFormat {
+                    name: "Indexes".to_string(),
+                    detail: format!("invalid int token: {}", indices_result.unwrap_err()),
+                },
+            ));
+        };
 
         let verts_tokens = match attrs.extract_case_insensitive("Vertices") {
             Some(a) => a.get_tokens(),
