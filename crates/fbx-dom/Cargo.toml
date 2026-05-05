@@ -1,0 +1,17 @@
+[package]
+name = "fbx-dom"
+version = "0.1.0"
+edition = {workspace = true}
+description = "Document Model for Reading in FBX"
+license = {workspace = true}
+authors = {workspace = true}
+repository = {workspace = true}
+documentation = "https://docs.rs/fbx-dom"
+
+[dependencies]
+base64 = { workspace = true }
+fbxcel = { workspace = true, features = ["tree"] }
+fbxscii = { workspace = true }
+log = { workspace = true }
+
+[features]

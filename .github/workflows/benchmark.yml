@@ -14,11 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
         - name: Checkout code
-          uses: actions/checkout@v4
+          uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         - name: Run benchmark
           run: cargo bench --benches -- --output-format bencher | tee output.txt
         - name: Store benchmark result
-          uses: benchmark-action/github-action-benchmark@v1
+          uses: benchmark-action/github-action-benchmark@a60cea5bc7b49e15c1f58f411161f99e0df48372 # v1
           with:
             name: Rust Benchmark
             tool: 'cargo'
