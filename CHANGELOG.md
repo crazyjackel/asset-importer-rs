@@ -1,0 +1,55 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.4.0](https://github.com/crazyjackel/asset-importer-rs/compare/asset-importer-rs-v0.3.0...asset-importer-rs-v0.4.0) - 2026-05-05
+
+### Fixed
+
+- fix up mesh_geometry
+- fix up objects
+
+### Other
+
+- Testing Release-Plz
+- Added Logging for ignoring errors
+- - Added CodeRabbit
+- Adding Cargo.lock
+- Added fbx-dom and fbxscii to the sonar merge
+- formatting fix
+- ready for review
+- Added children fetching and improved mesh_geometry tests
+- FBX DOM finished up, ready for more involved testing
+- Add animation
+- all fixed up
+- Added animation fields to objects.
+- update some objects
+- - Material fixes
+- video file reviewed and accepted
+- base64 decode fbx-dom video
+- starting to fix up objects
+- Added Objects for FBX based on Assimp
+- Added ability to access connections on objects
+- Added regular FBX import
+- Added fbxcel loading from tree into DOM.
+- working on document
+- begun developing API for reading fbx-dom
+- - added global settings
+- begin writing the fbxscii loader
+- formatting fixes
+- rename to amphithreatre and added document parsing
+- Parser Improvements for Element Handle, beginning to write document
+- setting up fbx dom
+- Initialize Parser
+- Tokenizer Fixes:
+- Merge branch 'main' into jlevitt/fbx-parser
+- Update
+- fbxscii initial tokenizer written
+- obj integration
+- comment generation
+- added post-processing
