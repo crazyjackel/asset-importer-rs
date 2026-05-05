@@ -2,6 +2,8 @@ name: Semantic Versioning Checks
 
 on:
   push:
+    branches:
+      - main
     tags:
       - '*'
 
@@ -11,6 +13,8 @@ env:
 jobs:
   cargo-semver-checks:
     runs-on: ubuntu-latest
+    # Tag releases: failure fails the workflow. Pushes to main: advisory only.
+    continue-on-error: ${{ github.ref_type != 'tag' }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Cache Cargo Dependencies
