@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.4.0](https://github.com/crazyjackel/asset-importer-rs/compare/gltf-v1-v0.3.0...gltf-v1-v0.4.0) - 2026-05-05
+## [0.1.1](https://github.com/crazyjackel/asset-importer-rs/compare/fbx-dom-v0.1.0...fbx-dom-v0.1.1) - 2026-05-05
 
 ### Other
 
