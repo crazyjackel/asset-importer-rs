@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1783895724292,
+  "lastUpdate": 1785971952471,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -755,6 +755,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 49931047,
             "range": "± 878441",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d448109346b53924fa6dc81555f62ba36b9681a2",
+          "message": "Merge pull request #46 from martinfrances107/action-upload-artifact\n\nbumped actions/upload-artifact to version 7.",
+          "timestamp": "2026-08-05T19:16:47-04:00",
+          "tree_id": "1b2e4e281a00eac909de9b27214521d8bdf294f1",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/d448109346b53924fa6dc81555f62ba36b9681a2"
+        },
+        "date": 1785971951673,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 94333609,
+            "range": "± 158947",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 48509150,
+            "range": "± 60500",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 196161071,
+            "range": "± 202456",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 49961552,
+            "range": "± 78076",
             "unit": "ns/iter"
           }
         ]
