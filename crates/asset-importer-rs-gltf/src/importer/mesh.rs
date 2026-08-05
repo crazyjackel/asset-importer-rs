@@ -561,8 +561,8 @@ impl Gltf2Importer {
                             };
 
                             //handle position
-                            if let Some(positions) = target.positions() {
-                                if positions.count() == num_all_vertices {
+                            if let Some(positions) = target.positions()
+                                && positions.count() == num_all_vertices {
                                     let data: Vec<[f32; 3]> = positions
                                         .extract_data(buffer_data, vertex_remapping_table)
                                         .map_err(Gltf2ImportError::MeshError)?;
@@ -584,11 +584,10 @@ impl Gltf2Importer {
                                         }
                                     }
                                 }
-                            }
 
                             //handle normals
-                            if let Some(normals) = target.normals() {
-                                if normals.count() == num_all_vertices {
+                            if let Some(normals) = target.normals()
+                                && normals.count() == num_all_vertices {
                                     let data: Vec<[f32; 3]> = normals
                                         .extract_data(buffer_data, vertex_remapping_table)
                                         .map_err(Gltf2ImportError::MeshError)?;
@@ -610,10 +609,9 @@ impl Gltf2Importer {
                                         }
                                     }
                                 }
-                            }
                             //handle tangents
-                            if let Some(tangents) = target.tangents() {
-                                if tangents.count() == num_all_vertices
+                            if let Some(tangents) = target.tangents()
+                                && tangents.count() == num_all_vertices
                                     && !anim_mesh.normals.is_empty()
                                 {
                                     let tangents_offsets: Vec<[f32; 3]> = tangents
@@ -639,7 +637,6 @@ impl Gltf2Importer {
                                         }
                                     }
                                 }
-                            }
                             //we do not handle colors nor texture coords as gltf 2.0 does not provide that information, it should be assumed that info doesn't changed
                         }
                     }

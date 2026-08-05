@@ -70,7 +70,7 @@ impl Gltf2Importer {
                 }
                 buffer::Source::Bin => blob.take().ok_or(gltf::Error::MissingBlob),
             }?;
-            while data.len() % 4 != 0 {
+            while !data.len().is_multiple_of(4) {
                 data.push(0);
             }
             if data.len() < buffer.length() {
@@ -127,7 +127,7 @@ impl AiImporter for Gltf2Importer {
             },
         };
 
-        let reader_result = loader(path.as_ref());
+        let reader_result = loader(path);
         //Check if File can be Opened
         if reader_result.is_err() {
             return false;

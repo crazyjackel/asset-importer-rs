@@ -147,11 +147,7 @@ impl Gltf2Exporter {
                     }
                 }
                 let accessor = AccessorExporter::export_u32(root, buffer_data, &indices);
-                if let Some(accessor) = accessor {
-                    Some(root.push(accessor))
-                } else {
-                    None
-                }
+                accessor.map(|accessor| root.push(accessor))
             } else {
                 None
             };
@@ -168,8 +164,8 @@ impl Gltf2Exporter {
             };
 
             //handle skin
-            if let Some(ref mut skin) = skin {
-                if !ai_mesh.bones.is_empty() {
+            if let Some(ref mut skin) = skin
+                && !ai_mesh.bones.is_empty() {
                     let num_verts = ai_mesh.vertices.len();
                     let mut all_vertices_pairs: Vec<Vec<(usize, AiReal)>> = Vec::new();
                     let mut joints_per_vertex: Vec<u32> = Vec::new();
@@ -270,7 +266,6 @@ impl Gltf2Exporter {
                         }
                     }
                 }
-            }
 
             //handle targets
             let mut targets: Option<Vec<MorphTarget>> = None;
@@ -307,11 +302,7 @@ impl Gltf2Exporter {
                             .collect();
                         let normals =
                             AccessorExporter::export_vector_3d(root, buffer_data, &normals_diff);
-                        if let Some(normals) = normals {
-                            Some(root.push(normals))
-                        } else {
-                            None
-                        }
+                        normals.map(|normals| root.push(normals))
                     } else {
                         None
                     };
@@ -364,24 +355,22 @@ impl Gltf2Exporter {
             // @todo: add skeleton support
             let skin = root.push(skin_ref);
             for node_index in 0..root.nodes.len() {
-                if let Some(node) = root.nodes.get_mut(node_index) {
-                    if let Some(node_meshes) = node_index_to_meshes.get(&node_index) {
+                if let Some(node) = root.nodes.get_mut(node_index)
+                    && let Some(node_meshes) = node_index_to_meshes.get(&node_index) {
                         for mesh_index in node_meshes {
-                            if let Some(mesh) = meshes.get(*mesh_index) {
-                                if mesh.weights.is_some() {
+                            if let Some(mesh) = meshes.get(*mesh_index)
+                                && mesh.weights.is_some() {
                                     node.skin = Some(skin);
                                 }
-                            }
                         }
                     }
-                }
             }
         }
 
         let mut merged_meshes: Vec<Mesh> = Vec::new();
         for node_index in 0..root.nodes.len() {
-            if let Some(node) = root.nodes.get_mut(node_index) {
-                if let Some(node_meshes) = node_index_to_meshes.get(&node_index) {
+            if let Some(node) = root.nodes.get_mut(node_index)
+                && let Some(node_meshes) = node_index_to_meshes.get(&node_index) {
                     let mut first_mesh: Option<Mesh> = None;
                     for mesh_index in node_meshes {
                         if let Some(mesh) = meshes.get_mut(*mesh_index) {
@@ -398,7 +387,6 @@ impl Gltf2Exporter {
                         node.mesh = Some(Index::new((merged_meshes.len() - 1) as u32));
                     }
                 }
-            }
         }
 
         for mesh in merged_meshes {
@@ -470,7 +458,7 @@ impl AccessorExporter {
         for vector_base in vector_data {
             let matrix: [AiReal; 16] = vector_base.into();
             for (i, a) in matrix.iter().enumerate() {
-                let b = *a as f32;
+                let b = *a;
                 if b < min[i] {
                     min[i] = b;
                 }
@@ -551,7 +539,7 @@ impl AccessorExporter {
         let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4 * 4);
         for vector_base in vector_data {
             for vector in vector_base {
-                let a = *vector as f32;
+                let a = *vector;
                 if a < min_x {
                     min_x = a;
                 }
