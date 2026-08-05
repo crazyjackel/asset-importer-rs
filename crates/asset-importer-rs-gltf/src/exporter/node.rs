@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use gltf::json::{Index, Node, Root, scene::UnitQuaternion};
 
-use asset_importer_rs_scene::{AiReal, AiScene};
+use asset_importer_rs_scene::{AiReal, AiScene, ai_real_to_f32};
 
 use crate::exporter::error::Gltf2ExportError;
 
@@ -40,14 +40,14 @@ impl Gltf2Exporter {
                 if use_translate_rotate_scale {
                     let decompose = ai_node.transformation.clone().decompose();
                     let translation: [AiReal; 3] = decompose.translation.into();
-                    node.translation = Some(translation.map(|x| x as f32));
+                    node.translation = Some(translation.map(ai_real_to_f32));
                     let rotation: [AiReal; 4] = decompose.rotation.into();
-                    node.rotation = Some(UnitQuaternion(rotation.map(|x| x as f32)));
+                    node.rotation = Some(UnitQuaternion(rotation.map(ai_real_to_f32)));
                     let scale: [AiReal; 3] = decompose.scale.into();
-                    node.scale = Some(scale.map(|x| x as f32));
+                    node.scale = Some(scale.map(ai_real_to_f32));
                 } else {
                     let transform_array: [AiReal; 16] = ai_node.transformation.clone().into();
-                    node.matrix = Some(transform_array.map(|x| x as f32));
+                    node.matrix = Some(transform_array.map(ai_real_to_f32));
                 }
             }
 

@@ -19,6 +19,7 @@ use gltf::{
 
 use asset_importer_rs_scene::{
     AiColor4D, AiMatrix4x4, AiPrimitiveType, AiQuaternion, AiReal, AiScene, AiVector2D, AiVector3D,
+    ai_real_to_f32,
 };
 use serde_json::{Number, Value};
 
@@ -470,7 +471,7 @@ impl AccessorExporter {
         for vector_base in vector_data {
             let matrix: [AiReal; 16] = vector_base.into();
             for (i, a) in matrix.iter().enumerate() {
-                let b = *a as f32;
+                let b = ai_real_to_f32(*a);
                 if b < min[i] {
                     min[i] = b;
                 }
@@ -551,7 +552,7 @@ impl AccessorExporter {
         let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4 * 4);
         for vector_base in vector_data {
             for vector in vector_base {
-                let a = *vector as f32;
+                let a = ai_real_to_f32(*vector);
                 if a < min_x {
                     min_x = a;
                 }
