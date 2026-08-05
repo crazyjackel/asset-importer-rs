@@ -12,6 +12,19 @@ Runs standard Rust quality checks:
 
 **Triggers:** Push and pull requests to `main` branch
 
+### `tests.yml` - Crate Tests and SonarQube
+Runs crate tests and uploads coverage artifacts. On trusted pushes to `main`,
+the final job merges those artifacts and runs SonarCloud with `SONAR_TOKEN`.
+The SonarQube job is skipped for pull requests.
+
+**Triggers:** Push and pull requests to `main`; SonarQube only runs on pushes
+
+### `sonarqube_manual.yml` - Manual SonarQube Scan
+Runs SonarCloud manually for a selected ref. It can optionally attach
+`coverage-*` artifacts from a prior Crate Tests run via `coverage_run_id`.
+
+**Triggers:** `workflow_dispatch` (requires Actions write access)
+
 ### `semver.yml` - Semantic Versioning Checks
 Runs semantic versioning checks:
 - Validates that version changes follow semantic versioning rules

@@ -513,7 +513,7 @@ jobs:
       - test-gltf-v1-lib
       - test-gltf-v1-json
       - test-gltf-v1-derive
-    if: always()
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:

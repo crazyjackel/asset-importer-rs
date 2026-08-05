@@ -1,0 +1,51 @@
+name: SonarQube (Manual)
+
+# SONAR_TOKEN is unavailable to fork PRs and other untrusted events.
+# Contributors with Actions write access can run this for a selected ref.
+on:
+  workflow_dispatch:
+    inputs:
+      coverage_run_id:
+        description: >
+          Optional Crate Tests workflow run ID whose coverage-* artifacts should
+          be attached. Leave empty to scan without coverage reports.
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  sonarqube:
+    name: SonarQube Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+
+      - name: Download coverage artifacts
+        if: inputs.coverage_run_id != ''
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: coverage-*
+          path: coverage-artifacts/
+          merge-multiple: false
+          run-id: ${{ inputs.coverage_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Flatten coverage files
+        run: |
+          mkdir -p coverage
+          if [ -d coverage-artifacts ] && [ "$(find coverage-artifacts -name "*.info" -type f | wc -l)" -gt 0 ]; then
+            find coverage-artifacts -name "*.info" -type f -exec mv {} coverage/ \;
+            find coverage-artifacts -type d -empty -delete
+          else
+            echo "No coverage artifacts found, creating empty coverage directory"
+          fi
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
