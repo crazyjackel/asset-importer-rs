@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 
 use asset_importer_rs_scene::{AiReal, AiVector3D};
 
