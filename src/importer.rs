@@ -51,13 +51,12 @@ impl Importer {
         let extension = extension.to_str().unwrap_or_default();
 
         let memory_loader = move |path: &Path| -> io::Result<Box<dyn ReadSeek>> {
-            if let Some(path_str) = path.to_str() {
-                if let Some(data_vec) = data.get(path_str) {
+            if let Some(path_str) = path.to_str()
+                && let Some(data_vec) = data.get(path_str) {
                     let cursor = Cursor::new(data_vec.as_slice());
                     let reader = BufReader::new(cursor);
                     return Ok(Box::new(reader));
                 }
-            }
 
             Err(io::Error::new(io::ErrorKind::NotFound, "File not found"))
         };
