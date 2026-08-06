@@ -40,14 +40,14 @@ impl Gltf2Exporter {
                 if use_translate_rotate_scale {
                     let decompose = ai_node.transformation.clone().decompose();
                     let translation: [AiReal; 3] = decompose.translation.into();
-                    node.translation = Some(translation.map(|x| x));
+                    node.translation = Some(translation.map(ai_real_to_f32));
                     let rotation: [AiReal; 4] = decompose.rotation.into();
-                    node.rotation = Some(UnitQuaternion(rotation.map(|x| x)));
+                    node.rotation = Some(UnitQuaternion(rotation.map(ai_real_to_f32)));
                     let scale: [AiReal; 3] = decompose.scale.into();
-                    node.scale = Some(scale.map(|x| x));
+                    node.scale = Some(scale.map(ai_real_to_f32));
                 } else {
                     let transform_array: [AiReal; 16] = ai_node.transformation.clone().into();
-                    node.matrix = Some(transform_array.map(|x| x));
+                    node.matrix = Some(transform_array.map(ai_real_to_f32));
                 }
             }
 
