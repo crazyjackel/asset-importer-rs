@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use asset_importer_rs_scene::{
     AI_MAX_NUMBER_OF_TEXTURECOORDS, AiPrimitiveType, AiQuaternion, AiScene, AiVector2D, AiVector3D,
+    ai_real_to_f32,
 };
 use gltf_v1::json::{
     Accessor, BufferView, Mesh, Root, StringIndex,
@@ -235,7 +236,7 @@ pub(crate) fn export_vector_2d(
     let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 2 * 4);
     for vector in vector_data {
         for i in 0..2_usize {
-            let value = vector[i] as f32;
+            let value = ai_real_to_f32(vector[i]);
             if value < min[i] {
                 min[i] = value;
             }
@@ -281,7 +282,7 @@ pub(crate) fn export_vector_3d(
     let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 3 * 4);
     for vector in vector_data {
         for i in 0..3_usize {
-            let value = vector[i] as f32;
+            let value = ai_real_to_f32(vector[i]);
             if value < min[i] {
                 min[i] = value;
             }
@@ -327,7 +328,7 @@ pub(crate) fn export_vector_4d(
     let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4 * 4);
     for vector in vector_data {
         for i in 0..4_usize {
-            let value = vector[i] as f32;
+            let value = ai_real_to_f32(vector[i]);
             if value < min[i] {
                 min[i] = value;
             }

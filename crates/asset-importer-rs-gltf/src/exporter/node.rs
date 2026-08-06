@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use gltf::json::{Index, Node, Root, scene::UnitQuaternion};
 
-use asset_importer_rs_scene::{AiReal, AiScene};
+use asset_importer_rs_scene::{AiReal, AiScene, ai_real_to_f32};
 
 use crate::exporter::error::Gltf2ExportError;
 

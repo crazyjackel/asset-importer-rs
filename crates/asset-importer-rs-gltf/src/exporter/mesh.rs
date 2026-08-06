@@ -19,6 +19,7 @@ use gltf::{
 
 use asset_importer_rs_scene::{
     AiColor4D, AiMatrix4x4, AiPrimitiveType, AiQuaternion, AiReal, AiScene, AiVector2D, AiVector3D,
+    ai_real_to_f32,
 };
 use serde_json::{Number, Value};
 
@@ -459,17 +460,15 @@ impl AccessorExporter {
         for vector_base in vector_data {
             let matrix: [AiReal; 16] = vector_base.into();
             for (i, a) in matrix.iter().enumerate() {
-                let b = *a as AiReal;
+                let b = ai_real_to_f32(*a);
                 if b < min[i] {
                     min[i] = b;
                 }
                 if b > max[i] {
                     max[i] = b;
                 }
+                data.extend_from_slice(&b.to_le_bytes());
             }
-
-            let vec: Vec<u8> = matrix.iter().flat_map(|x| x.to_le_bytes()).collect();
-            data.extend_from_slice(&vec);
         }
         let min = Some(Value::Array(vec![
             Value::Number(Number::from_f64(min[0] as f64).unwrap()),
@@ -540,7 +539,7 @@ impl AccessorExporter {
         let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4 * 4);
         for vector_base in vector_data {
             for vector in vector_base {
-                let a = *vector as AiReal;
+                let a = ai_real_to_f32(*vector);
                 if a < min_x {
                     min_x = a;
                 }
@@ -722,8 +721,8 @@ impl AccessorExporter {
                 max_y = vector.y;
             }
 
-            data.extend_from_slice(&vector.x.to_le_bytes());
-            data.extend_from_slice(&vector.y.to_le_bytes());
+            data.extend_from_slice(&ai_real_to_f32(vector.x).to_le_bytes());
+            data.extend_from_slice(&ai_real_to_f32(vector.y).to_le_bytes());
         }
         let min = Some(Value::Array(vec![
             Value::Number(Number::from_f64(min_x as f64).unwrap()),
@@ -781,9 +780,9 @@ impl AccessorExporter {
                 max_z = vector.z;
             }
 
-            data.extend_from_slice(&vector.x.to_le_bytes());
-            data.extend_from_slice(&vector.y.to_le_bytes());
-            data.extend_from_slice(&vector.z.to_le_bytes());
+            data.extend_from_slice(&ai_real_to_f32(vector.x).to_le_bytes());
+            data.extend_from_slice(&ai_real_to_f32(vector.y).to_le_bytes());
+            data.extend_from_slice(&ai_real_to_f32(vector.z).to_le_bytes());
         }
         let min = Some(Value::Array(vec![
             Value::Number(Number::from_f64(min_x as f64).unwrap()),
@@ -851,10 +850,10 @@ impl AccessorExporter {
                 max_w = vector.w;
             }
 
-            data.extend_from_slice(&vector.x.to_le_bytes());
-            data.extend_from_slice(&vector.y.to_le_bytes());
-            data.extend_from_slice(&vector.z.to_le_bytes());
-            data.extend_from_slice(&vector.w.to_le_bytes());
+            data.extend_from_slice(&ai_real_to_f32(vector.x).to_le_bytes());
+            data.extend_from_slice(&ai_real_to_f32(vector.y).to_le_bytes());
+            data.extend_from_slice(&ai_real_to_f32(vector.z).to_le_bytes());
+            data.extend_from_slice(&ai_real_to_f32(vector.w).to_le_bytes());
         }
         let min = Some(Value::Array(vec![
             Value::Number(Number::from_f64(min_x as f64).unwrap()),
