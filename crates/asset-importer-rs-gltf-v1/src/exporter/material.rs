@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use asset_importer_rs_scene::{
-    AiMaterial, AiPropertyTypeInfo, AiScene, AiTextureMapMode, AiTextureType,
+    AiMaterial, AiScene, AiTextureMapMode, AiTextureType,
     matkey::{
         self, _AI_MATKEY_MAPPINGMODE_U_BASE, _AI_MATKEY_MAPPINGMODE_V_BASE,
         _AI_MATKEY_TEXTURE_BASE, AI_MATKEY_COLOR_AMBIENT, AI_MATKEY_COLOR_DIFFUSE,
@@ -35,10 +35,10 @@ impl GltfExporter {
 
             let name_option = ai_material
                 .get_property(matkey::AI_MATKEY_NAME, Some(AiTextureType::None), 0)
-                .and_then(|prop| {
+                .map(|prop| {
                     let str =
                         String::from_utf8(prop.data.to_vec()).map_err(GltfExportError::UTFError);
-                    Some(str)
+                    str
                 });
             let name = if let Some(name) = name_option {
                 generate_unique_name(&name?, unique_names_map)
@@ -175,16 +175,15 @@ fn export_material_texture(
         _AI_MATKEY_TEXTURE_BASE,
         Some(material_export.texture_type),
         0,
-    ) {
-        if !path.is_empty() {
-            if !path.starts_with("*") {
-                if let Some(texture_name) = textures_by_path.get(&path) {
+    )
+        && !path.is_empty() {
+            if !path.starts_with("*")
+                && let Some(texture_name) = textures_by_path.get(&path) {
                     material.values.insert(
                         material_export.property_name.to_string(),
                         Checked::Valid(ParameterValue::String(texture_name.clone())),
                     );
                 }
-            }
 
             if !material.values.contains_key(material_export.material_name) {
                 let texture_name = generate_unique_name("texture", unique_names_map);
@@ -253,8 +252,8 @@ fn export_material_texture(
                 // Handle embedded textures
                 if path.starts_with("*") {
                     let trimmed_path = path.trim_start_matches('*');
-                    if let Ok(parsed_index) = trimmed_path.parse::<u32>() {
-                        if let Some(texture) = scene.textures.get(parsed_index as usize) {
+                    if let Ok(parsed_index) = trimmed_path.parse::<u32>()
+                        && let Some(texture) = scene.textures.get(parsed_index as usize) {
                             source.name = Some(texture.filename.clone());
                             if let Ok(data) = texture.export(&[]) {
                                 let mimetype = data.format.get_mime_type();
@@ -265,7 +264,6 @@ fn export_material_texture(
                                 );
                             }
                         }
-                    }
                 } else {
                     source.uri = path.to_string();
                 }
@@ -283,7 +281,6 @@ fn export_material_texture(
                 );
             }
         }
-    }
 }
 
 #[cfg(test)]
