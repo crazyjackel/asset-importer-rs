@@ -13,7 +13,7 @@ impl AiPostProcess for FindInvalidData {
         steps.contains(AiPostProcessSteps::FindInvalidData)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement invalid data detection
         Ok(())
     }

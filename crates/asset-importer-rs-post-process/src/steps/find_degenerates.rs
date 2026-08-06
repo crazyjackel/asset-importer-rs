@@ -13,7 +13,7 @@ impl AiPostProcess for FindDegenerates {
         steps.contains(AiPostProcessSteps::FindDegenerates)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement degenerate triangle detection
         Ok(())
     }
