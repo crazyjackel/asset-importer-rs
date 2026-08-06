@@ -93,7 +93,7 @@ impl AttributeInto<i32> for AttributeValue {
     fn into_attribute(&self) -> Option<i32> {
         match self {
             AttributeValue::I16(value) => Some(*value as i32),
-            AttributeValue::I32(value) => Some(*value as i32),
+            AttributeValue::I32(value) => Some((*value)),
             AttributeValue::I64(value) => Some(*value as i32),
             _ => None,
         }
@@ -138,8 +138,7 @@ fn read_header_from_tree(
     document.fbx_version = header_extension
         .first_child_by_name("FBXVersion")
         .ok_or_else(missing)?
-        .attributes()
-        .get(0)
+        .attributes().first()
         .and_then(|v| v.into_attribute())
         .ok_or_else(missing)?;
 
@@ -161,9 +160,8 @@ fn read_header_from_tree(
     document.creator = header_extension
         .first_child_by_name("Creator")
         .ok_or_else(missing)?
-        .attributes()
-        .get(0)
-        .and_then(|value| AttributeInto::<String>::into_attribute(value))
+        .attributes().first()
+        .and_then(AttributeInto::<String>::into_attribute)
         .ok_or_else(missing)?
         .to_owned();
 
@@ -178,56 +176,49 @@ fn read_header_from_tree(
     let year = creation_date_element
         .first_child_by_name("Year")
         .and_then(|node| {
-            node.attributes()
-                .get(0)
+            node.attributes().first()
                 .and_then(|value| value.into_attribute())
         })
         .ok_or_else(|| missing_child("Year"))?;
     let month = creation_date_element
         .first_child_by_name("Month")
         .and_then(|node| {
-            node.attributes()
-                .get(0)
+            node.attributes().first()
                 .and_then(|value| value.into_attribute())
         })
         .ok_or_else(|| missing_child("Month"))?;
     let day = creation_date_element
         .first_child_by_name("Day")
         .and_then(|node| {
-            node.attributes()
-                .get(0)
+            node.attributes().first()
                 .and_then(|value| value.into_attribute())
         })
         .ok_or_else(|| missing_child("Day"))?;
     let hour = creation_date_element
         .first_child_by_name("Hour")
         .and_then(|node| {
-            node.attributes()
-                .get(0)
+            node.attributes().first()
                 .and_then(|value| value.into_attribute())
         })
         .ok_or_else(|| missing_child("Hour"))?;
     let minute = creation_date_element
         .first_child_by_name("Minute")
         .and_then(|node| {
-            node.attributes()
-                .get(0)
+            node.attributes().first()
                 .and_then(|value| value.into_attribute())
         })
         .ok_or_else(|| missing_child("Minute"))?;
     let second = creation_date_element
         .first_child_by_name("Second")
         .and_then(|node| {
-            node.attributes()
-                .get(0)
+            node.attributes().first()
                 .and_then(|value| value.into_attribute())
         })
         .ok_or_else(|| missing_child("Second"))?;
     let millisecond = creation_date_element
         .first_child_by_name("Millisecond")
         .and_then(|node| {
-            node.attributes()
-                .get(0)
+            node.attributes().first()
                 .and_then(|value| value.into_attribute())
         })
         .ok_or_else(|| missing_child("Millisecond"))?;
@@ -243,7 +234,7 @@ fn read_property_details_from_tree(node: NodeHandle<'_>) -> Option<PropertyDetai
         return None;
     }
 
-    let property_name: String = attributes.get(0).and_then(|value| value.into_attribute())?;
+    let property_name: String = attributes.first().and_then(|value| value.into_attribute())?;
     let property_type: String = attributes.get(1).and_then(|value| value.into_attribute())?;
     let property = match property_type.as_str() {
         "KString" => Property::String(attributes.get(4).and_then(|value| value.into_attribute())?),
@@ -336,17 +327,15 @@ fn read_definitions_from_tree(
 
     for object_type in definitions.children_by_name("ObjectType") {
         let Some(object_name) = object_type
-            .attributes()
-            .get(0)
-            .and_then(|value| AttributeInto::<String>::into_attribute(value))
+            .attributes().first()
+            .and_then(AttributeInto::<String>::into_attribute)
         else {
             continue;
         };
         for property_template in object_type.children_by_name("PropertyTemplate") {
             let Some(property_name) = property_template
-                .attributes()
-                .get(0)
-                .and_then(|value| AttributeInto::<String>::into_attribute(value))
+                .attributes().first()
+                .and_then(AttributeInto::<String>::into_attribute)
             else {
                 continue;
             };
@@ -360,7 +349,7 @@ fn read_definitions_from_tree(
                 let template = document
                     .templates
                     .entry(template_name)
-                    .or_insert(Template::default());
+                    .or_default();
                 for property in properties70.children() {
                     if let Some(property_details) = read_property_details_from_tree(property) {
                         template.insert(property_details.name, property_details.property);
@@ -499,21 +488,20 @@ fn read_objects_from_tree(
         if attributes.len() < 3 {
             continue;
         }
-        let Some(object_index) = attributes
-            .get(0)
-            .and_then(|value| AttributeInto::<u64>::into_attribute(value))
+        let Some(object_index) = attributes.first()
+            .and_then(AttributeInto::<u64>::into_attribute)
         else {
             continue;
         };
         let Some(name) = attributes
             .get(1)
-            .and_then(|value| AttributeInto::<String>::into_attribute(value))
+            .and_then(AttributeInto::<String>::into_attribute)
         else {
             continue;
         };
         let Some(class_name) = attributes
             .get(2)
-            .and_then(|value| AttributeInto::<String>::into_attribute(value))
+            .and_then(AttributeInto::<String>::into_attribute)
         else {
             continue;
         };
@@ -554,9 +542,8 @@ fn read_connections_from_tree(
 
     for connection in connections.children() {
         let attributes = connection.attributes();
-        let Some(connection_type) = attributes
-            .get(0)
-            .and_then(|value| AttributeInto::<String>::into_attribute(value))
+        let Some(connection_type) = attributes.first()
+            .and_then(AttributeInto::<String>::into_attribute)
         else {
             continue;
         };
@@ -597,7 +584,7 @@ fn read_connections_from_tree(
                 };
                 let Some(src_property) = attributes
                     .get(2)
-                    .and_then(|value| AttributeInto::<String>::into_attribute(value))
+                    .and_then(AttributeInto::<String>::into_attribute)
                 else {
                     continue;
                 };

@@ -170,7 +170,7 @@ fn read_definitions(
                 let template = document
                     .templates
                     .entry(template_name.clone())
-                    .or_insert_with(Template::default);
+                    .or_default();
                 for property_detail in property_table_handle.children() {
                     match PropertyDetails::try_from(property_detail) {
                         Ok(property_details) => {
@@ -254,7 +254,7 @@ fn read_connections(
                 document
                     .object_connections
                     .entry(src)
-                    .or_insert(Vec::new())
+                    .or_default()
                     .push(dest);
             }
             "OP" => {
@@ -271,7 +271,7 @@ fn read_connections(
                 document
                     .object_property_connections
                     .entry(src)
-                    .or_insert(Vec::new())
+                    .or_default()
                     .push(ObjectPropertyConnection { dest, property });
             }
             "PP" => {
@@ -289,7 +289,7 @@ fn read_connections(
                 document
                     .object_to_source_properties
                     .entry(src)
-                    .or_insert(Vec::new())
+                    .or_default()
                     .push(src_property.clone());
                 document
                     .property_connections
@@ -297,7 +297,7 @@ fn read_connections(
                         dest: src,
                         property: src_property,
                     })
-                    .or_insert(Vec::new())
+                    .or_default()
                     .push(ObjectPropertyConnection {
                         dest,
                         property: dest_property,

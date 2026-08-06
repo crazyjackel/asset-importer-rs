@@ -46,7 +46,7 @@ impl CameraSwitcher {
 fn parse_camera_switcher_fields(
     attrs: &HashMap<String, ElementAttribute>,
 ) -> Result<(i32, String, String), FbxTryFromReason> {
-    let id_tok = attrs.require_token(&CAMERA_ID)?;
+    let id_tok = attrs.require_token(CAMERA_ID)?;
     let camera_id =
         id_tok
             .parse::<i32>()
@@ -55,8 +55,8 @@ fn parse_camera_switcher_fields(
                 detail: e.to_string(),
             })?;
 
-    let camera_name = attrs.require_token(&CAMERA_NAME)?.to_string();
-    let camera_index_name = attrs.require_token(&CAMERA_INDEX_NAME)?.to_string();
+    let camera_name = attrs.require_token(CAMERA_NAME)?.to_string();
+    let camera_index_name = attrs.require_token(CAMERA_INDEX_NAME)?.to_string();
 
     Ok((camera_id, camera_name, camera_index_name))
 }
