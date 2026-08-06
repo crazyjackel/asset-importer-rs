@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785975348878,
+  "lastUpdate": 1786057913046,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -899,6 +899,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 51435510,
             "range": "± 144163",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ff9aeb30d18dfe3ecbbb20d66c70e63046692f1e",
+          "message": "Merge pull request #44 from martinfrances107/clippy-fix-gltf\n\nran:  cargo clippy --fix --lib -p asset-importer-rs-gltf --",
+          "timestamp": "2026-08-06T18:44:46-04:00",
+          "tree_id": "c14ce67e4b8d029282ccab970e4ee651e84be25a",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/ff9aeb30d18dfe3ecbbb20d66c70e63046692f1e"
+        },
+        "date": 1786057912466,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 91172123,
+            "range": "± 501042",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 52100884,
+            "range": "± 134866",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 199592659,
+            "range": "± 3135306",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 52065392,
+            "range": "± 534936",
             "unit": "ns/iter"
           }
         ]
