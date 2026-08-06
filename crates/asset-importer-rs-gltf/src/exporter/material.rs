@@ -673,18 +673,16 @@ fn handle_pbr(
                         None
                     }
                 })
-            {
-                if let Some(specular) = ai_material
+                && let Some(specular) = ai_material
                     .get_property(AI_MATKEY_COLOR_SPECULAR, Some(AiTextureType::None), 0)
                     .and_then(|prop| try_from_bytes::<AiColor3D>(&prop.data).ok())
-                {
-                    let specular_intensity =
-                        specular.r * 0.2125 + specular.g * 0.2125 + specular.b * 0.2125;
-                    let mut normalized_shininess = f32::sqrt(shininess.0 / 1000.0);
-                    normalized_shininess = normalized_shininess.clamp(0.0, 1.0);
-                    normalized_shininess *= specular_intensity;
-                    return Some(StrengthFactor(1.0 - normalized_shininess));
-                }
+            {
+                let specular_intensity =
+                    specular.r * 0.2125 + specular.g * 0.2125 + specular.b * 0.2125;
+                let mut normalized_shininess = f32::sqrt(shininess.0 / 1000.0);
+                normalized_shininess = normalized_shininess.clamp(0.0, 1.0);
+                normalized_shininess *= specular_intensity;
+                return Some(StrengthFactor(1.0 - normalized_shininess));
             }
             None
         })
@@ -861,7 +859,7 @@ fn handle_specular_glossiness(
                 Some(AiTextureType::None),
                 0,
             )
-            .map(|x| StrengthFactor(x))
+            .map(StrengthFactor)
             .or(ai_material
                 .get_property_ai_float(
                     matkey::AI_MATKEY_ROUGHNESS_FACTOR,

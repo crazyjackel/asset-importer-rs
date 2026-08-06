@@ -148,11 +148,7 @@ impl Gltf2Exporter {
                     }
                 }
                 let accessor = AccessorExporter::export_u32(root, buffer_data, &indices);
-                if let Some(accessor) = accessor {
-                    Some(root.push(accessor))
-                } else {
-                    None
-                }
+                accessor.map(|accessor| root.push(accessor))
             } else {
                 None
             };
@@ -169,106 +165,103 @@ impl Gltf2Exporter {
             };
 
             //handle skin
-            if let Some(ref mut skin) = skin {
-                if !ai_mesh.bones.is_empty() {
-                    let num_verts = ai_mesh.vertices.len();
-                    let mut all_vertices_pairs: Vec<Vec<(usize, AiReal)>> = Vec::new();
-                    let mut joints_per_vertex: Vec<u32> = Vec::new();
-                    let mut max_joint_per_vertex: u32 = 0;
-                    joints_per_vertex.resize(num_verts, 0);
-                    all_vertices_pairs.resize(num_verts, Vec::new());
-                    for bone in &ai_mesh.bones {
-                        //We do this Check to make sure nodes exist and to potentially get validate node names once GLTF-RS supports Node Names
-                        if root.nodes.get(bone.node_index).is_some() {
-                            //Get Joint Index
-                            let joint_index_option = skin
-                                .joints
-                                .iter()
-                                .enumerate()
-                                .find(|(_, y)| y.value() == bone.node_index);
-                            //we grab the Index Node for node names
-                            let (joint_index, _) = if let Some(opt) = joint_index_option {
-                                opt
-                            } else {
-                                assert_eq!(skin.joints.len(), inverse_bind_matrices_data.len());
-                                let index = Index::new(bone.node_index as u32);
-                                skin.joints.push(index);
-                                inverse_bind_matrices_data.push(bone.offset_matrix.clone());
-                                let last_index = skin.joints.len() - 1;
-                                (last_index, &skin.joints[last_index])
-                            };
+            if let Some(ref mut skin) = skin
+                && !ai_mesh.bones.is_empty()
+            {
+                let num_verts = ai_mesh.vertices.len();
+                let mut all_vertices_pairs: Vec<Vec<(usize, AiReal)>> = Vec::new();
+                let mut joints_per_vertex: Vec<u32> = Vec::new();
+                let mut max_joint_per_vertex: u32 = 0;
+                joints_per_vertex.resize(num_verts, 0);
+                all_vertices_pairs.resize(num_verts, Vec::new());
+                for bone in &ai_mesh.bones {
+                    //We do this Check to make sure nodes exist and to potentially get validate node names once GLTF-RS supports Node Names
+                    if root.nodes.get(bone.node_index).is_some() {
+                        //Get Joint Index
+                        let joint_index_option = skin
+                            .joints
+                            .iter()
+                            .enumerate()
+                            .find(|(_, y)| y.value() == bone.node_index);
+                        //we grab the Index Node for node names
+                        let (joint_index, _) = if let Some(opt) = joint_index_option {
+                            opt
+                        } else {
+                            assert_eq!(skin.joints.len(), inverse_bind_matrices_data.len());
+                            let index = Index::new(bone.node_index as u32);
+                            skin.joints.push(index);
+                            inverse_bind_matrices_data.push(bone.offset_matrix.clone());
+                            let last_index = skin.joints.len() - 1;
+                            (last_index, &skin.joints[last_index])
+                        };
 
-                            //Populate Data Structures
-                            for weight in &bone.weights {
-                                all_vertices_pairs[weight.vertex_id]
-                                    .push((joint_index, weight.weight));
-                                joints_per_vertex[weight.vertex_id] += 1;
-                                max_joint_per_vertex = u32::max(
-                                    max_joint_per_vertex,
-                                    joints_per_vertex[weight.vertex_id],
-                                );
-                            }
+                        //Populate Data Structures
+                        for weight in &bone.weights {
+                            all_vertices_pairs[weight.vertex_id].push((joint_index, weight.weight));
+                            joints_per_vertex[weight.vertex_id] += 1;
+                            max_joint_per_vertex =
+                                u32::max(max_joint_per_vertex, joints_per_vertex[weight.vertex_id]);
                         }
                     }
+                }
 
-                    if unlimited_bones_per_vertex {
-                        max_joint_per_vertex = 4;
-                    }
+                if unlimited_bones_per_vertex {
+                    max_joint_per_vertex = 4;
+                }
 
-                    //Flatten and Sort Vertex Pairs into Vectors of Joint Indexes and Weight Indexes
-                    let num_groups = ((max_joint_per_vertex - 1) / 4) + 1;
-                    let mut vertex_joint_data: Vec<[usize; 4]> = Vec::new();
-                    let mut vertex_weight_data: Vec<[AiReal; 4]> = Vec::new();
-                    vertex_joint_data.resize(num_verts * num_groups as usize, Default::default());
-                    vertex_weight_data.resize(num_verts * num_groups as usize, Default::default());
-                    for (vertex_index, vertice_pair) in all_vertices_pairs.iter_mut().enumerate() {
-                        vertice_pair.sort_by(|x, y| {
-                            if x.1 == y.1 {
-                                Ordering::Equal
-                            } else if x.1 > y.1 {
-                                Ordering::Greater
-                            } else {
-                                Ordering::Less
-                            }
-                        });
-                        for group_index in 0..num_groups as usize {
-                            for joint_index in 0..4_usize {
-                                let index_bone = group_index * 4 + joint_index;
-                                let index_data = vertex_index + num_verts * group_index;
-                                if index_bone >= vertice_pair.len() {
-                                    vertex_joint_data[index_data][joint_index] = 0;
-                                    vertex_weight_data[index_data][joint_index] = 0.0;
-                                } else {
-                                    vertex_joint_data[index_data][joint_index] =
-                                        vertice_pair[index_bone].0;
-                                    vertex_weight_data[index_data][joint_index] =
-                                        vertice_pair[index_bone].1;
-                                }
-                            }
+                //Flatten and Sort Vertex Pairs into Vectors of Joint Indexes and Weight Indexes
+                let num_groups = ((max_joint_per_vertex - 1) / 4) + 1;
+                let mut vertex_joint_data: Vec<[usize; 4]> = Vec::new();
+                let mut vertex_weight_data: Vec<[AiReal; 4]> = Vec::new();
+                vertex_joint_data.resize(num_verts * num_groups as usize, Default::default());
+                vertex_weight_data.resize(num_verts * num_groups as usize, Default::default());
+                for (vertex_index, vertice_pair) in all_vertices_pairs.iter_mut().enumerate() {
+                    vertice_pair.sort_by(|x, y| {
+                        if x.1 == y.1 {
+                            Ordering::Equal
+                        } else if x.1 > y.1 {
+                            Ordering::Greater
+                        } else {
+                            Ordering::Less
                         }
-                    }
-
-                    //for each group export
+                    });
                     for group_index in 0..num_groups as usize {
-                        let start_index = group_index * num_verts;
-                        let end_index = start_index + num_verts;
-                        let slice = &vertex_joint_data[start_index..end_index];
-                        let joints = AccessorExporter::export_usize_4(root, buffer_data, slice);
-                        if let Some(joints) = joints {
-                            attributes.insert(
-                                Checked::Valid(Semantic::Joints(group_index as u32)),
-                                root.push(joints),
-                            );
+                        for joint_index in 0..4_usize {
+                            let index_bone = group_index * 4 + joint_index;
+                            let index_data = vertex_index + num_verts * group_index;
+                            if index_bone >= vertice_pair.len() {
+                                vertex_joint_data[index_data][joint_index] = 0;
+                                vertex_weight_data[index_data][joint_index] = 0.0;
+                            } else {
+                                vertex_joint_data[index_data][joint_index] =
+                                    vertice_pair[index_bone].0;
+                                vertex_weight_data[index_data][joint_index] =
+                                    vertice_pair[index_bone].1;
+                            }
                         }
+                    }
+                }
 
-                        let slice = &vertex_weight_data[start_index..end_index];
-                        let joints = AccessorExporter::export_real_4(root, buffer_data, slice);
-                        if let Some(joints) = joints {
-                            attributes.insert(
-                                Checked::Valid(Semantic::Weights(group_index as u32)),
-                                root.push(joints),
-                            );
-                        }
+                //for each group export
+                for group_index in 0..num_groups as usize {
+                    let start_index = group_index * num_verts;
+                    let end_index = start_index + num_verts;
+                    let slice = &vertex_joint_data[start_index..end_index];
+                    let joints = AccessorExporter::export_usize_4(root, buffer_data, slice);
+                    if let Some(joints) = joints {
+                        attributes.insert(
+                            Checked::Valid(Semantic::Joints(group_index as u32)),
+                            root.push(joints),
+                        );
+                    }
+
+                    let slice = &vertex_weight_data[start_index..end_index];
+                    let joints = AccessorExporter::export_real_4(root, buffer_data, slice);
+                    if let Some(joints) = joints {
+                        attributes.insert(
+                            Checked::Valid(Semantic::Weights(group_index as u32)),
+                            root.push(joints),
+                        );
                     }
                 }
             }
@@ -308,11 +301,7 @@ impl Gltf2Exporter {
                             .collect();
                         let normals =
                             AccessorExporter::export_vector_3d(root, buffer_data, &normals_diff);
-                        if let Some(normals) = normals {
-                            Some(root.push(normals))
-                        } else {
-                            None
-                        }
+                        normals.map(|normals| root.push(normals))
                     } else {
                         None
                     };
@@ -365,14 +354,14 @@ impl Gltf2Exporter {
             // @todo: add skeleton support
             let skin = root.push(skin_ref);
             for node_index in 0..root.nodes.len() {
-                if let Some(node) = root.nodes.get_mut(node_index) {
-                    if let Some(node_meshes) = node_index_to_meshes.get(&node_index) {
-                        for mesh_index in node_meshes {
-                            if let Some(mesh) = meshes.get(*mesh_index) {
-                                if mesh.weights.is_some() {
-                                    node.skin = Some(skin);
-                                }
-                            }
+                if let Some(node) = root.nodes.get_mut(node_index)
+                    && let Some(node_meshes) = node_index_to_meshes.get(&node_index)
+                {
+                    for mesh_index in node_meshes {
+                        if let Some(mesh) = meshes.get(*mesh_index)
+                            && mesh.weights.is_some()
+                        {
+                            node.skin = Some(skin);
                         }
                     }
                 }
@@ -381,23 +370,23 @@ impl Gltf2Exporter {
 
         let mut merged_meshes: Vec<Mesh> = Vec::new();
         for node_index in 0..root.nodes.len() {
-            if let Some(node) = root.nodes.get_mut(node_index) {
-                if let Some(node_meshes) = node_index_to_meshes.get(&node_index) {
-                    let mut first_mesh: Option<Mesh> = None;
-                    for mesh_index in node_meshes {
-                        if let Some(mesh) = meshes.get_mut(*mesh_index) {
-                            if let Some(first) = first_mesh.as_mut() {
-                                first.primitives.append(&mut mesh.primitives);
-                            } else {
-                                first_mesh = Some(mesh.clone());
-                            }
+            if let Some(node) = root.nodes.get_mut(node_index)
+                && let Some(node_meshes) = node_index_to_meshes.get(&node_index)
+            {
+                let mut first_mesh: Option<Mesh> = None;
+                for mesh_index in node_meshes {
+                    if let Some(mesh) = meshes.get_mut(*mesh_index) {
+                        if let Some(first) = first_mesh.as_mut() {
+                            first.primitives.append(&mut mesh.primitives);
+                        } else {
+                            first_mesh = Some(mesh.clone());
                         }
                     }
+                }
 
-                    if let Some(first) = first_mesh {
-                        merged_meshes.push(first);
-                        node.mesh = Some(Index::new((merged_meshes.len() - 1) as u32));
-                    }
+                if let Some(first) = first_mesh {
+                    merged_meshes.push(first);
+                    node.mesh = Some(Index::new((merged_meshes.len() - 1) as u32));
                 }
             }
         }

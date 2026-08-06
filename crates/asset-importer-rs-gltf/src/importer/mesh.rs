@@ -561,82 +561,81 @@ impl Gltf2Importer {
                             };
 
                             //handle position
-                            if let Some(positions) = target.positions() {
-                                if positions.count() == num_all_vertices {
-                                    let data: Vec<[f32; 3]> = positions
-                                        .extract_data(buffer_data, vertex_remapping_table)
-                                        .map_err(Gltf2ImportError::MeshError)?;
-                                    let offsets: Vec<AiVector3D> = data
-                                        .iter()
-                                        .map(|x| {
-                                            AiVector3D::new(
-                                                x[0] as AiReal,
-                                                x[1] as AiReal,
-                                                x[2] as AiReal,
-                                            )
-                                        })
-                                        .collect();
+                            if let Some(positions) = target.positions()
+                                && positions.count() == num_all_vertices
+                            {
+                                let data: Vec<[f32; 3]> = positions
+                                    .extract_data(buffer_data, vertex_remapping_table)
+                                    .map_err(Gltf2ImportError::MeshError)?;
+                                let offsets: Vec<AiVector3D> = data
+                                    .iter()
+                                    .map(|x| {
+                                        AiVector3D::new(
+                                            x[0] as AiReal,
+                                            x[1] as AiReal,
+                                            x[2] as AiReal,
+                                        )
+                                    })
+                                    .collect();
 
-                                    if offsets.len() == ai_mesh.vertices.len() {
-                                        anim_mesh.vertices = ai_mesh.vertices.clone();
-                                        for (i, offset) in offsets.iter().enumerate() {
-                                            anim_mesh.vertices[i] += *offset;
-                                        }
+                                if offsets.len() == ai_mesh.vertices.len() {
+                                    anim_mesh.vertices = ai_mesh.vertices.clone();
+                                    for (i, offset) in offsets.iter().enumerate() {
+                                        anim_mesh.vertices[i] += *offset;
                                     }
                                 }
                             }
 
                             //handle normals
-                            if let Some(normals) = target.normals() {
-                                if normals.count() == num_all_vertices {
-                                    let data: Vec<[f32; 3]> = normals
-                                        .extract_data(buffer_data, vertex_remapping_table)
-                                        .map_err(Gltf2ImportError::MeshError)?;
-                                    let offsets: Vec<AiVector3D> = data
-                                        .iter()
-                                        .map(|x| {
-                                            AiVector3D::new(
-                                                x[0] as AiReal,
-                                                x[1] as AiReal,
-                                                x[2] as AiReal,
-                                            )
-                                        })
-                                        .collect();
+                            if let Some(normals) = target.normals()
+                                && normals.count() == num_all_vertices
+                            {
+                                let data: Vec<[f32; 3]> = normals
+                                    .extract_data(buffer_data, vertex_remapping_table)
+                                    .map_err(Gltf2ImportError::MeshError)?;
+                                let offsets: Vec<AiVector3D> = data
+                                    .iter()
+                                    .map(|x| {
+                                        AiVector3D::new(
+                                            x[0] as AiReal,
+                                            x[1] as AiReal,
+                                            x[2] as AiReal,
+                                        )
+                                    })
+                                    .collect();
 
-                                    if offsets.len() == ai_mesh.normals.len() {
-                                        anim_mesh.normals = ai_mesh.normals.clone();
-                                        for (i, offset) in offsets.iter().enumerate() {
-                                            anim_mesh.normals[i] += *offset;
-                                        }
+                                if offsets.len() == ai_mesh.normals.len() {
+                                    anim_mesh.normals = ai_mesh.normals.clone();
+                                    for (i, offset) in offsets.iter().enumerate() {
+                                        anim_mesh.normals[i] += *offset;
                                     }
                                 }
                             }
                             //handle tangents
-                            if let Some(tangents) = target.tangents() {
-                                if tangents.count() == num_all_vertices
-                                    && !anim_mesh.normals.is_empty()
-                                {
-                                    let tangents_offsets: Vec<[f32; 3]> = tangents
-                                        .extract_data(buffer_data, vertex_remapping_table)
-                                        .map_err(Gltf2ImportError::MeshError)?;
+                            if let Some(tangents) = target.tangents()
+                                && tangents.count() == num_all_vertices
+                                && !anim_mesh.normals.is_empty()
+                            {
+                                let tangents_offsets: Vec<[f32; 3]> = tangents
+                                    .extract_data(buffer_data, vertex_remapping_table)
+                                    .map_err(Gltf2ImportError::MeshError)?;
 
-                                    if tangents_offsets.len() == ai_mesh.tangents.len() {
-                                        anim_mesh.tangents = ai_mesh.tangents.clone();
-                                        anim_mesh.bi_tangents = Vec::new();
-                                        anim_mesh
-                                            .bi_tangents
-                                            .resize(ai_mesh.tangents.len(), Default::default());
-                                        for i in 0..tangents_offsets.len() {
-                                            let offset = tangents_offsets[i];
-                                            anim_mesh.tangents[i] += AiVector3D::new(
-                                                offset[0] as AiReal,
-                                                offset[1] as AiReal,
-                                                offset[2] as AiReal,
-                                            );
-                                            anim_mesh.bi_tangents[i] = (anim_mesh.normals[i]
-                                                ^ anim_mesh.tangents[i])
-                                                * tangent_weights[i]; //Saved Tangent Weights to prevent need for re-extraction
-                                        }
+                                if tangents_offsets.len() == ai_mesh.tangents.len() {
+                                    anim_mesh.tangents = ai_mesh.tangents.clone();
+                                    anim_mesh.bi_tangents = Vec::new();
+                                    anim_mesh
+                                        .bi_tangents
+                                        .resize(ai_mesh.tangents.len(), Default::default());
+                                    for i in 0..tangents_offsets.len() {
+                                        let offset = tangents_offsets[i];
+                                        anim_mesh.tangents[i] += AiVector3D::new(
+                                            offset[0] as AiReal,
+                                            offset[1] as AiReal,
+                                            offset[2] as AiReal,
+                                        );
+                                        anim_mesh.bi_tangents[i] = (anim_mesh.normals[i]
+                                            ^ anim_mesh.tangents[i])
+                                            * tangent_weights[i]; //Saved Tangent Weights to prevent need for re-extraction
                                     }
                                 }
                             }
