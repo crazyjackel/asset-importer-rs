@@ -1,4 +1,3 @@
-
 use asset_importer_rs_scene::{AiReal, AiVector3D};
 
 pub const INITIAL_PLANE_NORMAL: AiVector3D = AiVector3D {

@@ -93,11 +93,11 @@ impl TryFrom<OwnedObject> for Texture {
             Ok(s) => s.map(|s| s.to_string()).unwrap_or_default(),
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         };
-        let relative_file_name =
-            match attrs.optional_token_case_insensitive(RELATIVE_FILENAME_ATTR) {
-                Ok(r) => r.map(|s| s.to_string()),
-                Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
-            };
+        let relative_file_name = match attrs.optional_token_case_insensitive(RELATIVE_FILENAME_ATTR)
+        {
+            Ok(r) => r.map(|s| s.to_string()),
+            Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
+        };
 
         let mut uv_translation = [0.0f32, 0.0f32];
         let mut uv_scaling = [1.0f32, 1.0f32];

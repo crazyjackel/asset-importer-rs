@@ -129,17 +129,19 @@ fn import_node(
 
         if let Some(camera) = node.camera()
             && let Some(name) = camera.name()
-                && let Some(index) = camera_map.get(name)
-                    && let Some(ai_camera) = cameras.get_mut(*index) {
-                        ai_camera.name = ai_node.name.clone();
-                    }
+            && let Some(index) = camera_map.get(name)
+            && let Some(ai_camera) = cameras.get_mut(*index)
+        {
+            ai_camera.name = ai_node.name.clone();
+        }
 
         if let Some(light) = node.light()
             && let Some(name) = light.name()
-                && let Some(index) = light_map.get(name)
-                    && let Some(ai_light) = lights.get_mut(*index) {
-                        ai_light.name = ai_node.name.clone();
-                    }
+            && let Some(index) = light_map.get(name)
+            && let Some(ai_light) = lights.get_mut(*index)
+        {
+            ai_light.name = ai_node.name.clone();
+        }
 
         ai_node_tree.arena.push(ai_node);
         if let Some(parent) = parent_index {

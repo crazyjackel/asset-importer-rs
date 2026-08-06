@@ -644,9 +644,10 @@ impl<'a, R: BufRead> ParserIter<'a, R> {
         let parent_index = element.parent_index;
         let index = self.parser_arena.insert(element);
         if let Some(parent_index) = parent_index
-            && let Some(parent) = self.parser_arena.get_mut(parent_index) {
-                parent.children.push(index);
-            }
+            && let Some(parent) = self.parser_arena.get_mut(parent_index)
+        {
+            parent.children.push(index);
+        }
         index
     }
 }
@@ -680,11 +681,12 @@ impl<'a, R: BufRead> Iterator for ParserIter<'a, R> {
                     // If Close Brace we should move out of the current scope, moving up into the parent scope.
                     // We then should return the next element in the parent scope.
                     if let Some(index) = self.current_scope
-                        && let Some(element) = self.parser_arena.get(index) {
-                            // element is guarenteed to have parent_index
-                            self.current_scope = element.parent_index;
-                            continue;
-                        }
+                        && let Some(element) = self.parser_arena.get(index)
+                    {
+                        // element is guarenteed to have parent_index
+                        self.current_scope = element.parent_index;
+                        continue;
+                    }
                     return None;
                 }
                 Token::Data(data) => {

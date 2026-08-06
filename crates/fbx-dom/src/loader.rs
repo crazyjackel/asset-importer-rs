@@ -167,10 +167,7 @@ fn read_definitions(
                     .default_template_by_object_type
                     .entry(object_name.to_string())
                     .or_insert_with(|| template_name.clone());
-                let template = document
-                    .templates
-                    .entry(template_name.clone())
-                    .or_default();
+                let template = document.templates.entry(template_name.clone()).or_default();
                 for property_detail in property_table_handle.children() {
                     match PropertyDetails::try_from(property_detail) {
                         Ok(property_details) => {

@@ -4,9 +4,7 @@ use bytemuck::{AnyBitPattern, Pod, Zeroable};
 use enumflags2::bitflags;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
-use super::{
-    AiColor3D, AiColor4D, type_def::base_types::AiReal, vector::AiVector2D,
-};
+use super::{AiColor3D, AiColor4D, type_def::base_types::AiReal, vector::AiVector2D};
 
 //@todo Add an Enum to Matkey that can be used to convert to and from binary based on format
 pub mod matkey {

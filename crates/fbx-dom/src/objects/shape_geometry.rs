@@ -126,7 +126,7 @@ impl TryFrom<OwnedObject> for ShapeGeometry {
                 .map(|t| t.parse::<f32>())
                 .collect::<Result<Vec<f32>, ParseFloatError>>()
                 .unwrap_or_default(); // If the parse fails, return an empty vector. This is intentional.
-            
+
             normals_result
                 .chunks_exact(3)
                 .map(|c| [c[0], c[1], c[2]])

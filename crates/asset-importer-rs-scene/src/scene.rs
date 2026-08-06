@@ -84,9 +84,10 @@ impl AiNodeTree {
             .collect();
         self.arena.append(&mut new_nodes);
         if let Some(root) = self.root
-            && let Some(root_ele) = self.arena.get_mut(root) {
-                root_ele.children.append(&mut new_root_indices);
-            }
+            && let Some(root_ele) = self.arena.get_mut(root)
+        {
+            root_ele.children.append(&mut new_root_indices);
+        }
     }
 
     pub fn insert(
