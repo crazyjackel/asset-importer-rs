@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1785974668798,
+  "lastUpdate": 1785975348878,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -851,6 +851,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 49946733,
             "range": "± 201597",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8af357bc1f50cf0fd33722fb3d12310a526a20bd",
+          "message": "Merge pull request #47 from crazyjackel/jlevitt/fix_aireal_coercion\n\nfix: added type definition for coercion",
+          "timestamp": "2026-08-05T20:13:18-04:00",
+          "tree_id": "a5669eb753a5aa2b7975e054de52d7f1ef09422f",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/8af357bc1f50cf0fd33722fb3d12310a526a20bd"
+        },
+        "date": 1785975348078,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 93277466,
+            "range": "± 142300",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 51095363,
+            "range": "± 219347",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 197003159,
+            "range": "± 1029897",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 51435510,
+            "range": "± 144163",
             "unit": "ns/iter"
           }
         ]
