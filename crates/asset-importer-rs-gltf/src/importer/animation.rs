@@ -285,7 +285,7 @@ impl Gltf2Importer {
                                     .extract_data(buffer_data, None)
                                     .map_err(Gltf2ImportError::MeshError)?;
 
-                                output_data.iter().map(|x| *x as AiReal / 255.0 ).collect()
+                                output_data.iter().map(|x| *x as AiReal / 255.0).collect()
                             }
                             gltf::accessor::DataType::I16 => {
                                 let output_data: Vec<i16> = output
@@ -302,17 +302,14 @@ impl Gltf2Importer {
                                     .extract_data(buffer_data, None)
                                     .map_err(Gltf2ImportError::MeshError)?;
 
-                                output_data
-                                    .iter()
-                                    .map(|x| *x as AiReal / 65535.0 )
-                                    .collect()
+                                output_data.iter().map(|x| *x as AiReal / 65535.0).collect()
                             }
                             gltf::accessor::DataType::U32 | gltf::accessor::DataType::F32 => {
                                 let output_data: Vec<f32> = output
                                     .extract_data(buffer_data, None)
                                     .map_err(Gltf2ImportError::MeshError)?;
 
-                                output_data.iter().map(|x| *x as AiReal ).collect()
+                                output_data.iter().map(|x| *x as AiReal).collect()
                             }
                         };
                         let stride = output.count() / times.len();

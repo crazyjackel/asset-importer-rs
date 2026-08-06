@@ -304,9 +304,10 @@ fn import_node<'a>(
         }
         //handle cameras
         if let Some(camera) = node.camera()
-            && let Some(ai_camera) = cameras.get_mut(camera.index()) {
-                ai_camera.name = ai_node.name.to_string();
-            }
+            && let Some(ai_camera) = cameras.get_mut(camera.index())
+        {
+            ai_camera.name = ai_node.name.to_string();
+        }
         //handle lights
         handle_lights(lights, &mut ai_node, &node);
 
