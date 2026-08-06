@@ -2,7 +2,7 @@ use enumflags2::BitFlags;
 
 use super::aabb::AiAABB;
 use super::matrix::AiMatrix4x4;
-use super::{color::AiColor4D, scene::AiNode, type_def::base_types::AiReal, vector::AiVector3D};
+use super::{color::AiColor4D, type_def::base_types::AiReal, vector::AiVector3D};
 
 pub const AI_MAX_NUMBER_OF_COLORS_SETS: usize = 0x8;
 pub const AI_MAX_NUMBER_OF_TEXTURECOORDS: usize = 0x8;

@@ -1,12 +1,11 @@
-use std::{fmt::Display, io::Read, string::FromUtf8Error};
+use std::{fmt::Display, string::FromUtf8Error};
 
 use bytemuck::{AnyBitPattern, Pod, Zeroable};
 use enumflags2::bitflags;
-use image::hooks::register_decoding_hook;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 use super::{
-    AiColor3D, AiColor4D, type_def::base_types::AiReal, vector::AiVector2D, vector::AiVector3D,
+    AiColor3D, AiColor4D, type_def::base_types::AiReal, vector::AiVector2D,
 };
 
 //@todo Add an Enum to Matkey that can be used to convert to and from binary based on format
@@ -342,10 +341,10 @@ impl AiMaterial {
 }
 
 impl AiMaterial {
-    pub fn iter(&self) -> core::slice::Iter<AiMaterialProperty> {
+    pub fn iter(&self) -> core::slice::Iter<'_, AiMaterialProperty> {
         self.properties.iter()
     }
-    pub fn iter_mut(&mut self) -> core::slice::IterMut<AiMaterialProperty> {
+    pub fn iter_mut(&mut self) -> core::slice::IterMut<'_, AiMaterialProperty> {
         self.properties.iter_mut()
     }
 }
@@ -362,7 +361,7 @@ impl AiMaterial {
                 && (semantic_type.is_none() || semantic_type.unwrap() == property.semantic)
                 && property.index == index
             {
-                return Some(&property);
+                return Some(property);
             }
         }
         None
@@ -493,12 +492,12 @@ impl AiMaterial {
             .and_then(|prop| match prop.property_type {
                 AiPropertyTypeInfo::Binary => {
                     if prop.data.len() == 4 {
-                        return Some(f32::from_le_bytes([
+                        Some(f32::from_le_bytes([
                             prop.data[0],
                             prop.data[1],
                             prop.data[2],
                             prop.data[3],
-                        ]));
+                        ]))
                     } else {
                         None
                     }
@@ -562,7 +561,7 @@ impl AiMaterial {
             AiPropertyTypeInfo::FloatArray => {
                 let chunks_iterator = data.rchunks_exact(4);
                 let remainder = chunks_iterator.remainder();
-                if remainder.len() != 0 {
+                if !remainder.is_empty() {
                     return None;
                 }
                 let ai_real_vec = chunks_iterator
@@ -576,7 +575,7 @@ impl AiMaterial {
             AiPropertyTypeInfo::DoubleArray => {
                 let chunks_iterator = data.rchunks_exact(8);
                 let remainder = chunks_iterator.remainder();
-                if remainder.len() != 0 {
+                if !remainder.is_empty() {
                     return None;
                 }
                 let ai_real_vec = chunks_iterator
@@ -593,7 +592,7 @@ impl AiMaterial {
             AiPropertyTypeInfo::IntegerArray => {
                 let chunks_iterator = data.rchunks_exact(4);
                 let remainder = chunks_iterator.remainder();
-                if remainder.len() != 0 {
+                if !remainder.is_empty() {
                     return None;
                 }
                 let ai_real_vec = chunks_iterator
@@ -610,7 +609,7 @@ impl AiMaterial {
             AiPropertyTypeInfo::Binary | AiPropertyTypeInfo::Buffer => {
                 let chunks_iterator = data.rchunks_exact(4);
                 let remainder = chunks_iterator.remainder();
-                if remainder.len() != 0 {
+                if !remainder.is_empty() {
                     return None;
                 }
                 let ai_real_vec = chunks_iterator
