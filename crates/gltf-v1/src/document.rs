@@ -61,85 +61,85 @@ impl Document {
             .and_then(|index| self.scenes().find(|x| x.index() == index.value()))
     }
 
-    pub fn accessors(&self) -> Accessors {
+    pub fn accessors(&self) -> Accessors<'_> {
         Accessors {
             iter: self.0.accessors.iter(),
             document: self,
         }
     }
-    pub fn buffers(&self) -> Buffers {
+    pub fn buffers(&self) -> Buffers<'_> {
         Buffers {
             iter: self.0.buffers.iter(),
             document: self,
         }
     }
-    pub fn views(&self) -> Views {
+    pub fn views(&self) -> Views<'_> {
         Views {
             iter: self.0.buffer_views.iter(),
             document: self,
         }
     }
-    pub fn images(&self) -> Images {
+    pub fn images(&self) -> Images<'_> {
         Images {
             iter: self.0.images.iter(),
             document: self,
         }
     }
-    pub fn textures(&self) -> Textures {
+    pub fn textures(&self) -> Textures<'_> {
         Textures {
             iter: self.0.textures.iter(),
             document: self,
         }
     }
-    pub fn samplers(&self) -> Samplers {
+    pub fn samplers(&self) -> Samplers<'_> {
         Samplers {
             iter: self.0.samplers.iter(),
             document: self,
         }
     }
-    pub fn materials(&self) -> Materials {
+    pub fn materials(&self) -> Materials<'_> {
         Materials {
             iter: self.0.materials.iter(),
             document: self,
         }
     }
-    pub fn techniques(&self) -> Techniques {
+    pub fn techniques(&self) -> Techniques<'_> {
         Techniques {
             iter: self.0.techniques.iter(),
             document: self,
         }
     }
-    pub fn meshes(&self) -> Meshes {
+    pub fn meshes(&self) -> Meshes<'_> {
         Meshes {
             iter: self.0.meshes.iter(),
             document: self,
         }
     }
-    pub fn cameras(&self) -> Cameras {
+    pub fn cameras(&self) -> Cameras<'_> {
         Cameras {
             iter: self.0.cameras.iter(),
             document: self,
         }
     }
-    pub fn nodes(&self) -> Nodes {
+    pub fn nodes(&self) -> Nodes<'_> {
         Nodes {
             iter: self.0.nodes.iter(),
             document: self,
         }
     }
-    pub fn skins(&self) -> Skins {
+    pub fn skins(&self) -> Skins<'_> {
         Skins {
             iter: self.0.skins.iter(),
             document: self,
         }
     }
-    pub fn scenes(&self) -> Scenes {
+    pub fn scenes(&self) -> Scenes<'_> {
         Scenes {
             iter: self.0.scenes.iter(),
             document: self,
         }
     }
-    pub fn lights(&self) -> Option<Lights> {
+    pub fn lights(&self) -> Option<Lights<'_>> {
         //Model only has lights if KHR_materials common is enabled, as it is an extension
         #[cfg(feature = "KHR_materials_common")]
         {
