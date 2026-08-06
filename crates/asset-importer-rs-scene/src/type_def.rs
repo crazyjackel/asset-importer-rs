@@ -14,6 +14,11 @@ pub mod base_types {
     pub const fn degrees_to_radians(degrees: AiReal) -> AiReal {
         degrees * 0.017_453_292_f64
     }
+
+    #[inline]
+    pub fn ai_real_to_f32(value: AiReal) -> f32 {
+        value as f32
+    }
 }
 #[cfg(not(feature = "double_precision"))]
 pub mod base_types {
@@ -31,6 +36,11 @@ pub mod base_types {
 
     pub const fn degrees_to_radians(degrees: AiReal) -> AiReal {
         degrees * 0.017_453_292_f32
+    }
+
+    #[inline]
+    pub fn ai_real_to_f32(value: AiReal) -> f32 {
+        value
     }
 }
 
