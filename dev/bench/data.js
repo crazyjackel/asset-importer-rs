@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786057913046,
+  "lastUpdate": 1786064048245,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -947,6 +947,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 52065392,
             "range": "± 534936",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "09090a97b9379b121c9deb22754e57700cfc3040",
+          "message": "Merge pull request #49 from crazyjackel/jlevitt/cursor_lint\n\nLint Fixes",
+          "timestamp": "2026-08-06T20:51:33-04:00",
+          "tree_id": "fe2b93d4ef4bf34f4ca41119a14e177f4489b441",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/09090a97b9379b121c9deb22754e57700cfc3040"
+        },
+        "date": 1786064047696,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 89385544,
+            "range": "± 1470768",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 48078914,
+            "range": "± 551678",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 185835031,
+            "range": "± 1993422",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 50124133,
+            "range": "± 1200473",
             "unit": "ns/iter"
           }
         ]
