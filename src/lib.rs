@@ -97,22 +97,22 @@ impl AssetImporter {
         Ok(scene)
     }
 
-    pub fn export_file(scene: &AiScene, file_path: &str) -> Result<(), AiExporterError> {
-        let exporter = AssetImporter::exporter();
+    pub fn export_file(_scene: &AiScene, _file_path: &str) -> Result<(), AiExporterError> {
+        let _exporter = AssetImporter::exporter();
         Ok(())
     }
 
     #[cfg(feature = "post-process")]
     pub fn export_file_with_post_process(
         scene: &mut AiScene,
-        file_path: &str,
+        _file_path: &str,
         flags: BitFlags<AiPostProcessSteps>,
     ) -> Result<(), AiExporterError> {
         let mut post_process = AiPostProcesser::post_process();
         post_process
             .process(scene, flags)
             .map_err(AiExporterError::PostProcessError)?;
-        let exporter = AssetImporter::exporter();
+        let _exporter = AssetImporter::exporter();
         Ok(())
     }
 }

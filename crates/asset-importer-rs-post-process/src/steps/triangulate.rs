@@ -13,7 +13,7 @@ impl AiPostProcess for Triangulate {
         steps.contains(AiPostProcessSteps::Triangulate)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement triangulation
         Ok(())
     }

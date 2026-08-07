@@ -5,7 +5,9 @@ use map::IndexMap;
 use serde::{de, ser};
 use serde_derive::{Deserialize, Serialize};
 
-use crate::{Path, Root, StringIndex, gltf::Get, validation::Checked};
+use crate::{Path, Root, validation::Checked};
+#[cfg(feature = "KHR_materials_common")]
+use crate::{StringIndex, gltf::Get};
 
 #[derive(Clone, Debug, PartialEq, Eq, Copy, Default)]
 pub enum Type {

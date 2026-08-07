@@ -606,7 +606,7 @@ impl<R: BufRead> Parser<R> {
 
     pub fn load(mut self) -> Result<ElementAmphitheatre, ParserError> {
         let mut iter = self.iter();
-        while let Some(result) = iter.next() {
+        for result in iter {
             result?;
         }
         Ok(self.element_arena)
@@ -643,10 +643,10 @@ impl<'a, R: BufRead> ParserIter<'a, R> {
     pub fn insert_element(&mut self, element: Element) -> usize {
         let parent_index = element.parent_index;
         let index = self.parser_arena.insert(element);
-        if let Some(parent_index) = parent_index {
-            if let Some(parent) = self.parser_arena.get_mut(parent_index) {
-                parent.children.push(index);
-            }
+        if let Some(parent_index) = parent_index
+            && let Some(parent) = self.parser_arena.get_mut(parent_index)
+        {
+            parent.children.push(index);
         }
         index
     }
@@ -680,12 +680,12 @@ impl<'a, R: BufRead> Iterator for ParserIter<'a, R> {
                 Token::CloseBrace => {
                     // If Close Brace we should move out of the current scope, moving up into the parent scope.
                     // We then should return the next element in the parent scope.
-                    if let Some(index) = self.current_scope {
-                        if let Some(element) = self.parser_arena.get(index) {
-                            // element is guarenteed to have parent_index
-                            self.current_scope = element.parent_index;
-                            continue;
-                        }
+                    if let Some(index) = self.current_scope
+                        && let Some(element) = self.parser_arena.get(index)
+                    {
+                        // element is guarenteed to have parent_index
+                        self.current_scope = element.parent_index;
+                        continue;
                     }
                     return None;
                 }

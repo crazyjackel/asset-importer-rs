@@ -137,15 +137,15 @@ impl<'a> Image<'a> {
     /// Returns the image data source.
     pub fn source(&self) -> Source<'a> {
         #[cfg(feature = "KHR_binary_glTF")]
-        if let Some(image_extensions) = &self.json.extensions {
-            if let Some(binary) = &image_extensions.khr_binary_gltf {
-                let view = self
-                    .document
-                    .views()
-                    .find(|x| x.index() == binary.buffer_view.value())
-                    .unwrap();
-                return Source::View { view, json: binary };
-            }
+        if let Some(image_extensions) = &self.json.extensions
+            && let Some(binary) = &image_extensions.khr_binary_gltf
+        {
+            let view = self
+                .document
+                .views()
+                .find(|x| x.index() == binary.buffer_view.value())
+                .unwrap();
+            return Source::View { view, json: binary };
         }
         let uri = self.json.uri.deref();
         Source::Uri(uri)

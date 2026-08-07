@@ -36,12 +36,12 @@ impl GltfExporter {
                 &ai_node.name
             };
             node.name = Some(generate_unique_name(base_name, &mut unique_names_map));
-            if let Some(parent_name) = parent_name {
-                if let Some(parent) = root.nodes.get_mut(&parent_name) {
-                    parent
-                        .children
-                        .push(StringIndex::new(node.name.clone().unwrap()));
-                }
+            if let Some(parent_name) = parent_name
+                && let Some(parent) = root.nodes.get_mut(&parent_name)
+            {
+                parent
+                    .children
+                    .push(StringIndex::new(node.name.clone().unwrap()));
             }
             if !ai_node.transformation.is_identity(config_epsilon as AiReal) {
                 node.matrix = Some(ai_node.transformation.clone().into());

@@ -173,8 +173,8 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                     mapping_counts: &mapping_counts,
                     mapping_offsets: &mapping_offsets,
                     mappings: &mappings,
-                    mapping_ty: mapping_ty,
-                    reference_ty: reference_ty,
+                    mapping_ty,
+                    reference_ty,
                 },
             ) {
                 Ok(v) => v,
@@ -218,8 +218,8 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                     mapping_counts: &mapping_counts,
                     mapping_offsets: &mapping_offsets,
                     mappings: &mappings,
-                    mapping_ty: mapping_ty,
-                    reference_ty: reference_ty,
+                    mapping_ty,
+                    reference_ty,
                 },
             ) {
                 Ok(v) => v,
@@ -263,8 +263,8 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                     mapping_counts: &mapping_counts,
                     mapping_offsets: &mapping_offsets,
                     mappings: &mappings,
-                    mapping_ty: mapping_ty,
-                    reference_ty: reference_ty,
+                    mapping_ty,
+                    reference_ty,
                 },
             ) {
                 Ok(v) => v,
@@ -311,8 +311,8 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                     mapping_counts: &mapping_counts,
                     mapping_offsets: &mapping_offsets,
                     mappings: &mappings,
-                    mapping_ty: mapping_ty,
-                    reference_ty: reference_ty,
+                    mapping_ty,
+                    reference_ty,
                 },
             ) {
                 Ok(v) => v,
@@ -348,8 +348,8 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                     mapping_counts: &mapping_counts,
                     mapping_offsets: &mapping_offsets,
                     mappings: &mappings,
-                    mapping_ty: mapping_ty,
-                    reference_ty: reference_ty,
+                    mapping_ty,
+                    reference_ty,
                 },
             ) {
                 Ok(v) => v,
@@ -382,8 +382,8 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                     &map,
                     &face_vertex_counts,
                     vertex_count,
-                    &mapping_ty,
-                    &reference_ty,
+                    mapping_ty,
+                    reference_ty,
                 ) {
                     Ok(v) => v,
                     Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
@@ -614,7 +614,7 @@ fn resolve_flat_f32_channel(
                 detail: "data channel not found".to_string(),
             },
         )?;
-        let channel_data_result = parse_f32_array(&channel_attribute);
+        let channel_data_result = parse_f32_array(channel_attribute);
         let Ok(channel_data) = channel_data_result else {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
                 name: params.data_name.to_string(),
@@ -666,7 +666,7 @@ fn resolve_flat_f32_channel(
                 detail: "data channel not found".to_string(),
             },
         )?;
-        let channel_data_result = parse_f32_array(&channel_attribute);
+        let channel_data_result = parse_f32_array(channel_attribute);
         let Ok(channel_data) = channel_data_result else {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
                 name: params.data_name.to_string(),
@@ -679,7 +679,7 @@ fn resolve_flat_f32_channel(
                 detail: "index channel not found".to_string(),
             },
         )?;
-        let channel_index_data_result = parse_i32_array(&channel_index_attribute);
+        let channel_index_data_result = parse_i32_array(channel_index_attribute);
         let Ok(channel_index_data) = channel_index_data_result else {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
                 name: params.index_name.to_string(),
@@ -725,7 +725,7 @@ fn resolve_flat_f32_channel(
                 detail: "data channel not found".to_string(),
             },
         )?;
-        let channel_data_result = parse_f32_array(&channel_attribute);
+        let channel_data_result = parse_f32_array(channel_attribute);
         let Ok(channel_data) = channel_data_result else {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
                 name: params.data_name.to_string(),
@@ -758,7 +758,7 @@ fn resolve_flat_f32_channel(
                 detail: "data channel not found".to_string(),
             },
         )?;
-        let channel_data_result = parse_f32_array(&channel_attribute);
+        let channel_data_result = parse_f32_array(channel_attribute);
         let Ok(channel_data) = channel_data_result else {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
                 name: params.data_name.to_string(),
@@ -771,7 +771,7 @@ fn resolve_flat_f32_channel(
                 detail: "index channel not found".to_string(),
             },
         )?;
-        let channel_index_data_result = parse_i32_array(&channel_index_attribute);
+        let channel_index_data_result = parse_i32_array(channel_index_attribute);
         let Ok(mut channel_index_data) = channel_index_data_result else {
             return Err(FbxTryFromReason::InvalidAttributeFormat {
                 name: params.index_name.to_string(),

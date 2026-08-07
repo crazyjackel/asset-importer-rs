@@ -13,7 +13,7 @@ impl AiPostProcess for RemoveRedundantMaterials {
         steps.contains(AiPostProcessSteps::RemoveRedundantMaterials)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement redundant material removal
         Ok(())
     }

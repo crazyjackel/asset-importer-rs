@@ -13,7 +13,7 @@ impl AiPostProcess for ValidateDataStructure {
         steps.contains(AiPostProcessSteps::ValidateDataStructure)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement data structure validation
         Ok(())
     }

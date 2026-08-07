@@ -33,3 +33,5 @@ glTF-Sample-Assets/
 
 # Ignore coverage files
 lcov-*.info
+
+.cursor/

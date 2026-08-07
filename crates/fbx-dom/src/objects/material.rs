@@ -81,7 +81,7 @@ impl TryFrom<OwnedObject> for Material {
         }
 
         let attrs = &o.attributes;
-        let shading_raw = match attrs.require_token(&SHADING_MODEL) {
+        let shading_raw = match attrs.require_token(SHADING_MODEL) {
             Ok(s) => s,
             Err(reason) => return Err(FbxTypeMismatch { object: o, reason }),
         };

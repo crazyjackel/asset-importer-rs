@@ -13,7 +13,7 @@ impl AiPostProcess for OptimizeMeshes {
         steps.contains(AiPostProcessSteps::OptimizeMeshes)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement mesh optimization
         Ok(())
     }

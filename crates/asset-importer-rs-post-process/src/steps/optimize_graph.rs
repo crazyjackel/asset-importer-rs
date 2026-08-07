@@ -13,7 +13,7 @@ impl AiPostProcess for OptimizeGraph {
         steps.contains(AiPostProcessSteps::OptimizeGraph)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement graph optimization
         Ok(())
     }

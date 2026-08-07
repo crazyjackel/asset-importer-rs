@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use asset_importer_rs_scene::{
-    AiMaterial, AiPropertyTypeInfo, AiScene, AiTextureMapMode, AiTextureType,
+    AiMaterial, AiScene, AiTextureMapMode, AiTextureType,
     matkey::{
         self, _AI_MATKEY_MAPPINGMODE_U_BASE, _AI_MATKEY_MAPPINGMODE_V_BASE,
         _AI_MATKEY_TEXTURE_BASE, AI_MATKEY_COLOR_AMBIENT, AI_MATKEY_COLOR_DIFFUSE,
@@ -35,10 +35,10 @@ impl GltfExporter {
 
             let name_option = ai_material
                 .get_property(matkey::AI_MATKEY_NAME, Some(AiTextureType::None), 0)
-                .and_then(|prop| {
+                .map(|prop| {
                     let str =
                         String::from_utf8(prop.data.to_vec()).map_err(GltfExportError::UTFError);
-                    Some(str)
+                    str
                 });
             let name = if let Some(name) = name_option {
                 generate_unique_name(&name?, unique_names_map)
@@ -175,113 +175,109 @@ fn export_material_texture(
         _AI_MATKEY_TEXTURE_BASE,
         Some(material_export.texture_type),
         0,
-    ) {
-        if !path.is_empty() {
-            if !path.starts_with("*") {
-                if let Some(texture_name) = textures_by_path.get(&path) {
-                    material.values.insert(
-                        material_export.property_name.to_string(),
-                        Checked::Valid(ParameterValue::String(texture_name.clone())),
-                    );
-                }
-            }
+    ) && !path.is_empty()
+    {
+        if !path.starts_with("*")
+            && let Some(texture_name) = textures_by_path.get(&path)
+        {
+            material.values.insert(
+                material_export.property_name.to_string(),
+                Checked::Valid(ParameterValue::String(texture_name.clone())),
+            );
+        }
 
-            if !material.values.contains_key(material_export.material_name) {
-                let texture_name = generate_unique_name("texture", unique_names_map);
-                textures_by_path.insert(path.clone(), texture_name.clone());
+        if !material.values.contains_key(material_export.material_name) {
+            let texture_name = generate_unique_name("texture", unique_names_map);
+            textures_by_path.insert(path.clone(), texture_name.clone());
 
-                // Create Sampler
-                let sampler_name = generate_unique_name("sampler", unique_names_map);
-                let sampler = Sampler {
-                    mag_filter: Checked::Valid(SamplerMagFilter::Linear),
-                    min_filter: Checked::Valid(SamplerMinFilter::Linear),
-                    wrap_s: material_export
-                        .material
-                        .get_property(
-                            _AI_MATKEY_MAPPINGMODE_U_BASE,
-                            Some(material_export.texture_type),
-                            0,
-                        )
-                        .and_then(|prop| {
-                            if prop.data.len() == 1 {
-                                match prop.data[0].try_into() {
-                                    Ok(AiTextureMapMode::Clamp) => {
-                                        Some(Checked::Valid(SamplerWrap::ClampToEdge))
-                                    }
-                                    Ok(AiTextureMapMode::Mirror) => {
-                                        Some(Checked::Valid(SamplerWrap::MirroredRepeat))
-                                    }
-                                    Ok(_) => None,
-                                    Err(_) => None,
+            // Create Sampler
+            let sampler_name = generate_unique_name("sampler", unique_names_map);
+            let sampler = Sampler {
+                mag_filter: Checked::Valid(SamplerMagFilter::Linear),
+                min_filter: Checked::Valid(SamplerMinFilter::Linear),
+                wrap_s: material_export
+                    .material
+                    .get_property(
+                        _AI_MATKEY_MAPPINGMODE_U_BASE,
+                        Some(material_export.texture_type),
+                        0,
+                    )
+                    .and_then(|prop| {
+                        if prop.data.len() == 1 {
+                            match prop.data[0].try_into() {
+                                Ok(AiTextureMapMode::Clamp) => {
+                                    Some(Checked::Valid(SamplerWrap::ClampToEdge))
                                 }
-                            } else {
-                                None
-                            }
-                        })
-                        .unwrap_or(Checked::Valid(SamplerWrap::Repeat)),
-                    wrap_t: material_export
-                        .material
-                        .get_property(
-                            _AI_MATKEY_MAPPINGMODE_V_BASE,
-                            Some(material_export.texture_type),
-                            0,
-                        )
-                        .and_then(|prop| {
-                            if prop.data.len() == 1 {
-                                match prop.data[0].try_into() {
-                                    Ok(AiTextureMapMode::Clamp) => {
-                                        Some(Checked::Valid(SamplerWrap::ClampToEdge))
-                                    }
-                                    Ok(AiTextureMapMode::Mirror) => {
-                                        Some(Checked::Valid(SamplerWrap::MirroredRepeat))
-                                    }
-                                    Ok(_) => None,
-                                    Err(_) => None,
+                                Ok(AiTextureMapMode::Mirror) => {
+                                    Some(Checked::Valid(SamplerWrap::MirroredRepeat))
                                 }
-                            } else {
-                                None
+                                Ok(_) => None,
+                                Err(_) => None,
                             }
-                        })
-                        .unwrap_or(Checked::Valid(SamplerWrap::Repeat)),
-                    name: None,
-                };
-                root.samplers.insert(sampler_name.clone(), sampler);
-
-                let source_name = generate_unique_name("image", unique_names_map);
-                let mut source = Image::default();
-
-                // Handle embedded textures
-                if path.starts_with("*") {
-                    let trimmed_path = path.trim_start_matches('*');
-                    if let Ok(parsed_index) = trimmed_path.parse::<u32>() {
-                        if let Some(texture) = scene.textures.get(parsed_index as usize) {
-                            source.name = Some(texture.filename.clone());
-                            if let Ok(data) = texture.export(&[]) {
-                                let mimetype = data.format.get_mime_type();
-                                source.uri = format!(
-                                    "data:{};base64,{}",
-                                    mimetype,
-                                    base64::encode(data.data)
-                                );
-                            }
+                        } else {
+                            None
                         }
+                    })
+                    .unwrap_or(Checked::Valid(SamplerWrap::Repeat)),
+                wrap_t: material_export
+                    .material
+                    .get_property(
+                        _AI_MATKEY_MAPPINGMODE_V_BASE,
+                        Some(material_export.texture_type),
+                        0,
+                    )
+                    .and_then(|prop| {
+                        if prop.data.len() == 1 {
+                            match prop.data[0].try_into() {
+                                Ok(AiTextureMapMode::Clamp) => {
+                                    Some(Checked::Valid(SamplerWrap::ClampToEdge))
+                                }
+                                Ok(AiTextureMapMode::Mirror) => {
+                                    Some(Checked::Valid(SamplerWrap::MirroredRepeat))
+                                }
+                                Ok(_) => None,
+                                Err(_) => None,
+                            }
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or(Checked::Valid(SamplerWrap::Repeat)),
+                name: None,
+            };
+            root.samplers.insert(sampler_name.clone(), sampler);
+
+            let source_name = generate_unique_name("image", unique_names_map);
+            let mut source = Image::default();
+
+            // Handle embedded textures
+            if path.starts_with("*") {
+                let trimmed_path = path.trim_start_matches('*');
+                if let Ok(parsed_index) = trimmed_path.parse::<u32>()
+                    && let Some(texture) = scene.textures.get(parsed_index as usize)
+                {
+                    source.name = Some(texture.filename.clone());
+                    if let Ok(data) = texture.export(&[]) {
+                        let mimetype = data.format.get_mime_type();
+                        source.uri =
+                            format!("data:{};base64,{}", mimetype, base64::encode(data.data));
                     }
-                } else {
-                    source.uri = path.to_string();
                 }
-                root.images.insert(source_name.clone(), source);
-
-                let texture = Texture::new(
-                    StringIndex::new(source_name),
-                    StringIndex::new(sampler_name),
-                );
-                root.textures.insert(texture_name.clone(), texture);
-
-                material.values.insert(
-                    material_export.property_name.to_string(),
-                    Checked::Valid(ParameterValue::String(texture_name)),
-                );
+            } else {
+                source.uri = path.to_string();
             }
+            root.images.insert(source_name.clone(), source);
+
+            let texture = Texture::new(
+                StringIndex::new(source_name),
+                StringIndex::new(sampler_name),
+            );
+            root.textures.insert(texture_name.clone(), texture);
+
+            material.values.insert(
+                material_export.property_name.to_string(),
+                Checked::Valid(ParameterValue::String(texture_name)),
+            );
         }
     }
 }

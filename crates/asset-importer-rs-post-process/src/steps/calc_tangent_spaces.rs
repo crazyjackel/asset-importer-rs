@@ -13,7 +13,7 @@ impl AiPostProcess for CalcTangentSpaces {
         steps.contains(AiPostProcessSteps::CalcTangentSpaces)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement tangent space calculation
         Ok(())
     }
