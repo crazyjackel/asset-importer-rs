@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1](https://github.com/crazyjackel/asset-importer-rs/compare/asset-importer-rs-v0.4.0...asset-importer-rs-v0.4.1) - 2026-08-08
+
+### Fixed
+
+- cargo fmt
+- source project cargo clippy fixes
+- add ignore files
+
+### Other
+
+- Bump criterion to 0.8.2.
+- bumped actions/upload-artifact to version 7.
+- release
+
 ## [0.4.0](https://github.com/crazyjackel/asset-importer-rs/compare/asset-importer-rs-v0.3.0...asset-importer-rs-v0.4.0) - 2026-05-05
 
 ### Fixed
