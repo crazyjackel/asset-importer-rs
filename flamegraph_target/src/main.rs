@@ -1,3 +1,5 @@
+//! Allow the flamgraphs to be generate for gtlf2 files with slow load times.
+//!
 use std::path::PathBuf;
 
 use asset_importer_rs_core::{AiImporterExt, default_file_loader};

@@ -34,4 +34,8 @@ glTF-Sample-Assets/
 # Ignore coverage files
 lcov-*.info
 
+# Added by flamegraph_target
+flamegraph.svg
+perf.data
+
 .cursor/
