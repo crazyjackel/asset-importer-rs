@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786487679414,
+  "lastUpdate": 1786487767627,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -1235,6 +1235,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 53152808,
             "range": "± 323502",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "81263b2cac4056f36e6cbfe23772409c0865782f",
+          "message": "Merge pull request #68 from martinfrances107/mod_test\n\nNow uniformly wrapping tests in a mod tests.",
+          "timestamp": "2026-08-11T18:33:24-04:00",
+          "tree_id": "f88f858e9adaac0abb3e74eca2b4b8219136968b",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/81263b2cac4056f36e6cbfe23772409c0865782f"
+        },
+        "date": 1786487766967,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 94799391,
+            "range": "± 815450",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 52386441,
+            "range": "± 190633",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 196962675,
+            "range": "± 760787",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 52749572,
+            "range": "± 120089",
             "unit": "ns/iter"
           }
         ]
