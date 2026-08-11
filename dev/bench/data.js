@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786487799904,
+  "lastUpdate": 1786487822053,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -1331,6 +1331,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 52202283,
             "range": "± 204494",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1077806ddf1f256ad24c7dd28a687f7cdcabe15d",
+          "message": "Merge pull request #55 from crazyjackel/dependabot/github_actions/Swatinem/rust-cache-6323deb102c322ba6fcbdcafc7e3dddab59af2b6\n\nBump Swatinem/rust-cache from e18b497796c12c097a38f9edb9d0641fb99eee32 to 6323deb102c322ba6fcbdcafc7e3dddab59af2b6",
+          "timestamp": "2026-08-11T18:34:34-04:00",
+          "tree_id": "2de7716af65ca4205513b81a354a120b1de76bd1",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/1077806ddf1f256ad24c7dd28a687f7cdcabe15d"
+        },
+        "date": 1786487821476,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 96555110,
+            "range": "± 491863",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 53114748,
+            "range": "± 93230",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 199876592,
+            "range": "± 850019",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 53129619,
+            "range": "± 94455",
             "unit": "ns/iter"
           }
         ]
