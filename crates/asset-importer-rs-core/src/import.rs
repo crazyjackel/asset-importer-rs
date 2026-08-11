@@ -32,7 +32,7 @@ use super::importer_desc::AiImporterDesc;
 ///
 /// # Methods
 ///
-/// - [`info`]: Returns a description of the importer's capabilities and metadata.
+/// - [`AiImporterInfo::info`]: Returns a description of the importer's capabilities and metadata.
 pub trait AiImporterInfo {
     /// Returns information about this importer.
     ///
@@ -104,8 +104,8 @@ pub type DataLoader<'a> = dyn Fn(&Path) -> io::Result<Box<dyn ReadSeek + 'a>> + 
 ///
 /// # Methods
 ///
-/// - [`can_read_dyn`]: Determines if the importer can handle the specified file.
-/// - [`read_file_dyn`]: Reads and parses a file into an [`AiScene`].
+/// - [`AiImporter::can_read_dyn`]: Determines if the importer can handle the specified file.
+/// - [`AiImporter::read_file_dyn`]: Reads and parses a file into an [`AiScene`].
 pub trait AiImporter: AiImporterInfo {
     /// The error type returned by import operations.
     type Error: Error;
@@ -180,10 +180,10 @@ pub trait AiImporter: AiImporterInfo {
 ///
 /// # Methods
 ///
-/// - [`can_read`]: Checks if the importer can handle a file with a generic reader and loader.
-/// - [`read_file`]: Reads a file with a generic reader and loader.
-/// - [`can_read_default`]: Checks if the importer can handle a file using the default file loader.
-/// - [`read_file_default`]: Reads a file using the default file loader.
+/// - [`AiImporterExt::can_read`]: Checks if the importer can handle a file with a generic reader and loader.
+/// - [`AiImporterExt::read_file`]: Reads a file with a generic reader and loader.
+/// - [`AiImporterExt::can_read_default`]: Checks if the importer can handle a file using the default file loader.
+/// - [`AiImporterExt::read_file_default`]: Reads a file using the default file loader.
 pub trait AiImporterExt {
     /// The error type returned by import operations.
     type Error: Error;

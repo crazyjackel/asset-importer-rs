@@ -32,8 +32,8 @@ use enumflags2::{BitFlags, bitflags};
 ///
 /// # Methods
 ///
-/// - [`prepare`]: Prepares this post-process step and returns whether it will be applied.
-/// - [`process`]: Applies the post-process step to the given scene.
+/// - [`AiPostProcess::prepare`]: Prepares this post-process step and returns whether it will be applied.
+/// - [`AiPostProcess::process`]: Applies the post-process step to the given scene.
 pub trait AiPostProcess {
     /// The error type returned by the post-process step.
     type Error;
