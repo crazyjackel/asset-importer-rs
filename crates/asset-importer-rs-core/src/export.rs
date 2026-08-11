@@ -53,7 +53,7 @@ pub type DataExporter<'a> = dyn Fn(&Path) -> io::Result<Box<dyn Write + 'a>> + '
 ///
 /// # Methods
 ///
-/// - [`export_file_dyn`]: Exports a scene to a file using dynamic dispatch for the data exporter.
+/// - [`AiExport::export_file_dyn`]: Exports a scene to a file using dynamic dispatch for the data exporter.
 pub trait AiExport {
     /// The error type returned by export operations.
     type Error: Error;
@@ -115,8 +115,8 @@ pub trait AiExport {
 ///
 /// # Methods
 ///
-/// - [`export_file`]: Exports a scene with a generic writer and exporter function.
-/// - [`export_file_default`]: Exports a scene using the default file exporter.
+/// - [`AiExportExt::export_file`]: Exports a scene with a generic writer and exporter function.
+/// - [`AiExportExt::export_file_default`]: Exports a scene using the default file exporter.
 pub trait AiExportExt {
     /// The error type returned by export operations.
     type Error: Error;

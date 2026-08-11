@@ -29,7 +29,7 @@ pub const INITIAL_PLANE_NORMAL: AiVector3D = AiVector3D {
 ///
 /// # Methods
 ///
-/// - [`find_position`]: Finds all positions within a specified radius of a query point.
+/// - [`SpatialLookup::find_position`]: Finds all positions within a specified radius of a query point.
 pub trait SpatialLookup {
     /// Find the positions within a radius of the given position.
     ///
