@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786407864968,
+  "lastUpdate": 1786487679414,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -1187,6 +1187,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 52496501,
             "range": "± 303636",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4cd8d924736f469391e1cf23dc12d35c5cf5b6b7",
+          "message": "Merge pull request #70 from martinfrances107/light_collect\n\nPerf: Removed allocation caused by a call to .collect().",
+          "timestamp": "2026-08-11T18:32:10-04:00",
+          "tree_id": "396cbe44b5d04744838296c3ad61c650a9c151bb",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/4cd8d924736f469391e1cf23dc12d35c5cf5b6b7"
+        },
+        "date": 1786487678901,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 103662371,
+            "range": "± 215357",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 53359192,
+            "range": "± 206970",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 207413075,
+            "range": "± 467509",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 53152808,
+            "range": "± 323502",
             "unit": "ns/iter"
           }
         ]
