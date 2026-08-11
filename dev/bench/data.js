@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786407779735,
+  "lastUpdate": 1786407864968,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -1139,6 +1139,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 52454446,
             "range": "± 410063",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "da11d1d8999bb436160a256e8811ebb1e6ecb24f",
+          "message": "Merge pull request #53 from crazyjackel/dependabot/github_actions/SonarSource/sonarqube-scan-action-8.2.1\n\nBump SonarSource/sonarqube-scan-action from 6.0.0 to 8.2.1",
+          "timestamp": "2026-08-10T20:20:53-04:00",
+          "tree_id": "34a1f6f9ebe6ce2fd837edab9a30affe1cb5b84a",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/da11d1d8999bb436160a256e8811ebb1e6ecb24f"
+        },
+        "date": 1786407863953,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 90314131,
+            "range": "± 292098",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 52435341,
+            "range": "± 150738",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 194990918,
+            "range": "± 400259",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 52496501,
+            "range": "± 303636",
             "unit": "ns/iter"
           }
         ]
