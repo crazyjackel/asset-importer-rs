@@ -1,6 +1,6 @@
 name: Base Tests
 
-on: 
+on:
   push:
     branches: [ main ]
   pull_request:
@@ -18,14 +18,14 @@ jobs:
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - name: Cache Cargo Dependencies
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           cache-on-failure: true
       - name: build
         run: cargo build -v --locked
       - name: test
         run: cargo doc -v
-  
+
   clippy:
     name: Lint Code
     runs-on: ubuntu-latest
