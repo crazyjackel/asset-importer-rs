@@ -17,8 +17,7 @@ impl Gltf2Importer {
             return Ok(Vec::new());
         }
         let mut lights: Vec<AiLight> = Vec::new(); //Final Lights to return
-        let asset_lights =
-            document.lights().unwrap();
+        let asset_lights = document.lights().unwrap();
         lights.reserve(asset_lights.len());
         for light in asset_lights {
             let mut ai_light = AiLight::default();
