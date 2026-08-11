@@ -235,9 +235,14 @@ pub struct Accessor {
     pub name: Option<String>,
 }
 
-#[test]
-fn test_accessor_deserialize() {
-    let data = r#"{
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_accessor_deserialize() {
+        let data = r#"{
             "bufferView" : "bufferViewWithVertices_id",
             "byteOffset" : 0,
             "byteStride" : 3,
@@ -254,14 +259,15 @@ fn test_accessor_deserialize() {
             },
             "extras" : {
                 "Application specific" : "The extra object can contain any properties."
-            }     
+            }
         }
     "#;
-    let accessor: Result<Accessor, _> = serde_json::from_str(data);
-    let accessor_unwrap = accessor.unwrap();
-    println!("{}", serde_json::to_string(&accessor_unwrap).unwrap());
-    assert_eq!(
-        Some("user-defined accessor name".to_string()),
-        accessor_unwrap.name
-    );
+        let accessor: Result<Accessor, _> = serde_json::from_str(data);
+        let accessor_unwrap = accessor.unwrap();
+        println!("{}", serde_json::to_string(&accessor_unwrap).unwrap());
+        assert_eq!(
+            Some("user-defined accessor name".to_string()),
+            accessor_unwrap.name
+        );
+    }
 }

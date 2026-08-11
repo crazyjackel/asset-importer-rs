@@ -176,9 +176,14 @@ pub struct Animation {
     pub name: Option<String>,
 }
 
-#[test]
-fn test_animation_deserialize() {
-    let data = r#"{
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_animation_deserialize() {
+        let data = r#"{
             "channels": [
                 {
                     "sampler": "a_sampler",
@@ -192,7 +197,7 @@ fn test_animation_deserialize() {
                         },
                         "extras" : {
                             "Application specific" : "The extra object can contain any properties."
-                        }     
+                        }
                     },
                      "extensions" : {
                          "extension_name" : {
@@ -201,7 +206,7 @@ fn test_animation_deserialize() {
                      },
                     "extras" : {
                         "Application specific" : "The extra object can contain any properties."
-                    }     
+                    }
                 }
             ],
             "name": "user-defined animation name",
@@ -221,7 +226,7 @@ fn test_animation_deserialize() {
 		            },
                     "extras" : {
                         "Application specific" : "The extra object can contain any properties."
-                    }     
+                    }
                 }
             },
             "extensions" : {
@@ -231,13 +236,14 @@ fn test_animation_deserialize() {
             },
             "extras" : {
                 "Application specific" : "The extra object can contain any properties."
-            }     
+            }
         }"#;
-    let animation: Result<Animation, _> = serde_json::from_str(data);
-    let animation_unwrap = animation.unwrap();
-    println!("{}", serde_json::to_string(&animation_unwrap).unwrap());
-    assert_eq!(
-        Some("user-defined animation name".to_string()),
-        animation_unwrap.name
-    );
+        let animation: Result<Animation, _> = serde_json::from_str(data);
+        let animation_unwrap = animation.unwrap();
+        println!("{}", serde_json::to_string(&animation_unwrap).unwrap());
+        assert_eq!(
+            Some("user-defined animation name".to_string()),
+            animation_unwrap.name
+        );
+    }
 }

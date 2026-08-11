@@ -1183,9 +1183,14 @@ pub struct Material {
     pub extensions: Option<extensions::material::Material>,
 }
 
-#[test]
-fn test_technique_deserialize() {
-    let data = r#"{
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_technique_deserialize() {
+        let data = r#"{
             "name": "user-defined technique name",
             "parameters": {
                 "ambient": {
@@ -1313,17 +1318,18 @@ fn test_technique_deserialize() {
                 "Application specific" : "The extra object can contain any properties."
             }
         }"#;
-    let technique: Result<Technique, _> = serde_json::from_str(data);
-    let technique_unwrap = technique.unwrap();
-    println!("{}", serde_json::to_string(&technique_unwrap).unwrap());
-    assert_eq!(
-        Some("user-defined technique name".to_string()),
-        technique_unwrap.name
-    );
-}
-#[test]
-fn test_material_deserialize() {
-    let data = r#"{
+        let technique: Result<Technique, _> = serde_json::from_str(data);
+        let technique_unwrap = technique.unwrap();
+        println!("{}", serde_json::to_string(&technique_unwrap).unwrap());
+        assert_eq!(
+            Some("user-defined technique name".to_string()),
+            technique_unwrap.name
+        );
+    }
+
+    #[test]
+    fn test_material_deserialize() {
+        let data = r#"{
             "technique": "technique_id",
             "values": {
                 "ambient": [
@@ -1343,13 +1349,14 @@ fn test_material_deserialize() {
             },
             "extras" : {
                 "Application specific" : "The extra object can contain any properties."
-            }     
+            }
         }"#;
-    let material: Result<Material, _> = serde_json::from_str(data);
-    let material_unwrap = material.unwrap();
-    println!("{}", serde_json::to_string(&material_unwrap).unwrap());
-    assert_eq!(
-        Some("user-defined material name".to_string()),
-        material_unwrap.name
-    );
+        let material: Result<Material, _> = serde_json::from_str(data);
+        let material_unwrap = material.unwrap();
+        println!("{}", serde_json::to_string(&material_unwrap).unwrap());
+        assert_eq!(
+            Some("user-defined material name".to_string()),
+            material_unwrap.name
+        );
+    }
 }

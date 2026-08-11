@@ -179,9 +179,13 @@ impl GltfImporter {
     }
 }
 
-#[test]
-fn test_gltf_material_import() {
-    let gltf_data = r#"
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+    #[test]
+    fn test_gltf_material_import() {
+        let gltf_data = r#"
     {
         "materials": {
             "m0Avocado_M-fx": {
@@ -275,9 +279,10 @@ fn test_gltf_material_import() {
             }
         }
     }"#;
-    let scene = serde_json::from_str(gltf_data).unwrap();
-    let document = Document::from_json_without_validation(scene);
-    let (materials, _) =
-        GltfImporter::import_embedded_materials(&document, &HashMap::new()).unwrap();
-    assert_eq!(1, materials.len())
+        let scene = serde_json::from_str(gltf_data).unwrap();
+        let document = Document::from_json_without_validation(scene);
+        let (materials, _) =
+            GltfImporter::import_embedded_materials(&document, &HashMap::new()).unwrap();
+        assert_eq!(1, materials.len())
+    }
 }

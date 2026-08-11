@@ -36,9 +36,14 @@ pub struct Node {
     pub extensions: Option<extensions::node::Node>,
 }
 
-#[test]
-fn test_node_deserialize() {
-    let data = r#"{
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_node_deserialize() {
+        let data = r#"{
             "children": [],
             "matrix": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ],
             "meshes": [
@@ -52,13 +57,14 @@ fn test_node_deserialize() {
             },
             "extras" : {
                 "Application specific" : "The extra object can contain any properties."
-            }     
+            }
         }"#;
-    let node: Result<Node, _> = serde_json::from_str(data);
-    let node_unwrap = node.unwrap();
-    println!("{}", serde_json::to_string(&node_unwrap).unwrap());
-    assert_eq!(
-        Some("user-defined name of meshes node".to_string()),
-        node_unwrap.name
-    );
+        let node: Result<Node, _> = serde_json::from_str(data);
+        let node_unwrap = node.unwrap();
+        println!("{}", serde_json::to_string(&node_unwrap).unwrap());
+        assert_eq!(
+            Some("user-defined name of meshes node".to_string()),
+            node_unwrap.name
+        );
+    }
 }

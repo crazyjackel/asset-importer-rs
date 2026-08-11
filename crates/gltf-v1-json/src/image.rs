@@ -12,9 +12,14 @@ pub struct Image {
     pub extensions: Option<extensions::image::Image>,
 }
 
-#[test]
-fn test_image_deserialize() {
-    let data = r#"{
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_image_deserialize() {
+        let data = r#"{
             "name": "user-defined image name",
             "uri" : "image.png",
             "extensions" : {
@@ -26,11 +31,12 @@ fn test_image_deserialize() {
                 "Application specific" : "The extra object can contain any properties."
             }
         }"#;
-    let image: Result<Image, _> = serde_json::from_str(data);
-    let image_unwrap = image.unwrap();
-    println!("{}", serde_json::to_string(&image_unwrap).unwrap());
-    assert_eq!(
-        Some("user-defined image name".to_string()),
-        image_unwrap.name
-    );
+        let image: Result<Image, _> = serde_json::from_str(data);
+        let image_unwrap = image.unwrap();
+        println!("{}", serde_json::to_string(&image_unwrap).unwrap());
+        assert_eq!(
+            Some("user-defined image name".to_string()),
+            image_unwrap.name
+        );
+    }
 }

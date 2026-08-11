@@ -138,9 +138,13 @@ impl Program {
     }
 }
 
-#[test]
-fn test_program_deserialize() {
-    let data = r#"{
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_program_deserialize() {
+        let data = r#"{
             "attributes": [
                 "a_normal",
                 "a_position"
@@ -155,20 +159,20 @@ fn test_program_deserialize() {
             },
             "extras" : {
                 "Application specific" : "The extra object can contain any properties."
-            }     
+            }
         }"#;
-    let program: Result<Program, _> = serde_json::from_str(data);
-    let program_unwrap = program.unwrap();
-    println!("{}", serde_json::to_string(&program_unwrap).unwrap());
-    assert_eq!(
-        Some("user-defined program name".to_string()),
-        program_unwrap.name
-    );
-}
+        let program: Result<Program, _> = serde_json::from_str(data);
+        let program_unwrap = program.unwrap();
+        println!("{}", serde_json::to_string(&program_unwrap).unwrap());
+        assert_eq!(
+            Some("user-defined program name".to_string()),
+            program_unwrap.name
+        );
+    }
 
-#[test]
-fn test_shader_deserialize() {
-    let data = r#"{
+    #[test]
+    fn test_shader_deserialize() {
+        let data = r#"{
             "name": "user-defined vertex shader name",
             "uri" : "vertexshader.glsl",
             "type": 35633,
@@ -181,11 +185,12 @@ fn test_shader_deserialize() {
                 "Application specific" : "The extra object can contain any properties."
             }
         }"#;
-    let shader: Result<Shader, _> = serde_json::from_str(data);
-    let shader_unwrap = shader.unwrap();
-    println!("{}", serde_json::to_string(&shader_unwrap).unwrap());
-    assert_eq!(
-        Some("user-defined vertex shader name".to_string()),
-        shader_unwrap.name
-    );
+        let shader: Result<Shader, _> = serde_json::from_str(data);
+        let shader_unwrap = shader.unwrap();
+        println!("{}", serde_json::to_string(&shader_unwrap).unwrap());
+        assert_eq!(
+            Some("user-defined vertex shader name".to_string()),
+            shader_unwrap.name
+        );
+    }
 }

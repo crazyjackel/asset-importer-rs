@@ -550,9 +550,14 @@ fn default_texture_type() -> Checked<TextureType> {
     Checked::Valid(TextureType::UnsignedByte)
 }
 
-#[test]
-fn test_sampler_deserialize() {
-    let data = r#"{
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_sampler_deserialize() {
+        let data = r#"{
             "magFilter": 9729,
             "minFilter": 9987,
             "name": "user-defined sampler name",
@@ -565,20 +570,20 @@ fn test_sampler_deserialize() {
             },
             "extras" : {
                 "Application specific" : "The extra object can contain any properties."
-            }     
+            }
         }"#;
-    let sampler: Result<Sampler, _> = serde_json::from_str(data);
-    let sampler_unwrap = sampler.unwrap();
-    println!("{}", serde_json::to_string(&sampler_unwrap).unwrap());
-    assert_eq!(
-        Some("user-defined sampler name".to_string()),
-        sampler_unwrap.name
-    );
-}
+        let sampler: Result<Sampler, _> = serde_json::from_str(data);
+        let sampler_unwrap = sampler.unwrap();
+        println!("{}", serde_json::to_string(&sampler_unwrap).unwrap());
+        assert_eq!(
+            Some("user-defined sampler name".to_string()),
+            sampler_unwrap.name
+        );
+    }
 
-#[test]
-fn test_texture_deserialize() {
-    let data = r#"{
+    #[test]
+    fn test_texture_deserialize() {
+        let data = r#"{
             "format": 6408,
             "internalFormat": 6408,
             "name": "user-defined texture name",
@@ -593,13 +598,14 @@ fn test_texture_deserialize() {
             },
             "extras" : {
                 "Application specific" : "The extra object can contain any properties."
-            }     
+            }
         }"#;
-    let texture: Result<Texture, _> = serde_json::from_str(data);
-    let texture_unwrap = texture.unwrap();
-    println!("{}", serde_json::to_string(&texture_unwrap).unwrap());
-    assert_eq!(
-        Some("user-defined texture name".to_string()),
-        texture_unwrap.name
-    );
+        let texture: Result<Texture, _> = serde_json::from_str(data);
+        let texture_unwrap = texture.unwrap();
+        println!("{}", serde_json::to_string(&texture_unwrap).unwrap());
+        assert_eq!(
+            Some("user-defined texture name".to_string()),
+            texture_unwrap.name
+        );
+    }
 }
