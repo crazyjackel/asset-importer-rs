@@ -190,9 +190,14 @@ fn default_byte_length() -> USize64 {
     0u64.into()
 }
 
-#[test]
-fn test_buffer_deserialize() {
-    let data = r#"{
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_buffer_deserialize() {
+        let data = r#"{
             "uri": "vertices.bin",
             "byteLength": 1024,
             "name": "user-defined buffer name",
@@ -206,31 +211,31 @@ fn test_buffer_deserialize() {
                 "Application specific" : "The extra object can contain any properties."
             }
         }"#;
-    let buffer: Result<Buffer, _> = serde_json::from_str(data);
-    let buffer_unwrap = buffer.unwrap();
-    println!("{}", serde_json::to_string(&buffer_unwrap).unwrap());
-    assert_eq!("vertices.bin".to_string(), buffer_unwrap.uri);
-}
+        let buffer: Result<Buffer, _> = serde_json::from_str(data);
+        let buffer_unwrap = buffer.unwrap();
+        println!("{}", serde_json::to_string(&buffer_unwrap).unwrap());
+        assert_eq!("vertices.bin".to_string(), buffer_unwrap.uri);
+    }
 
-#[test]
-fn test_binary_buffer_deserialize() {
-    let data = r#"{
+    #[test]
+    fn test_binary_buffer_deserialize() {
+        let data = r#"{
             "type":"arraybuffer",
             "byteLength":1975367,
             "uri":"data:,"
         }"#;
-    let buffer: Result<Buffer, _> = serde_json::from_str(data);
-    let buffer_unwrap = buffer.unwrap();
-    println!("{}", serde_json::to_string(&buffer_unwrap).unwrap());
-    assert_eq!(
-        Some(Checked::Valid(BufferType::ArrayBuffer)),
-        buffer_unwrap.type_
-    );
-}
+        let buffer: Result<Buffer, _> = serde_json::from_str(data);
+        let buffer_unwrap = buffer.unwrap();
+        println!("{}", serde_json::to_string(&buffer_unwrap).unwrap());
+        assert_eq!(
+            Some(Checked::Valid(BufferType::ArrayBuffer)),
+            buffer_unwrap.type_
+        );
+    }
 
-#[test]
-fn test_buffer_view_deserialize() {
-    let data = r#"{
+    #[test]
+    fn test_buffer_view_deserialize() {
+        let data = r#"{
             "buffer" : "buffer_id",
             "byteLength": 76768,
             "byteOffset": 0,
@@ -245,11 +250,12 @@ fn test_buffer_view_deserialize() {
                 "Application specific" : "The extra object can contain any properties."
             }
         }"#;
-    let buffer_view: Result<BufferView, _> = serde_json::from_str(data);
-    let buffer_view_unwrap = buffer_view.unwrap();
-    println!("{}", serde_json::to_string(&buffer_view_unwrap).unwrap());
-    assert_eq!(
-        Some("user-defined name of bufferView with vertices".to_string()),
-        buffer_view_unwrap.name
-    );
+        let buffer_view: Result<BufferView, _> = serde_json::from_str(data);
+        let buffer_view_unwrap = buffer_view.unwrap();
+        println!("{}", serde_json::to_string(&buffer_view_unwrap).unwrap());
+        assert_eq!(
+            Some("user-defined name of bufferView with vertices".to_string()),
+            buffer_view_unwrap.name
+        );
+    }
 }

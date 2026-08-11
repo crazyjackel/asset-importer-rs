@@ -621,6 +621,8 @@ impl AiMaterial {
         }
     }
 }
+
+#[cfg(test)]
 mod tests {
     /// Tests the code of get_real_vector's String | Buffer Match
     /// Check that strings made up of joined floats can be parsed successfully

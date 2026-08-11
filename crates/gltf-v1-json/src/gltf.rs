@@ -178,9 +178,14 @@ impl_get!(Skin, skins);
 impl_get!(Texture, textures);
 impl_get!(Technique, techniques);
 
-#[test]
-fn test_gltf_deserialize() {
-    let data = r#"{
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_gltf_deserialize() {
+        let data = r#"{
     "asset" : {
         "copyright" : "(C) Copyright Khronos Group",
         "generator" : "collada2gltf@042d7d2a3782aaf6d86961d052fc53bea8b3e424",
@@ -190,7 +195,7 @@ fn test_gltf_deserialize() {
             "version" : "1.0.3",
             "extras" : {
                 "Application specific" : "The extra object can contain any properties."
-            }  
+            }
         },
         "version" : "1.0",
         "extensions" : {
@@ -200,13 +205,14 @@ fn test_gltf_deserialize() {
         },
         "extras" : {
             "Application specific" : "The extra object can contain any properties."
-        }  
+        }
     }
 }"#;
-    let gltf: Root = serde_json::from_str(data).unwrap();
-    println!("{}", serde_json::to_string(&gltf).unwrap());
-    assert_eq!(
-        &Some("(C) Copyright Khronos Group".to_string()),
-        &gltf.asset.unwrap().copyright
-    );
+        let gltf: Root = serde_json::from_str(data).unwrap();
+        println!("{}", serde_json::to_string(&gltf).unwrap());
+        assert_eq!(
+            &Some("(C) Copyright Khronos Group".to_string()),
+            &gltf.asset.unwrap().copyright
+        );
+    }
 }

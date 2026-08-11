@@ -99,33 +99,39 @@ impl AiCamera {
     }
 }
 
-#[test]
-fn test_get_camera_matrix() {
-    let camera = AiCamera {
-        position: AiVector3D::new(0.0, 0.0, 5.0),
-        look_vec: AiVector3D::new(0.0, 0.0, -1.0),
-        up_vec: AiVector3D::new(0.0, 1.0, 0.0),
-        ..Default::default()
-    };
+#[cfg(test)]
+mod tests {
 
-    let view_matrix = camera.get_camera_matrix();
-    let base_matrix = AiMatrix4x4 {
-        a1: -1.0,
-        a2: 0.0,
-        a3: 0.0,
-        a4: 0.0,
-        b1: 0.0,
-        b2: 1.0,
-        b3: 0.0,
-        b4: 0.0,
-        c1: 0.0,
-        c2: 0.0,
-        c3: -1.0,
-        c4: 5.0,
-        d1: 0.0,
-        d2: 0.0,
-        d3: 0.0,
-        d4: 1.0,
-    };
-    assert_eq!(base_matrix, view_matrix);
+    use super::*;
+
+    #[test]
+    fn test_get_camera_matrix() {
+        let camera = AiCamera {
+            position: AiVector3D::new(0.0, 0.0, 5.0),
+            look_vec: AiVector3D::new(0.0, 0.0, -1.0),
+            up_vec: AiVector3D::new(0.0, 1.0, 0.0),
+            ..Default::default()
+        };
+
+        let view_matrix = camera.get_camera_matrix();
+        let base_matrix = AiMatrix4x4 {
+            a1: -1.0,
+            a2: 0.0,
+            a3: 0.0,
+            a4: 0.0,
+            b1: 0.0,
+            b2: 1.0,
+            b3: 0.0,
+            b4: 0.0,
+            c1: 0.0,
+            c2: 0.0,
+            c3: -1.0,
+            c4: 5.0,
+            d1: 0.0,
+            d2: 0.0,
+            d3: 0.0,
+            d4: 1.0,
+        };
+        assert_eq!(base_matrix, view_matrix);
+    }
 }

@@ -13,9 +13,14 @@ pub struct Scene {
     pub name: Option<String>,
 }
 
-#[test]
-fn test_scene_deserialize() {
-    let data = r#"{
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_scene_deserialize() {
+        let data = r#"{
             "name": "user-defined scene name",
             "nodes": [
                 "mesh_node_id",
@@ -30,11 +35,12 @@ fn test_scene_deserialize() {
                 "Application specific" : "The extra object can contain any properties."
             }
         }"#;
-    let scene: Result<Scene, _> = serde_json::from_str(data);
-    let scene_unwrap = scene.unwrap();
-    println!("{}", serde_json::to_string(&scene_unwrap).unwrap());
-    assert_eq!(
-        Some("user-defined scene name".to_string()),
-        scene_unwrap.name
-    );
+        let scene: Result<Scene, _> = serde_json::from_str(data);
+        let scene_unwrap = scene.unwrap();
+        println!("{}", serde_json::to_string(&scene_unwrap).unwrap());
+        assert_eq!(
+            Some("user-defined scene name".to_string()),
+            scene_unwrap.name
+        );
+    }
 }

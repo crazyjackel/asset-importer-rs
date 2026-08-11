@@ -245,9 +245,14 @@ pub struct Mesh {
     pub name: Option<String>,
 }
 
-#[test]
-fn test_mesh_deserialize() {
-    let data = r#"{
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_mesh_deserialize() {
+        let data = r#"{
             "name": "user-defined name of mesh",
             "primitives": [
                 {
@@ -266,7 +271,7 @@ fn test_mesh_deserialize() {
 		            },
                     "extras" : {
                         "Application specific" : "The extra object can contain any properties."
-                    }     
+                    }
                 }
             ],
             "extensions" : {
@@ -276,13 +281,14 @@ fn test_mesh_deserialize() {
             },
             "extras" : {
                 "Application specific" : "The extra object can contain any properties."
-            }     
+            }
         }"#;
-    let mesh: Result<Mesh, _> = serde_json::from_str(data);
-    let mesh_unwrap = mesh.unwrap();
-    println!("{}", serde_json::to_string(&mesh_unwrap).unwrap());
-    assert_eq!(
-        Some("user-defined name of mesh".to_string()),
-        mesh_unwrap.name
-    );
+        let mesh: Result<Mesh, _> = serde_json::from_str(data);
+        let mesh_unwrap = mesh.unwrap();
+        println!("{}", serde_json::to_string(&mesh_unwrap).unwrap());
+        assert_eq!(
+            Some("user-defined name of mesh".to_string()),
+            mesh_unwrap.name
+        );
+    }
 }

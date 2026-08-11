@@ -22,9 +22,14 @@ pub struct Asset {
     pub version: String,
 }
 
-#[test]
-fn test_asset_deserialize() {
-    let data = r#"{
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_asset_deserialize() {
+        let data = r#"{
         "copyright" : "(C) Copyright Khronos Group",
         "generator" : "collada2gltf@042d7d2a3782aaf6d86961d052fc53bea8b3e424",
         "premultipliedAlpha" : true,
@@ -33,7 +38,7 @@ fn test_asset_deserialize() {
             "version" : "1.0.3",
             "extras" : {
                 "Application specific" : "The extra object can contain any properties."
-            }  
+            }
         },
         "version" : "1.0",
         "extensions" : {
@@ -43,13 +48,14 @@ fn test_asset_deserialize() {
         },
         "extras" : {
             "Application specific" : "The extra object can contain any properties."
-        }  
+        }
     }"#;
-    let asset: Result<Asset, _> = serde_json::from_str(data);
-    let asset_unwrap = asset.unwrap();
-    println!("{}", serde_json::to_string(&asset_unwrap).unwrap());
-    assert_eq!(
-        Some("(C) Copyright Khronos Group".to_string()),
-        asset_unwrap.copyright
-    );
+        let asset: Result<Asset, _> = serde_json::from_str(data);
+        let asset_unwrap = asset.unwrap();
+        println!("{}", serde_json::to_string(&asset_unwrap).unwrap());
+        assert_eq!(
+            Some("(C) Copyright Khronos Group".to_string()),
+            asset_unwrap.copyright
+        );
+    }
 }

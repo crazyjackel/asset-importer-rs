@@ -126,12 +126,16 @@ fn get_texels(data: &gltf_v1::image::Data) -> Vec<AiTexel> {
     texels
 }
 
-#[test]
-fn test_gltf_texture_import() {
-    let binding = std::env::current_dir().expect("Failed to get the current executable path");
-    let exe_path = binding.as_path();
+#[cfg(test)]
+mod tests {
 
-    let gltf_data = r#"{
+    use super::*;
+    #[test]
+    fn test_gltf_texture_import() {
+        let binding = std::env::current_dir().expect("Failed to get the current executable path");
+        let exe_path = binding.as_path();
+
+        let gltf_data = r#"{
             "images": {
                 "UnicodeTexture": {
                     "name": "UnicodeTexture",
@@ -139,10 +143,11 @@ fn test_gltf_texture_import() {
                 }
             }
         }"#;
-    let scene = serde_json::from_str(gltf_data).unwrap();
-    let document = Document::from_json_without_validation(scene);
-    let (embedded_textures, _tex_ids) =
-        GltfImporter::import_embedded_textures(&document, Some(exe_path), &IndexMap::new())
-            .unwrap();
-    assert_eq!(1, embedded_textures.len());
+        let scene = serde_json::from_str(gltf_data).unwrap();
+        let document = Document::from_json_without_validation(scene);
+        let (embedded_textures, _tex_ids) =
+            GltfImporter::import_embedded_textures(&document, Some(exe_path), &IndexMap::new())
+                .unwrap();
+        assert_eq!(1, embedded_textures.len());
+    }
 }

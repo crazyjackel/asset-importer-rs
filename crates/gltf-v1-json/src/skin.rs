@@ -44,10 +44,14 @@ fn default_matrix() -> [f32; 16] {
         1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
     ]
 }
+#[cfg(test)]
+mod tests {
 
-#[test]
-fn test_skin_deserialize() {
-    let data = r#"{
+    use super::*;
+
+    #[test]
+    fn test_skin_deserialize() {
+        let data = r#"{
             "bindShapeMatrix": [
                 1,
                 0,
@@ -79,10 +83,11 @@ fn test_skin_deserialize() {
             },
             "extras" : {
                 "Application specific" : "The extra object can contain any properties."
-            }     
+            }
         }"#;
-    let skin: Result<Skin, _> = serde_json::from_str(data);
-    let skin_unwrap = skin.unwrap();
-    println!("{}", serde_json::to_string(&skin_unwrap).unwrap());
-    assert_eq!(Some("user-defined skin name".to_string()), skin_unwrap.name);
+        let skin: Result<Skin, _> = serde_json::from_str(data);
+        let skin_unwrap = skin.unwrap();
+        println!("{}", serde_json::to_string(&skin_unwrap).unwrap());
+        assert_eq!(Some("user-defined skin name".to_string()), skin_unwrap.name);
+    }
 }
