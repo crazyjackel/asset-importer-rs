@@ -11,6 +11,8 @@ env:
 
 jobs:
   test_doc:
+    permissions:
+      contents: read
     name: Run Documentation Tests
     runs-on: ubuntu-latest
     steps:
@@ -27,6 +29,8 @@ jobs:
         run: cargo doc -v
 
   clippy:
+    permissions:
+      contents: read
     name: Lint Code
     runs-on: ubuntu-latest
     steps:
@@ -38,6 +42,8 @@ jobs:
         run: cargo clippy --all-features
 
   rustfmt:
+    permissions:
+      contents: read
     name: Check Code Formatting
     runs-on: ubuntu-latest
     steps:
