@@ -438,7 +438,7 @@ impl ElementAttribute {
     /// returns one entry per direct child of the subtree root (child key paired with vector of leaf or nested
     /// subtree). If the subtree root index is invalid, returns an empty map.
     ///
-    /// If you only want the distinct and want to use less memory, use [get_children_distinct] instead.
+    /// If you only want the distinct and want to use less memory, use [ElementAttribute::get_children_distinct] instead.
     pub fn get_children(&self) -> HashMap<String, Vec<ElementAttribute>> {
         match self {
             ElementAttribute::Leaf(_) => HashMap::new(),
@@ -469,7 +469,7 @@ impl ElementAttribute {
     /// returns one entry per direct child of the subtree root (child key paired with leaf or nested
     /// subtree). If the subtree root index is invalid, returns an empty vector.
     ///
-    /// Some Element's might have multiple children with the same key, use [get_children] instead.
+    /// Some Element's might have multiple children with the same key, use [ElementAttribute::get_children] instead.
     pub fn get_children_distinct(&self) -> HashMap<String, ElementAttribute> {
         match self {
             ElementAttribute::Leaf(_) => HashMap::new(),
