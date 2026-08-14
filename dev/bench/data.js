@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786665949309,
+  "lastUpdate": 1786666015896,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -1427,6 +1427,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 50290297,
             "range": "± 304701",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "28cb833ca1e2fad8d8ae170b5272db06693e935e",
+          "message": "Merge pull request #73 from martinfrances107/cargo-doc-workspace\n\ncargo doc is not sufficient",
+          "timestamp": "2026-08-13T20:04:31-04:00",
+          "tree_id": "cd49cf57b4f506dcfc533fd69d8d39c03cf37806",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/28cb833ca1e2fad8d8ae170b5272db06693e935e"
+        },
+        "date": 1786666015335,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 100546218,
+            "range": "± 583843",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 51464853,
+            "range": "± 141178",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 202414984,
+            "range": "± 349800",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 51789324,
+            "range": "± 224686",
             "unit": "ns/iter"
           }
         ]
