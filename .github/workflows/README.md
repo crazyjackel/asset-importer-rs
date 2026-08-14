@@ -83,6 +83,12 @@ Tests OBJ format import/export:
 
 **Triggers:** Push to `main` branch, or pull requests to `main` when OBJ format crate or dependencies change
 
+### DAE Format Tests
+Tests the DAE (Collada) stub crate in `tests.yml`:
+- Builds and tests `asset-importer-rs-dae`
+
+**Triggers:** Push to `main` branch, or pull requests to `main` when the DAE crate or dependencies change
+
 ### `dep-gltf-v1.yml` - GLTF V1 Library Tests
 Tests the `gltf-v1` library crate:
 - Builds and tests the gltf-v1 library

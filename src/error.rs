@@ -6,6 +6,8 @@ pub enum AiImporterError {
     UnsupportedFileExtension(String),
     #[cfg(feature = "obj")]
     ObjImportError(asset_importer_rs_obj::ObjImportError),
+    #[cfg(feature = "dae")]
+    DaeImportError(asset_importer_rs_dae::DaeImportError),
     #[cfg(feature = "gltf")]
     GltfImportError(asset_importer_rs_gltf_v1::GLTFImportError),
     #[cfg(feature = "gltf2")]
@@ -22,6 +24,8 @@ impl Display for AiImporterError {
             }
             #[cfg(feature = "obj")]
             AiImporterError::ObjImportError(error) => write!(f, "ObjImportError: {}", error),
+            #[cfg(feature = "dae")]
+            AiImporterError::DaeImportError(error) => write!(f, "DaeImportError: {}", error),
             #[cfg(feature = "gltf")]
             AiImporterError::GltfImportError(error) => write!(f, "GltfImportError: {}", error),
             #[cfg(feature = "gltf2")]
@@ -63,6 +67,13 @@ impl Error for AiExporterError {}
 impl From<asset_importer_rs_obj::ObjImportError> for AiImporterError {
     fn from(error: asset_importer_rs_obj::ObjImportError) -> Self {
         AiImporterError::ObjImportError(error)
+    }
+}
+
+#[cfg(feature = "dae")]
+impl From<asset_importer_rs_dae::DaeImportError> for AiImporterError {
+    fn from(error: asset_importer_rs_dae::DaeImportError) -> Self {
+        AiImporterError::DaeImportError(error)
     }
 }
 

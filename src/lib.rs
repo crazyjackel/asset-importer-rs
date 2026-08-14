@@ -1,4 +1,6 @@
 use asset_importer_rs_core::AiPostProcessSteps;
+#[cfg(feature = "dae")]
+use asset_importer_rs_dae::DaeImporter;
 #[cfg(feature = "gltf2")]
 use asset_importer_rs_gltf::{Gltf2Exporter, Gltf2Importer, Output as Gltf2Output};
 #[cfg(feature = "gltf")]
@@ -28,6 +30,8 @@ impl AssetImporter {
         Importer::new(vec![
             #[cfg(feature = "obj")]
             Box::new(AiImportWrapper::new(ObjImporter::new())),
+            #[cfg(feature = "dae")]
+            Box::new(AiImportWrapper::new(DaeImporter::new())),
             #[cfg(feature = "gltf2")]
             Box::new(AiImportWrapper::new(Gltf2Importer::new())),
             #[cfg(feature = "gltf")]

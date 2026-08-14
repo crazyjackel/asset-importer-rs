@@ -18,6 +18,7 @@ members = [
     "crates/asset-importer-rs-gltf",
     "crates/asset-importer-rs-gltf-v1",
     "crates/asset-importer-rs-obj",
+    "crates/asset-importer-rs-dae",
     "crates/asset-importer-rs-post-process",
     "crates/fbxscii",
     "crates/fbx-dom",
@@ -36,7 +37,9 @@ asset-importer-rs-scene = { path = "crates/asset-importer-rs-scene", version = "
 asset-importer-rs-gltf = { path = "crates/asset-importer-rs-gltf", version = "0.4.0" }
 asset-importer-rs-gltf-v1 = { path = "crates/asset-importer-rs-gltf-v1", version = "0.4.0" }
 asset-importer-rs-obj = { path = "crates/asset-importer-rs-obj", version = "0.4.0" }
+asset-importer-rs-dae = { path = "crates/asset-importer-rs-dae", version = "0.4.0" }
 asset-importer-rs-post-process = { path = "crates/asset-importer-rs-post-process", version = "0.4.0" }
+dae-parser = "0.11.0"
 base64 = "0.13"
 bytemuck = { version = "1.21.0", features = ["derive"] }
 byteorder = "1.3"
@@ -75,6 +78,7 @@ asset-importer-rs-scene = { path = "crates/asset-importer-rs-scene", version = "
 asset-importer-rs-gltf = { path = "crates/asset-importer-rs-gltf", optional = true, default-features = false, version = "0.4.0" }
 asset-importer-rs-gltf-v1 = { path = "crates/asset-importer-rs-gltf-v1", optional = true, default-features = false, version = "0.4.0" }
 asset-importer-rs-obj = { path = "crates/asset-importer-rs-obj", optional = true, default-features = false, version = "0.4.0" }
+asset-importer-rs-dae = { path = "crates/asset-importer-rs-dae", optional = true, default-features = false, version = "0.4.0" }
 asset-importer-rs-post-process = { path = "crates/asset-importer-rs-post-process", optional = true, default-features = false, version = "0.4.0" }
 
 [dev-dependencies]
@@ -92,6 +96,8 @@ gltf2 = ["dep:asset-importer-rs-gltf"]
 gltf2-default = ["asset-importer-rs-gltf/default"]
 obj = ["dep:asset-importer-rs-obj"]
 obj-default = ["asset-importer-rs-obj/default"]
+dae = ["dep:asset-importer-rs-dae"]
+dae-default = ["asset-importer-rs-dae/default"]
 post-process = ["dep:asset-importer-rs-post-process"]
 post-process-default = ["asset-importer-rs-post-process/default"]
 
