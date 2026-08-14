@@ -26,7 +26,7 @@ jobs:
       - name: build
         run: cargo build -v --locked
       - name: test
-        run: cargo doc -v
+        run: cargo doc --workspace -v
 
   clippy:
     permissions:
