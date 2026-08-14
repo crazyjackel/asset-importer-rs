@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1](https://github.com/crazyjackel/asset-importer-rs/compare/asset-importer-rs-v0.4.0...asset-importer-rs-v0.4.1) - 2026-08-14
+
+### Added
+
+- stub out asset-importer-rs-dae
+
+### Fixed
+
+- cargo fmt
+- source project cargo clippy fixes
+- add ignore files
+
+### Other
+
+- Merge pull request #73 from martinfrances107/cargo-doc-workspace
+- Restrict the GITHUB_TOKEN permissions.
+- Merge pull request #55 from crazyjackel/dependabot/github_actions/Swatinem/rust-cache-6323deb102c322ba6fcbdcafc7e3dddab59af2b6
+- Merge pull request #53 from crazyjackel/dependabot/github_actions/SonarSource/sonarqube-scan-action-8.2.1
+- Bump actions/download-artifact from 4.3.0 to 8.0.1
+- Bump criterion to 0.8.2.
+- bumped actions/upload-artifact to version 7.
+- release
+
 ## [0.4.0](https://github.com/crazyjackel/asset-importer-rs/compare/asset-importer-rs-v0.3.0...asset-importer-rs-v0.4.0) - 2026-05-05
 
 ### Fixed

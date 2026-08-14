@@ -79,7 +79,7 @@ checksum = "940b3a0ca603d1eade50a4846a2afffd5ef57a9feac2c0e2ec2e14f9ead76000"
 
 [[package]]
 name = "asset-importer-rs"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "asset-importer-rs-core",
  "asset-importer-rs-dae",
@@ -94,7 +94,7 @@ dependencies = [
 
 [[package]]
 name = "asset-importer-rs-core"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "asset-importer-rs-scene",
  "enumflags2",
@@ -102,7 +102,7 @@ dependencies = [
 
 [[package]]
 name = "asset-importer-rs-dae"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "asset-importer-rs-core",
  "asset-importer-rs-scene",
@@ -112,7 +112,7 @@ dependencies = [
 
 [[package]]
 name = "asset-importer-rs-gltf"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "asset-importer-rs-core",
  "asset-importer-rs-scene",
@@ -126,7 +126,7 @@ dependencies = [
 
 [[package]]
 name = "asset-importer-rs-gltf-v1"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "asset-importer-rs-core",
  "asset-importer-rs-scene",
@@ -139,7 +139,7 @@ dependencies = [
 
 [[package]]
 name = "asset-importer-rs-obj"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "asset-importer-rs-core",
  "asset-importer-rs-scene",
@@ -151,7 +151,7 @@ dependencies = [
 
 [[package]]
 name = "asset-importer-rs-post-process"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "asset-importer-rs-core",
  "asset-importer-rs-scene",
@@ -161,7 +161,7 @@ dependencies = [
 
 [[package]]
 name = "asset-importer-rs-scene"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "bytemuck",
  "enumflags2",
@@ -445,7 +445,7 @@ checksum = "877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f"
 
 [[package]]
 name = "fbx-dom"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "base64",
  "fbxcel",
@@ -467,7 +467,7 @@ dependencies = [
 
 [[package]]
 name = "fbxscii"
-version = "0.1.1"
+version = "0.1.2"
 
 [[package]]
 name = "fdeflate"
@@ -592,7 +592,7 @@ dependencies = [
 
 [[package]]
 name = "gltf-v1"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "base64",
  "byteorder",
@@ -604,7 +604,7 @@ dependencies = [
 
 [[package]]
 name = "gltf-v1-derive"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "inflections",
  "proc-macro2",
@@ -614,7 +614,7 @@ dependencies = [
 
 [[package]]
 name = "gltf-v1-json"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "gltf-v1-derive",
  "indexmap",
