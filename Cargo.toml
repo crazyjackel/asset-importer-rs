@@ -21,6 +21,7 @@ members = [
     "crates/asset-importer-rs-post-process",
     "crates/fbxscii",
     "crates/fbx-dom",
+    "flamegraph_target",
 ]
 
 [workspace.package]
