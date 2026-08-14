@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1786487822053,
+  "lastUpdate": 1786665949309,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -1379,6 +1379,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 53129619,
             "range": "± 94455",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b87be7ce011d47e33ead6ac33b6f75d2c0f1213c",
+          "message": "Merge pull request #74 from martinfrances107/github_perms\n\nSecurity: Restrict the GITHUB_TOKEN permissions.",
+          "timestamp": "2026-08-13T20:03:28-04:00",
+          "tree_id": "27d1d1337a71e55c3985613b44aee519b0dc6541",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/b87be7ce011d47e33ead6ac33b6f75d2c0f1213c"
+        },
+        "date": 1786665948221,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 101319982,
+            "range": "± 2408787",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 53043059,
+            "range": "± 87271",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 203948370,
+            "range": "± 264255",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 50290297,
+            "range": "± 304701",
             "unit": "ns/iter"
           }
         ]
