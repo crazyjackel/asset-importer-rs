@@ -1,5 +1,5 @@
 mod error;
-mod importer;
+mod import;
 
 pub use error::DaeImportError;
-pub use importer::DaeImporter;
+pub use import::DaeImporter;
