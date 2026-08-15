@@ -1,10 +1,11 @@
-use std::io::Read;
+use std::io::{BufReader, Read};
 use std::path::Path;
 
 use asset_importer_rs_core::{
     AiImporter, AiImporterDesc, AiImporterFlags, AiImporterInfo, DataLoader,
 };
-use asset_importer_rs_scene::AiScene;
+use asset_importer_rs_scene::{AiNodeTree, AiScene};
+use dae_parser::Document;
 use enumflags2::BitFlags;
 
 use super::DaeImportError;
@@ -64,11 +65,43 @@ impl AiImporter for DaeImporter {
         head.contains("<collada")
     }
 
-    fn read_file_dyn(
-        &self,
-        _path: &Path,
-        _loader: &DataLoader<'_>,
-    ) -> Result<AiScene, Self::Error> {
-        Err(DaeImportError::NotImplemented)
+    fn read_file_dyn(&self, path: &Path, loader: &DataLoader<'_>) -> Result<AiScene, Self::Error> {
+        let reader =
+            loader(path).map_err(|x| DaeImportError::FileOpenError(x, path.to_path_buf()))?;
+        let document = Document::from_reader(BufReader::new(reader))
+            .map_err(DaeImportError::FileFormatError)?;
+
+        let visual_scene = document
+            .get_visual_scene()
+            .ok_or(DaeImportError::MissingVisualScene)?;
+
+        let scene_name = visual_scene
+            .name
+            .clone()
+            .or_else(|| visual_scene.id.clone())
+            .unwrap_or_default();
+
+        // TODO: import remaining Collada libraries into AiScene
+        let animations = Vec::new();
+        let cameras = Vec::new();
+        let meshes = Vec::new();
+        let lights = Vec::new();
+        let materials = Vec::new();
+        let textures = Vec::new();
+        let nodes = AiNodeTree::default();
+        let metadata = Default::default();
+
+        Ok(AiScene {
+            name: scene_name,
+            animations,
+            cameras,
+            meshes,
+            lights,
+            materials,
+            textures,
+            nodes,
+            metadata,
+            ..AiScene::default()
+        })
     }
 }

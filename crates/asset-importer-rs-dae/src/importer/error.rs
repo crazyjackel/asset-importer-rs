@@ -1,15 +1,23 @@
-use std::{error::Error, fmt::Display};
+use std::{error::Error, fmt::Display, io, path::PathBuf};
 
 #[derive(Debug)]
 pub enum DaeImportError {
-    NotImplemented,
+    FileOpenError(io::Error, PathBuf),
+    FileFormatError(dae_parser::Error),
+    MissingVisualScene,
 }
 
 impl Display for DaeImportError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            DaeImportError::NotImplemented => {
-                write!(f, "DAE import is not implemented")
+            DaeImportError::FileOpenError(error, path) => {
+                write!(f, "failed to open DAE file '{}': {}", path.display(), error)
+            }
+            DaeImportError::FileFormatError(error) => {
+                write!(f, "failed to parse DAE file: {:?}", error)
+            }
+            DaeImportError::MissingVisualScene => {
+                write!(f, "no visual scene found in DAE file")
             }
         }
     }

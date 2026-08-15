@@ -4,7 +4,7 @@ use std::{
 };
 
 use asset_importer_rs_core::AiImporterExt;
-use asset_importer_rs_dae::{DaeImportError, DaeImporter};
+use asset_importer_rs_dae::DaeImporter;
 
 fn dummy_loader(_path: &Path) -> io::Result<Cursor<Vec<u8>>> {
     Ok(Cursor::new(Vec::new()))
@@ -27,8 +27,11 @@ fn test_dae_can_read_extension() {
 }
 
 #[test]
-fn test_dae_read_file_not_implemented() {
+fn test_dae_import_cube_scene_name() {
     let importer = DaeImporter::new();
-    let result = importer.read_file("model.dae", dummy_loader);
-    assert!(matches!(result, Err(DaeImportError::NotImplemented)));
+    let path = Path::new("tests/cube.dae");
+    assert!(path.exists(), "path does not exist");
+    let scene = importer.read_file_default(path);
+    assert!(scene.is_ok(), "error: {}", scene.err().unwrap());
+    assert_eq!(scene.unwrap().name, "reportScene");
 }
