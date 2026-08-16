@@ -6,6 +6,7 @@ pub enum DaeImportError {
     FileFormatError(dae_parser::Error),
     MissingLocalMapEntry(String),
     MissingVisualScene,
+    MissingRootNode,
 }
 
 impl Display for DaeImportError {
@@ -22,6 +23,9 @@ impl Display for DaeImportError {
             }
             DaeImportError::MissingVisualScene => {
                 write!(f, "no visual scene found in DAE file")
+            }
+            DaeImportError::MissingRootNode => {
+                write!(f, "no root node found in DAE visual scene")
             }
         }
     }

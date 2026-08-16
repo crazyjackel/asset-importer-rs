@@ -106,6 +106,7 @@ impl AiMatrix4x4 {
     }
 
     pub fn rotation(angle: AiReal, axis: &AiVector3D) -> Self {
+        let axis = axis.norm();
         let c = angle.cos();
         let s = angle.sin();
         let t = 1.0 - c;

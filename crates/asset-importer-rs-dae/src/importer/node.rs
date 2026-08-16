@@ -26,7 +26,7 @@ impl DaeImporter {
             Ordering::Equal => {
                 queue.push_back((&visual_scene.nodes[0], None));
             }
-            Ordering::Less | Ordering::Greater => {
+            Ordering::Greater => {
                 let root = AiNode {
                     name: visual_scene
                         .name
@@ -42,6 +42,9 @@ impl DaeImporter {
                 for child in visual_scene.nodes.iter().rev() {
                     queue.push_back((child, Some(root_index)));
                 }
+            }
+            Ordering::Less => {
+                return Err(DaeImportError::MissingRootNode);
             }
         }
 
@@ -74,22 +77,19 @@ impl DaeImporter {
 }
 
 fn find_name_for_node(node: &Node, use_collada_name: bool, node_name_counter: &mut u32) -> String {
-    if use_collada_name {
-        if let Some(name) = node.name.as_ref().filter(|name| !name.is_empty()) {
-            return name.clone();
-        }
-        return next_auto_node_name(node_name_counter);
+    // Use Collada Name if available and we enabled usage
+    if use_collada_name && let Some(name) = node.name.as_ref().filter(|name| !name.is_empty()) {
+        return name.clone();
     }
+    // Use ID if available
     if let Some(id) = node.id.as_ref().filter(|id| !id.is_empty()) {
         return id.clone();
     }
+    // Use SID if available
     if let Some(sid) = node.sid.as_ref().filter(|sid| !sid.is_empty()) {
         return sid.clone();
     }
-    next_auto_node_name(node_name_counter)
-}
-
-fn next_auto_node_name(node_name_counter: &mut u32) -> String {
+    // Fallback to auto-generated name
     let name = format!("$ColladaAutoName$_{}", *node_name_counter);
     *node_name_counter += 1;
     name
@@ -228,6 +228,17 @@ mod tests {
         assert!((result.a2 - -1.0).abs() < 1e-6);
         assert!((result.b1 - 1.0).abs() < 1e-6);
         assert!((result.b2 - 0.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn normalizes_scaled_rotation_axis() {
+        let scaled = calculate_result_transform(&[Rotate::new([0.0, 2.0, 0.0], 90.0).into()]);
+        let unit = calculate_result_transform(&[Rotate::new([0.0, 1.0, 0.0], 90.0).into()]);
+        let scaled_array: [AiReal; 16] = scaled.into();
+        let unit_array: [AiReal; 16] = unit.into();
+        for (scaled_value, unit_value) in scaled_array.iter().zip(unit_array.iter()) {
+            assert!((scaled_value - unit_value).abs() < 1e-6);
+        }
     }
 
     #[test]

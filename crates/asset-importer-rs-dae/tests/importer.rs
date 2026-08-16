@@ -4,7 +4,7 @@ use std::{
 };
 
 use asset_importer_rs_core::AiImporterExt;
-use asset_importer_rs_dae::DaeImporter;
+use asset_importer_rs_dae::{DaeImportError, DaeImporter};
 use asset_importer_rs_scene::{
     AiColor4D, AiShadingMode, AiTextureType,
     matkey::{
@@ -84,4 +84,24 @@ fn test_dae_import_cube_nodes() {
     assert_eq!(root_node.name, "F1");
     assert!(root_node.children.is_empty());
     assert_eq!(root_node.parent, None);
+}
+
+#[test]
+fn test_dae_import_empty_visual_scene_missing_root() {
+    let importer = DaeImporter::new();
+    let xml = br##"<?xml version="1.0"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset>
+    <created>1970-01-01T00:00:00Z</created>
+    <modified>1970-01-01T00:00:00Z</modified>
+  </asset>
+  <library_visual_scenes>
+    <visual_scene id="Empty"/>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#Empty"/>
+  </scene>
+</COLLADA>"##;
+    let result = importer.read_file("empty.dae", |_| Ok(Cursor::new(xml.to_vec())));
+    assert!(matches!(result, Err(DaeImportError::MissingRootNode)));
 }
