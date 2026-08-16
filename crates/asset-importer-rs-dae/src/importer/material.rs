@@ -10,8 +10,8 @@ use asset_importer_rs_scene::{
     },
 };
 use dae_parser::{
-    ColorParam, Document, Effect as DocumentEffect, Extra, FloatParam, ImageParam, Material,
-    NewParam, ParamType, ProfileCommon, Shader,
+    ColorParam, Document, Effect as DocumentEffect, Extra, FloatParam, Material, ProfileCommon,
+    Shader,
 };
 
 use crate::DaeImportError;
@@ -25,12 +25,6 @@ enum ShadeType {
     Blinn,
     #[default]
     Phong,
-}
-
-#[derive(Clone, Debug)]
-#[allow(dead_code)]
-struct EffectParam {
-    ty: ParamType,
 }
 
 /// A collada effect. Can contain about anything according to the Collada spec,
@@ -51,8 +45,6 @@ struct Effect {
     has_transparency: bool,
     rgb_transparency: bool,
     invert_transparency: bool,
-    #[allow(dead_code)]
-    params: HashMap<String, EffectParam>,
     double_sided: bool,
     wireframe: bool,
     faceted: bool,
@@ -75,7 +67,6 @@ impl Default for Effect {
             has_transparency: false,
             rgb_transparency: false,
             invert_transparency: false,
-            params: HashMap::new(),
             double_sided: false,
             wireframe: false,
             faceted: false,
@@ -86,14 +77,6 @@ impl Default for Effect {
 impl From<&ProfileCommon> for Effect {
     fn from(profile: &ProfileCommon) -> Self {
         let mut effect = Effect::default();
-        for param in &profile.new_param {
-            effect.insert_param(param);
-        }
-        for image_param in &profile.technique.data.image_param {
-            if let ImageParam::NewParam(param) = image_param {
-                effect.insert_param(param);
-            }
-        }
         effect.apply_extras(profile.extra.iter().chain(profile.technique.extra.iter()));
         if let Some(shader) = profile.technique.data.shaders.first() {
             effect.apply_shader(shader);
@@ -103,15 +86,6 @@ impl From<&ProfileCommon> for Effect {
 }
 
 impl Effect {
-    fn insert_param(&mut self, param: &NewParam) {
-        self.params.insert(
-            param.sid.clone(),
-            EffectParam {
-                ty: param.ty.clone(),
-            },
-        );
-    }
-
     fn apply_extras<'a>(&mut self, extras: impl IntoIterator<Item = &'a Extra>) {
         for extra in extras {
             for technique in &extra.technique {
