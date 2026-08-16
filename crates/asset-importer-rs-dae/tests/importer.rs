@@ -75,3 +75,13 @@ fn test_dae_import_cube_materials() {
         Some(1.0)
     );
 }
+
+#[test]
+fn test_dae_import_cube_nodes() {
+    let scene = load_cube_scene();
+    let root = scene.nodes.root.expect("scene should have a root node");
+    let root_node = &scene.nodes.arena[root];
+    assert_eq!(root_node.name, "F1");
+    assert!(root_node.children.is_empty());
+    assert_eq!(root_node.parent, None);
+}

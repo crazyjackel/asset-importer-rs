@@ -228,6 +228,7 @@ impl Effect {
 
 impl DaeImporter {
     pub(crate) fn import_materials(
+        &self,
         document: &Document,
     ) -> Result<(Vec<AiMaterial>, HashMap<String, usize>), DaeImportError> {
         let mut materials = Vec::new();
@@ -356,6 +357,8 @@ impl DaeImporter {
                     }
                 }
 
+                // Add Material to Index Map
+                let index = materials.len();
                 material_index_map.insert(name, index);
                 materials.push(ai_material);
             }

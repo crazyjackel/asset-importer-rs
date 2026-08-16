@@ -4,18 +4,21 @@ use std::path::Path;
 use asset_importer_rs_core::{
     AiImporter, AiImporterDesc, AiImporterFlags, AiImporterInfo, DataLoader,
 };
-use asset_importer_rs_scene::{AiNodeTree, AiScene};
+use asset_importer_rs_scene::AiScene;
 use dae_parser::Document;
 use enumflags2::BitFlags;
 
 use super::DaeImportError;
 
 #[derive(Debug, Default)]
-pub struct DaeImporter;
+pub struct DaeImporter {
+    /// When true, prefer Collada `name` over `id`/`sid` for node names.
+    pub use_collada_name: bool,
+}
 
 impl DaeImporter {
     pub fn new() -> Self {
-        Self
+        Self::default()
     }
 }
 
@@ -81,14 +84,14 @@ impl AiImporter for DaeImporter {
             .or_else(|| visual_scene.id.clone())
             .unwrap_or_default();
 
-        let (materials, _material_index_map) = DaeImporter::import_materials(&document)?;
+        let (materials, _material_index_map) = self.import_materials(&document)?;
+        let nodes = self.import_nodes(&document, visual_scene)?;
         // TODO: import remaining Collada libraries into AiScene
         let animations = Vec::new();
         let cameras = Vec::new();
         let meshes = Vec::new();
         let lights = Vec::new();
         let textures = Vec::new();
-        let nodes = AiNodeTree::default();
         let metadata = Default::default();
 
         Ok(AiScene {
