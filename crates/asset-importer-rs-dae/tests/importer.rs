@@ -5,6 +5,13 @@ use std::{
 
 use asset_importer_rs_core::AiImporterExt;
 use asset_importer_rs_dae::DaeImporter;
+use asset_importer_rs_scene::{
+    AiColor4D, AiShadingMode, AiTextureType,
+    matkey::{
+        AI_MATKEY_COLOR_DIFFUSE, AI_MATKEY_NAME, AI_MATKEY_OPACITY, AI_MATKEY_SHADING_MODEL,
+        AI_MATKEY_SHININESS,
+    },
+};
 
 fn dummy_loader(_path: &Path) -> io::Result<Cursor<Vec<u8>>> {
     Ok(Cursor::new(Vec::new()))
@@ -45,4 +52,26 @@ fn test_dae_import_cube_scene_name() {
 fn test_dae_import_cube_materials() {
     let scene = load_cube_scene();
     assert_eq!(scene.materials.len(), 1);
+    let material = &scene.materials[0];
+    let name = material
+        .get_property_ai_str(AI_MATKEY_NAME, Some(AiTextureType::None), 0)
+        .unwrap()
+        .unwrap();
+    assert_eq!(name, "Blue");
+    assert_eq!(
+        material.get_property_byte(AI_MATKEY_SHADING_MODEL, Some(AiTextureType::None), 0),
+        Some(AiShadingMode::Phong as u8)
+    );
+    let diffuse = material
+        .get_property_ai_color_rgba(AI_MATKEY_COLOR_DIFFUSE, Some(AiTextureType::None), 0)
+        .unwrap();
+    assert_eq!(diffuse, AiColor4D::new(0.137255, 0.403922, 0.870588, 1.0));
+    assert_eq!(
+        material.get_property_ai_float(AI_MATKEY_SHININESS, Some(AiTextureType::None), 0),
+        Some(16.0)
+    );
+    assert_eq!(
+        material.get_property_ai_float(AI_MATKEY_OPACITY, Some(AiTextureType::None), 0),
+        Some(1.0)
+    );
 }

@@ -414,6 +414,16 @@ impl AiMaterial {
         None
     }
 
+    pub fn add_binary_property(&mut self, key: &str, data: Vec<u8>) -> bool {
+        self.add_property(
+            key,
+            Some(AiTextureType::None),
+            AiPropertyTypeInfo::Binary,
+            0,
+            data,
+        )
+    }
+
     pub fn add_property(
         &mut self,
         key: &str,
