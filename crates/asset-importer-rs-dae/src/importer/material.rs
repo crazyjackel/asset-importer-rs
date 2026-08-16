@@ -10,9 +10,8 @@ use asset_importer_rs_scene::{
     },
 };
 use dae_parser::{
-    ColorParam, Document, Extra, FloatParam, ImageParam, Material, NewParam, ParamType,
-    ProfileCommon, Shader,
-    Effect as DocumentEffect,
+    ColorParam, Document, Effect as DocumentEffect, Extra, FloatParam, ImageParam, Material,
+    NewParam, ParamType, ProfileCommon, Shader,
 };
 
 use crate::DaeImportError;
@@ -276,10 +275,8 @@ impl DaeImporter {
                         .add_binary_property(AI_MATKEY_SHADING_MODEL, vec![shade_mode as u8]);
 
                     // Material Flags
-                    ai_material.add_binary_property(
-                        AI_MATKEY_TWOSIDED,
-                        vec![effect.double_sided as u8],
-                    );
+                    ai_material
+                        .add_binary_property(AI_MATKEY_TWOSIDED, vec![effect.double_sided as u8]);
                     ai_material.add_binary_property(
                         AI_MATKEY_ENABLE_WIREFRAME,
                         vec![effect.wireframe as u8],
@@ -323,7 +320,7 @@ impl DaeImporter {
 
                     let mut transparency = effect.transparency;
                     let mut transparent = effect.transparent;
-                    if transparency >= 0.0 && transparency <= 1.0 {
+                    if (0.0..=1.0).contains(&transparency) {
                         // Handle RGB Transparency
                         if effect.rgb_transparency {
                             transparency *= 0.212671 * transparent.r
