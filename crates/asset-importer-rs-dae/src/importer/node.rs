@@ -27,6 +27,7 @@ impl DaeImporter {
         let mut tree = AiNodeTree::default();
         let mut scene_meshes = Vec::new();
         let mut scene_mesh_name_map = HashMap::new();
+        let mut seen_node_names: HashMap<String, ()> = HashMap::new();
         let mut node_name_counter = 0u32;
         // Depth-first: pop from the back so the queue stays O(depth) instead of O(breadth).
         let mut queue: VecDeque<(&Node, Option<usize>)> = VecDeque::new();
@@ -58,8 +59,14 @@ impl DaeImporter {
         }
 
         while let Some((node, parent_index)) = queue.pop_back() {
+            let name = find_name_for_node(node, self.use_collada_name, &mut node_name_counter);
+            if seen_node_names.contains_key(&name) {
+                continue;
+            }
+            seen_node_names.insert(name.clone(), ());
+
             let mut ai_node = AiNode {
-                name: find_name_for_node(node, self.use_collada_name, &mut node_name_counter),
+                name,
                 transformation: calculate_result_transform(&node.transforms),
                 ..AiNode::default()
             };
