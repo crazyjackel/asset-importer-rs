@@ -108,8 +108,18 @@ impl From<&InstanceMaterial> for SemanticMappingTable {
 struct MeshInstance {
     /// ID of the mesh or controller to be instanced.
     mesh_or_controller: String,
-    /// Materials by the subgroup ID they're applied to.
-    materials: HashMap<String, SemanticMappingTable>,
+    /// Materials by the subgroup ID they're applied to, in document order.
+    materials: Vec<(String, SemanticMappingTable)>,
+}
+
+impl MeshInstance {
+    fn material_for_symbol(&self, symbol: &str) -> Option<&SemanticMappingTable> {
+        self.materials
+            .iter()
+            .find(|(bound_symbol, _)| bound_symbol == symbol)
+            .map(|(_, table)| table)
+            .or_else(|| self.materials.first().map(|(_, table)| table))
+    }
 }
 
 impl From<&Instance<Geometry>> for MeshInstance {
@@ -562,10 +572,7 @@ impl DaeImporter {
                     continue;
                 }
 
-                let table = instance
-                    .materials
-                    .get(&sub_mesh.material)
-                    .or_else(|| instance.materials.values().next());
+                let table = instance.material_for_symbol(&sub_mesh.material);
                 let mat_name = table.map(|table| table.mat_name.as_str()).unwrap_or("");
                 let material_index =
                     resolve_material_index(document, mat_name, &material_map, material_index_map);
@@ -772,8 +779,7 @@ mod tests {
         assert_eq!(instance.mesh_or_controller, "F1");
         assert_eq!(instance.materials.len(), 1);
         let table = instance
-            .materials
-            .get("geometryElement5")
+            .material_for_symbol("geometryElement5")
             .expect("bound subgroup");
         assert_eq!(table.mat_name, "Blue");
         assert!(table.map.is_empty());
