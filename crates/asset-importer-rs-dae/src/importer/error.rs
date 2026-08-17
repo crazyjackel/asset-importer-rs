@@ -5,6 +5,8 @@ pub enum DaeImportError {
     FileOpenError(io::Error, PathBuf),
     FileFormatError(dae_parser::Error),
     MissingLocalMapEntry(String),
+    /// Primitive index buffer length or a position index is out of bounds.
+    InvalidMeshIndices(String),
     MissingVisualScene,
     MissingRootNode,
 }
@@ -20,6 +22,9 @@ impl Display for DaeImportError {
             }
             DaeImportError::MissingLocalMapEntry(url) => {
                 write!(f, "no local map entry found for URL: {}", url)
+            }
+            DaeImportError::InvalidMeshIndices(detail) => {
+                write!(f, "invalid mesh primitive indices: {}", detail)
             }
             DaeImportError::MissingVisualScene => {
                 write!(f, "no visual scene found in DAE file")

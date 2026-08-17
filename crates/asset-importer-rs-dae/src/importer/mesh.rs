@@ -380,15 +380,42 @@ impl Mesh {
         }
 
         let positions = position_reader(document_mesh, &vertex_channel.accessor)?;
+        let position_count = positions.len();
+        if per_vertex_offset >= num_offsets {
+            return Err(DaeImportError::InvalidMeshIndices(format!(
+                "VERTEX offset {per_vertex_offset} exceeds input stride {num_offsets}"
+            )));
+        }
 
         let mut actual_primitives = 0usize;
         match prim_type {
             PrimitiveType::Triangles => {
+                let required = num_primitives
+                    .checked_mul(3 * num_offsets)
+                    .and_then(|corners| corners.checked_mul(num_offsets))
+                    .ok_or_else(|| {
+                        DaeImportError::InvalidMeshIndices(
+                            "triangle index count overflow".to_string(),
+                        )
+                    })?;
+                if indices.len() < required {
+                    return Err(DaeImportError::InvalidMeshIndices(format!(
+                        "triangles need at least {required} indices, found {}",
+                        indices.len()
+                    )));
+                }
                 for face in 0..num_primitives {
                     for corner in 0..3 {
-                        let index =
-                            indices[(face * 3 + corner) * num_offsets + per_vertex_offset] as usize;
-                        self.positions.push(vec3_from_source(&positions, index));
+                        let slot = (face * 3 + corner) * num_offsets + per_vertex_offset;
+                        let index = indices[slot] as usize;
+                        if index >= position_count {
+                            return Err(DaeImportError::InvalidMeshIndices(format!(
+                                "position index {index} out of bounds for {position_count} positions"
+                            )));
+                        }
+                        self.positions.push(AiVector3D::from(
+                            positions.get(index).map(|value| value as AiReal),
+                        ));
                         self.face_pos_indices.push(index);
                     }
                     self.face_size.push(3);
@@ -396,12 +423,30 @@ impl Mesh {
                 }
             }
             PrimitiveType::Polylist => {
+                let vertex_total: usize = vcount.iter().take(num_primitives).sum();
+                let required = vertex_total.checked_mul(num_offsets).ok_or_else(|| {
+                    DaeImportError::InvalidMeshIndices("polylist index count overflow".to_string())
+                })?;
+                if indices.len() < required {
+                    return Err(DaeImportError::InvalidMeshIndices(format!(
+                        "polylist needs at least {required} indices, found {}",
+                        indices.len()
+                    )));
+                }
                 let mut prim_cursor = 0usize;
                 for &vertex_count in vcount.iter().take(num_primitives) {
                     for _ in 0..vertex_count {
-                        let index = indices[prim_cursor * num_offsets + per_vertex_offset] as usize;
+                        let slot = prim_cursor * num_offsets + per_vertex_offset;
+                        let index = indices[slot] as usize;
                         prim_cursor += 1;
-                        self.positions.push(vec3_from_source(&positions, index));
+                        if index >= position_count {
+                            return Err(DaeImportError::InvalidMeshIndices(format!(
+                                "position index {index} out of bounds for {position_count} positions"
+                            )));
+                        }
+                        self.positions.push(AiVector3D::from(
+                            positions.get(index).map(|value| value as AiReal),
+                        ));
                         self.face_pos_indices.push(index);
                     }
                     self.face_size.push(vertex_count);
@@ -636,10 +681,6 @@ fn find_source<'a>(sources: &'a [Source], url: &Url) -> Option<&'a Source> {
     sources
         .iter()
         .find(|source| source.id.as_deref() == Some(id))
-}
-
-fn vec3_from_source(positions: &SourceReader<'_, XYZ>, index: usize) -> AiVector3D {
-    AiVector3D::from(positions.get(index).map(|value| value as AiReal))
 }
 
 fn url_key(url: &Url) -> &str {
