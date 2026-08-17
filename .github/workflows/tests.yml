@@ -27,7 +27,7 @@ jobs:
       fbxscii: ${{ steps.filter.outputs.fbxscii }}
       fbx-dom: ${{ steps.filter.outputs.fbx-dom }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
         id: filter
         with:
@@ -99,7 +99,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.core == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -124,7 +124,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.scene == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -149,7 +149,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.post-process == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -178,7 +178,7 @@ jobs:
         use_default_features: [true, false]
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -217,9 +217,9 @@ jobs:
         features: ["default", "minimal"]
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - name: Checkout glTF Sample Assets
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           repository: KhronosGroup/glTF-Sample-Assets
           path: glTF-Sample-Assets
@@ -256,7 +256,7 @@ jobs:
         use_default_features: [true, false]
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -295,7 +295,7 @@ jobs:
         features: ["minimal", "default", "extras"]
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -324,7 +324,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.obj == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -353,7 +353,7 @@ jobs:
         features: ["minimal", "default", "extras"]
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -382,7 +382,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.dae == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -407,7 +407,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.fbxscii == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -432,7 +432,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.fbx-dom == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -457,7 +457,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.gltf-v1-lib == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -482,7 +482,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.gltf-v1-json == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -507,7 +507,7 @@ jobs:
     if: github.event_name == 'push' || needs.changes.outputs.gltf-v1-derive == 'true'
     steps:
       - name: Checkout code
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
       - uses: taiki-e/install-action@dbd64b376a77edb5c67164dc7b5383735171cf97 # cargo-llvm-cov
       - name: Cache Cargo Dependencies
@@ -547,7 +547,7 @@ jobs:
       - test-gltf-v1-derive
     if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
