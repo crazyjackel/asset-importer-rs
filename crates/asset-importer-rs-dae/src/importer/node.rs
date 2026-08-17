@@ -18,7 +18,7 @@ impl DaeImporter {
         document: &Document,
         visual_scene: &VisualScene,
         material_index_map: &HashMap<String, usize>,
-    ) -> Result<(AiNodeTree, Vec<AiMesh>), DaeImportError> {
+    ) -> Result<(AiNodeTree, Vec<AiMesh>, HashMap<String, usize>), DaeImportError> {
         let node_map = document
             .local_map::<Node>()
             .map_err(DaeImportError::FileFormatError)?;
@@ -29,7 +29,7 @@ impl DaeImporter {
         let mut scene_mesh_name_map = HashMap::new();
         let mut seen_node_names: HashMap<String, ()> = HashMap::new();
         let mut node_name_counter = 0u32;
-        // Depth-first: pop from the back so the queue stays O(depth) instead of O(breadth).
+        // Depth-first: pop from the back so the queue's memory usage stays small.
         let mut queue: VecDeque<(&Node, Option<usize>)> = VecDeque::new();
 
         match visual_scene.nodes.len().cmp(&1) {
@@ -74,11 +74,9 @@ impl DaeImporter {
             let (local_meshes, local_name_map) =
                 self.build_meshes_for_node(document, node, &mesh_library, material_index_map)?;
             let offset = scene_meshes.len();
-            ai_node.mesh_indexes = (0..local_meshes.len())
-                .map(|index| index + offset)
-                .collect();
+            ai_node.mesh_indexes = (offset..offset + local_meshes.len()).collect();
             for (name, index) in local_name_map {
-                scene_mesh_name_map.insert(name, index + offset);
+                scene_mesh_name_map.insert(name, offset + index);
             }
             scene_meshes.extend(local_meshes);
 
@@ -98,7 +96,7 @@ impl DaeImporter {
             }
         }
 
-        Ok((tree, scene_meshes))
+        Ok((tree, scene_meshes, scene_mesh_name_map))
     }
 }
 
