@@ -27,6 +27,25 @@ enum ShadeType {
     Phong,
 }
 
+#[derive(Clone, Debug, Default)]
+#[allow(dead_code)]
+struct EffectSampler {
+    name: String,
+    uv_channel: String,
+    uv_id: u32,
+}
+
+#[derive(Clone, Debug, Default)]
+#[allow(dead_code)]
+struct EffectTextures {
+    diffuse: EffectSampler,
+    ambient: EffectSampler,
+    specular: EffectSampler,
+    emissive: EffectSampler,
+    transparent: EffectSampler,
+    bump: EffectSampler,
+}
+
 /// A collada effect. Can contain about anything according to the Collada spec,
 /// but we limit our version to a reasonable subset.
 #[derive(Clone, Debug)]
@@ -71,6 +90,12 @@ impl Default for Effect {
             wireframe: false,
             faceted: false,
         }
+    }
+}
+
+impl From<&ProfileCommon> for EffectTextures {
+    fn from(_profile: &ProfileCommon) -> Self {
+        Self::default()
     }
 }
 
@@ -216,13 +241,7 @@ impl DaeImporter {
             for (index, material) in library.items.iter().enumerate() {
                 let mut ai_material = AiMaterial::new();
 
-                // Handle Name
-                let name: String = material
-                    .name
-                    .as_ref()
-                    .or(material.id.as_ref())
-                    .cloned()
-                    .unwrap_or(index.to_string());
+                let name = material_key(material, index);
                 ai_material.add_binary_property(AI_MATKEY_NAME, name.bytes().collect());
 
                 // Handle Instance Effect
@@ -331,12 +350,19 @@ impl DaeImporter {
                     }
                 }
 
-                // Add Material to Index Map
-                let index = materials.len();
-                material_index_map.insert(name, index);
+                material_index_map.insert(name, materials.len());
                 materials.push(ai_material);
             }
         }
         Ok((materials, material_index_map))
     }
+}
+
+pub(crate) fn material_key(material: &Material, index: usize) -> String {
+    material
+        .name
+        .as_ref()
+        .or(material.id.as_ref())
+        .cloned()
+        .unwrap_or_else(|| index.to_string())
 }

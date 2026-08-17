@@ -84,12 +84,11 @@ impl AiImporter for DaeImporter {
             .or_else(|| visual_scene.id.clone())
             .unwrap_or_default();
 
-        let (materials, _material_index_map) = self.import_materials(&document)?;
-        let nodes = self.import_nodes(&document, visual_scene)?;
+        let (materials, material_index_map) = self.import_materials(&document)?;
+        let (nodes, meshes) = self.import_nodes(&document, visual_scene, &material_index_map)?;
         // TODO: import remaining Collada libraries into AiScene
         let animations = Vec::new();
         let cameras = Vec::new();
-        let meshes = Vec::new();
         let lights = Vec::new();
         let textures = Vec::new();
         let metadata = Default::default();

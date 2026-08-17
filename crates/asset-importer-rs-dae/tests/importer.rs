@@ -87,6 +87,19 @@ fn test_dae_import_cube_nodes() {
 }
 
 #[test]
+fn test_dae_import_cube_meshes() {
+    let scene = load_cube_scene();
+    assert_eq!(scene.meshes.len(), 1);
+    let mesh = &scene.meshes[0];
+    assert_eq!(mesh.name, "F1");
+    assert_eq!(mesh.vertices.len(), 36);
+    assert_eq!(mesh.faces.len(), 12);
+    assert_eq!(mesh.material_index, 0);
+    let root = scene.nodes.root.expect("scene should have a root node");
+    assert_eq!(scene.nodes.arena[root].mesh_indexes, vec![0]);
+}
+
+#[test]
 fn test_dae_import_empty_visual_scene_missing_root() {
     let importer = DaeImporter::new();
     let xml = br##"<?xml version="1.0"?>
