@@ -100,6 +100,12 @@ fn test_dae_import_cube_meshes() {
 }
 
 #[test]
+fn test_dae_import_cube_cameras() {
+    let scene = load_cube_scene();
+    assert!(scene.cameras.is_empty());
+}
+
+#[test]
 fn test_dae_import_empty_visual_scene_missing_root() {
     let importer = DaeImporter::new();
     let xml = br##"<?xml version="1.0"?>

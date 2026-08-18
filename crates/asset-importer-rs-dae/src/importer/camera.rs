@@ -1,5 +1,5 @@
-use asset_importer_rs_scene::AiNode;
-use dae_parser::{Document, Node};
+use asset_importer_rs_scene::{AiCamera, AiVector3D};
+use dae_parser::{Camera, LocalMap, Node, ProjectionType};
 
 use crate::DaeImportError;
 
@@ -7,10 +7,205 @@ use super::DaeImporter;
 
 impl DaeImporter {
     pub(crate) fn build_cameras_for_node(
-        _document: &Document,
-        _node: &Node,
-        _ai_node: &mut AiNode,
+        camera_map: &LocalMap<'_, Camera>,
+        node: &Node,
+        node_name: &str,
+        cameras: &mut Vec<AiCamera>,
     ) -> Result<(), DaeImportError> {
+        for instance in &node.instance_camera {
+            let Some(src_camera) = camera_map.get(&instance.url) else {
+                continue;
+            };
+            let mut camera = ai_camera_from(src_camera);
+            camera.name = camera_name(src_camera, node_name);
+            cameras.push(camera);
+        }
         Ok(())
+    }
+}
+
+fn ai_camera_from(src_camera: &Camera) -> AiCamera {
+    let mut out = AiCamera {
+        look_vec: AiVector3D::new(0.0, 0.0, -1.0),
+        ..AiCamera::default()
+    };
+
+    match &src_camera.optics.ty {
+        ProjectionType::Orthographic(ortho) => {
+            // Assimp does not support orthographic cameras yet; keep clip planes.
+            out.near_plane = ortho.znear;
+            out.far_plane = ortho.zfar;
+            if let Some(aspect) = ortho.aspect_ratio {
+                out.aspect_ratio = aspect;
+            }
+        }
+        ProjectionType::Perspective(perspective) => {
+            out.near_plane = perspective.znear;
+            out.far_plane = perspective.zfar;
+            if let Some(aspect) = perspective.aspect_ratio {
+                out.aspect_ratio = aspect;
+            }
+            if let Some(hor_fov) = perspective.xfov {
+                out.horizontal_fov = hor_fov.to_radians();
+                if perspective.aspect_ratio.is_none()
+                    && let Some(ver_fov) = perspective.yfov
+                {
+                    out.aspect_ratio = hor_fov.to_radians().tan() / ver_fov.to_radians().tan();
+                }
+            } else if let (Some(aspect), Some(ver_fov)) =
+                (perspective.aspect_ratio, perspective.yfov)
+            {
+                out.horizontal_fov = 2.0 * (aspect * (ver_fov.to_radians() * 0.5).tan()).atan();
+            }
+        }
+    }
+
+    out
+}
+
+fn camera_name(src_camera: &Camera, node_name: &str) -> String {
+    if let Some(name) = src_camera.name.as_ref().filter(|name| !name.is_empty()) {
+        return name.clone();
+    }
+    if let Some(id) = src_camera.id.as_ref().filter(|id| !id.is_empty()) {
+        return id.clone();
+    }
+    node_name.to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use dae_parser::Document;
+    use std::str::FromStr;
+
+    fn camera_document_with(camera_open: &str, optics: &str) -> Document {
+        let xml = format!(
+            r##"<?xml version="1.0"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset>
+    <created>1970-01-01T00:00:00Z</created>
+    <modified>1970-01-01T00:00:00Z</modified>
+  </asset>
+  <library_cameras>
+    {camera_open}
+      <optics>
+        <technique_common>
+          {optics}
+        </technique_common>
+      </optics>
+    </camera>
+  </library_cameras>
+  <library_visual_scenes>
+    <visual_scene id="Scene">
+      <node id="CamNode">
+        <instance_camera url="#Cam"/>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#Scene"/>
+  </scene>
+</COLLADA>"##
+        );
+        Document::from_str(&xml).expect("camera document should parse")
+    }
+
+    fn camera_document(optics: &str) -> Document {
+        camera_document_with(r#"<camera id="Cam">"#, optics)
+    }
+
+    fn import_cameras(document: &Document) -> Vec<AiCamera> {
+        let camera_map = document.local_map::<Camera>().expect("camera map");
+        let node = document
+            .get_visual_scene()
+            .expect("visual scene")
+            .nodes
+            .first()
+            .expect("root node");
+        let mut cameras = Vec::new();
+        DaeImporter::build_cameras_for_node(&camera_map, node, "CamNode", &mut cameras)
+            .expect("cameras");
+        cameras
+    }
+
+    #[test]
+    fn perspective_xfov_is_converted_to_radians() {
+        let document = camera_document(
+            "<perspective><xfov>90</xfov><aspect_ratio>1.777</aspect_ratio><znear>0.1</znear><zfar>1000</zfar></perspective>",
+        );
+        let cameras = import_cameras(&document);
+        assert_eq!(cameras.len(), 1);
+        let camera = &cameras[0];
+        assert_eq!(camera.name, "Cam");
+        assert_eq!(camera.look_vec, AiVector3D::new(0.0, 0.0, -1.0));
+        assert!((camera.horizontal_fov - 90f32.to_radians()).abs() < 1e-5);
+        assert!((camera.aspect_ratio - 1.777).abs() < 1e-5);
+        assert_eq!(camera.near_plane, 0.1);
+        assert_eq!(camera.far_plane, 1000.0);
+    }
+
+    #[test]
+    fn perspective_yfov_and_aspect_compute_horizontal_fov() {
+        let document = camera_document(
+            "<perspective><yfov>60</yfov><aspect_ratio>2</aspect_ratio><znear>1</znear><zfar>10</zfar></perspective>",
+        );
+        let cameras = import_cameras(&document);
+        let expected = 2.0 * (2.0 * (60f32.to_radians() * 0.5).tan()).atan();
+        assert!((cameras[0].horizontal_fov - expected).abs() < 1e-5);
+        assert_eq!(cameras[0].aspect_ratio, 2.0);
+    }
+
+    #[test]
+    fn perspective_xfov_and_yfov_compute_aspect() {
+        let document = camera_document(
+            "<perspective><xfov>90</xfov><yfov>45</yfov><znear>1</znear><zfar>10</zfar></perspective>",
+        );
+        let cameras = import_cameras(&document);
+        let expected = 90f32.to_radians().tan() / 45f32.to_radians().tan();
+        assert!((cameras[0].aspect_ratio - expected).abs() < 1e-5);
+    }
+
+    const OPTICS: &str =
+        "<perspective><xfov>90</xfov><znear>0.1</znear><zfar>1000</zfar></perspective>";
+
+    #[test]
+    fn camera_name_prefers_name_over_id() {
+        let document = camera_document_with(r#"<camera id="Cam" name="NamedCam">"#, OPTICS);
+        assert_eq!(import_cameras(&document)[0].name, "NamedCam");
+    }
+
+    #[test]
+    fn camera_name_falls_back_to_node_name() {
+        let src = Camera::new(ProjectionType::Perspective(dae_parser::Perspective::new(
+            Some(90.0),
+            None,
+            0.1,
+            1000.0,
+        )));
+        assert_eq!(camera_name(&src, "CamNode"), "CamNode");
+    }
+
+    #[test]
+    fn missing_camera_instance_is_skipped() {
+        let xml = r##"<?xml version="1.0"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset>
+    <created>1970-01-01T00:00:00Z</created>
+    <modified>1970-01-01T00:00:00Z</modified>
+  </asset>
+  <library_visual_scenes>
+    <visual_scene id="Scene">
+      <node id="CamNode">
+        <instance_camera url="#Missing"/>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#Scene"/>
+  </scene>
+</COLLADA>"##;
+        let document = Document::from_str(xml).expect("document should parse");
+        assert!(import_cameras(&document).is_empty());
     }
 }

@@ -491,7 +491,6 @@ impl TryFrom<&Geometry> for Mesh {
 
         if let Some(vertices) = &document_mesh.vertices {
             mesh.vertex_id = vertices.id.clone();
-            // @TODO: index and offset are not provided by dae_parser for unshared <input> yet.
             mesh.per_vertex_data = vertices
                 .inputs
                 .iter()

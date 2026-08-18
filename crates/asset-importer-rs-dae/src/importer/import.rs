@@ -9,6 +9,7 @@ use dae_parser::Document;
 use enumflags2::BitFlags;
 
 use super::DaeImportError;
+use super::node::ImportNodes;
 
 #[derive(Debug, Default)]
 pub struct DaeImporter {
@@ -85,11 +86,14 @@ impl AiImporter for DaeImporter {
             .unwrap_or_default();
 
         let (materials, material_index_map) = self.import_materials(&document)?;
-        let (nodes, meshes, scene_mesh_name_map) =
-            self.import_nodes(&document, visual_scene, &material_index_map)?;
+        let ImportNodes {
+            nodes,
+            meshes,
+            cameras,
+            ..
+        } = self.import_nodes(&document, visual_scene, &material_index_map)?;
         // TODO: import remaining Collada libraries into AiScene
         let animations = Vec::new();
-        let cameras = Vec::new();
         let lights = Vec::new();
         let textures = Vec::new();
         let metadata = Default::default();
