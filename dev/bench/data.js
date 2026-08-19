@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787098075067,
+  "lastUpdate": 1787098294973,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -1619,6 +1619,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 52754820,
             "range": "± 976951",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1462db90881bb844e31e1e7259a678cf58991b07",
+          "message": "Merge pull request #52 from crazyjackel/dependabot/github_actions/release-plz/action-0.5.131\n\nBump release-plz/action from 0.5.128 to 0.5.131",
+          "timestamp": "2026-08-18T20:08:58-04:00",
+          "tree_id": "4e302ecb4e9e03bdc26e0d99dda53d287864e0ae",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/1462db90881bb844e31e1e7259a678cf58991b07"
+        },
+        "date": 1787098293875,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 94944498,
+            "range": "± 1205258",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 51536754,
+            "range": "± 555359",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 189891663,
+            "range": "± 4708049",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 47822367,
+            "range": "± 1527560",
             "unit": "ns/iter"
           }
         ]
