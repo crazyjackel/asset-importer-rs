@@ -33,11 +33,21 @@ fn ai_camera_from(src_camera: &Camera) -> AiCamera {
 
     match &src_camera.optics.ty {
         ProjectionType::Orthographic(ortho) => {
-            // Assimp does not support orthographic cameras yet; keep clip planes.
             out.near_plane = ortho.znear;
             out.far_plane = ortho.zfar;
+            out.horizontal_fov = 0.0;
             if let Some(aspect) = ortho.aspect_ratio {
                 out.aspect_ratio = aspect;
+            }
+            if let (Some(xmag), Some(ymag)) = (ortho.xmag, ortho.ymag) {
+                if ymag != 0.0 {
+                    out.aspect_ratio = xmag / ymag;
+                }
+            }
+            if let Some(xmag) = ortho.xmag {
+                out.orthographic_width = xmag;
+            } else if let (Some(ymag), Some(aspect)) = (ortho.ymag, ortho.aspect_ratio) {
+                out.orthographic_width = ymag * aspect;
             }
         }
         ProjectionType::Perspective(perspective) => {
@@ -156,6 +166,30 @@ mod tests {
         let cameras = import_cameras(&document);
         let expected = (90f32.to_radians() * 0.5).tan() / (45f32.to_radians() * 0.5).tan();
         assert!((cameras[0].aspect_ratio - expected).abs() < 1e-5);
+    }
+
+    #[test]
+    fn orthographic_xmag_and_ymag_set_width_and_aspect() {
+        let document = camera_document(
+            "<orthographic><xmag>2</xmag><ymag>1</ymag><znear>0.1</znear><zfar>100</zfar></orthographic>",
+        );
+        let camera = &import_cameras(&document)[0];
+        assert_eq!(camera.horizontal_fov, 0.0);
+        assert_eq!(camera.orthographic_width, 2.0);
+        assert_eq!(camera.aspect_ratio, 2.0);
+        assert_eq!(camera.near_plane, 0.1);
+        assert_eq!(camera.far_plane, 100.0);
+    }
+
+    #[test]
+    fn orthographic_ymag_and_aspect_derive_width() {
+        let document = camera_document(
+            "<orthographic><ymag>3</ymag><aspect_ratio>1.5</aspect_ratio><znear>1</znear><zfar>10</zfar></orthographic>",
+        );
+        let camera = &import_cameras(&document)[0];
+        assert_eq!(camera.horizontal_fov, 0.0);
+        assert_eq!(camera.orthographic_width, 4.5);
+        assert_eq!(camera.aspect_ratio, 1.5);
     }
 
     #[test]

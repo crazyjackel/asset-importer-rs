@@ -428,6 +428,12 @@ impl Mesh {
                 }
             }
             PrimitiveType::Polylist => {
+                if vcount.len() < num_primitives {
+                    return Err(DaeImportError::InvalidMeshIndices(format!(
+                        "polylist needs at least {num_primitives} vcount entries, found {}",
+                        vcount.len()
+                    )));
+                }
                 let vertex_total: usize = vcount.iter().take(num_primitives).sum();
                 let required = vertex_total.checked_mul(num_offsets).ok_or_else(|| {
                     DaeImportError::InvalidMeshIndices("polylist index count overflow".to_string())
@@ -723,6 +729,35 @@ mod tests {
         assert_eq!(mesh.per_vertex_data[0].accessor, "cube-vertex-positions");
         assert_eq!(mesh.per_vertex_data[0].offset, 0);
         assert_eq!(mesh.per_vertex_data[0].index, 0);
+    }
+
+    #[test]
+    fn read_primitives_rejects_short_polylist_vcount() {
+        let document = cube_document();
+        let geometry = cube_geometry(&document);
+        let document_mesh = geometry.element.as_mesh().expect("cube mesh");
+        let mut mesh = Mesh {
+            vertex_id: "cube-vertices".to_string(),
+            ..Default::default()
+        };
+        let channels = [InputChannel {
+            type_: InputType::Vertex,
+            index: 0,
+            offset: 0,
+            accessor: "cube-vertices".to_string(),
+        }];
+
+        let error = mesh
+            .read_primitives(
+                document_mesh,
+                &channels,
+                2,
+                &[3],
+                &[0, 1, 2],
+                PrimitiveType::Polylist,
+            )
+            .expect_err("short vcount should fail");
+        assert!(matches!(error, DaeImportError::InvalidMeshIndices(_)));
     }
 
     #[test]
