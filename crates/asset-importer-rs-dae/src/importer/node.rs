@@ -4,9 +4,9 @@ use std::{
 };
 
 use asset_importer_rs_scene::{
-    AI_MATH_PI, AiCamera, AiMatrix4x4, AiMesh, AiNode, AiNodeTree, AiReal, AiVector3D,
+    AI_MATH_PI, AiCamera, AiLight, AiMatrix4x4, AiMesh, AiNode, AiNodeTree, AiReal, AiVector3D,
 };
-use dae_parser::{Camera, Document, LocalMap, Node, Transform, Url, VisualScene};
+use dae_parser::{Camera, Document, Light, LocalMap, Node, Transform, Url, VisualScene};
 
 use crate::DaeImportError;
 
@@ -19,6 +19,7 @@ pub(crate) struct ImportNodes {
     #[allow(dead_code)]
     pub mesh_name_map: HashMap<String, usize>,
     pub cameras: Vec<AiCamera>,
+    pub lights: Vec<AiLight>,
 }
 
 impl DaeImporter {
@@ -34,11 +35,15 @@ impl DaeImporter {
         let camera_map = document
             .local_map::<Camera>()
             .map_err(DaeImportError::FileFormatError)?;
+        let light_map = document
+            .local_map::<Light>()
+            .map_err(DaeImportError::FileFormatError)?;
         let mesh_library = self.import_mesh_library(document)?;
 
         let mut tree = AiNodeTree::default();
         let mut scene_meshes = Vec::new();
         let mut scene_cameras = Vec::new();
+        let mut scene_lights = Vec::new();
         let mut scene_mesh_name_map = HashMap::new();
         let mut seen_node_names: HashMap<String, ()> = HashMap::new();
         let mut node_name_counter = 0u32;
@@ -94,7 +99,7 @@ impl DaeImporter {
             scene_meshes.extend(local_meshes);
 
             Self::build_cameras_for_node(&camera_map, node, &ai_node.name, &mut scene_cameras)?;
-            Self::build_lights_for_node(document, node, &mut ai_node)?;
+            Self::build_lights_for_node(&light_map, node, &ai_node.name, &mut scene_lights)?;
 
             let index = tree
                 .insert(ai_node, parent_index)
@@ -114,6 +119,7 @@ impl DaeImporter {
             meshes: scene_meshes,
             mesh_name_map: scene_mesh_name_map,
             cameras: scene_cameras,
+            lights: scene_lights,
         })
     }
 }
