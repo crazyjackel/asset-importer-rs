@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787098043156,
+  "lastUpdate": 1787098075067,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -1571,6 +1571,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 54384571,
             "range": "± 1018265",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3e346ca9028c6f0c9cd2fb4e66a6bbdde882bf89",
+          "message": "Merge pull request #83 from crazyjackel/dependabot/github_actions/actions/checkout-7.0.1\n\nBump actions/checkout from 4.3.1 to 7.0.1",
+          "timestamp": "2026-08-18T20:05:00-04:00",
+          "tree_id": "d63e720e50517b71a0168b520e9ea038fdc3a201",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/3e346ca9028c6f0c9cd2fb4e66a6bbdde882bf89"
+        },
+        "date": 1787098074128,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 91978815,
+            "range": "± 683170",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 52654968,
+            "range": "± 160044",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 194434705,
+            "range": "± 1689555",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 52754820,
+            "range": "± 976951",
             "unit": "ns/iter"
           }
         ]
