@@ -51,8 +51,8 @@ fn ai_camera_from(src_camera: &Camera) -> AiCamera {
                 if perspective.aspect_ratio.is_none()
                     && let Some(ver_fov) = perspective.yfov
                 {
-                    out.aspect_ratio = (hor_fov.to_radians() * 0.5).tan()
-                        / (ver_fov.to_radians() * 0.5).tan();
+                    out.aspect_ratio =
+                        (hor_fov.to_radians() * 0.5).tan() / (ver_fov.to_radians() * 0.5).tan();
                 }
             } else if let (Some(aspect), Some(ver_fov)) =
                 (perspective.aspect_ratio, perspective.yfov)
@@ -154,8 +154,7 @@ mod tests {
             "<perspective><xfov>90</xfov><yfov>45</yfov><znear>1</znear><zfar>10</zfar></perspective>",
         );
         let cameras = import_cameras(&document);
-        let expected =
-            (90f32.to_radians() * 0.5).tan() / (45f32.to_radians() * 0.5).tan();
+        let expected = (90f32.to_radians() * 0.5).tan() / (45f32.to_radians() * 0.5).tan();
         assert!((cameras[0].aspect_ratio - expected).abs() < 1e-5);
     }
 

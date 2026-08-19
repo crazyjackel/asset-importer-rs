@@ -401,9 +401,7 @@ impl Mesh {
         match prim_type {
             PrimitiveType::Triangles => {
                 let required = num_primitives.checked_mul(3 * num_offsets).ok_or_else(|| {
-                    DaeImportError::InvalidMeshIndices(
-                        "triangle index count overflow".to_string(),
-                    )
+                    DaeImportError::InvalidMeshIndices("triangle index count overflow".to_string())
                 })?;
                 if indices.len() < required {
                     return Err(DaeImportError::InvalidMeshIndices(format!(
