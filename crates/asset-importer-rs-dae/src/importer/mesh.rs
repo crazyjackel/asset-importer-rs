@@ -400,14 +400,11 @@ impl Mesh {
         let mut actual_primitives = 0usize;
         match prim_type {
             PrimitiveType::Triangles => {
-                let required = num_primitives
-                    .checked_mul(3 * num_offsets)
-                    .and_then(|corners| corners.checked_mul(num_offsets))
-                    .ok_or_else(|| {
-                        DaeImportError::InvalidMeshIndices(
-                            "triangle index count overflow".to_string(),
-                        )
-                    })?;
+                let required = num_primitives.checked_mul(3 * num_offsets).ok_or_else(|| {
+                    DaeImportError::InvalidMeshIndices(
+                        "triangle index count overflow".to_string(),
+                    )
+                })?;
                 if indices.len() < required {
                     return Err(DaeImportError::InvalidMeshIndices(format!(
                         "triangles need at least {required} indices, found {}",

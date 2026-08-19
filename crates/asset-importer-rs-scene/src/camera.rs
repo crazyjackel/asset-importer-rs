@@ -6,9 +6,22 @@ pub struct AiCamera {
     pub position: AiVector3D,
     pub up_vec: AiVector3D,
     pub look_vec: AiVector3D,
+    /// Full horizontal field of view, in radians.
+    ///
+    /// This is the angle from the left edge of the view to the right edge,
+    /// not the half-angle from the optical axis to one side. The half-angle
+    /// used in projection math is `horizontal_fov * 0.5`.
+    ///
+    /// The default is `π / 2` (90°). Orthographic cameras typically set this
+    /// to `0.0`.
     pub horizontal_fov: f32,
     pub near_plane: f32,
     pub far_plane: f32,
+    /// Screen aspect ratio as width / height.
+    ///
+    /// Typical values are `4.0 / 3.0` or `16.0 / 9.0`. `0.0` means the
+    /// aspect ratio is unknown or omitted by the source file; that is also
+    /// the default.
     pub aspect_ratio: f32,
     pub orthographic_width: f32,
 }

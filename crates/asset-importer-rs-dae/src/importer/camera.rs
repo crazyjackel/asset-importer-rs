@@ -17,7 +17,8 @@ impl DaeImporter {
                 continue;
             };
             let mut camera = ai_camera_from(src_camera);
-            camera.name = camera_name(src_camera, node_name);
+            // Camera's name corresponds to the node name in the scene graph
+            camera.name = node_name.to_string();
             cameras.push(camera);
         }
         Ok(())
@@ -50,7 +51,8 @@ fn ai_camera_from(src_camera: &Camera) -> AiCamera {
                 if perspective.aspect_ratio.is_none()
                     && let Some(ver_fov) = perspective.yfov
                 {
-                    out.aspect_ratio = hor_fov.to_radians().tan() / ver_fov.to_radians().tan();
+                    out.aspect_ratio = (hor_fov.to_radians() * 0.5).tan()
+                        / (ver_fov.to_radians() * 0.5).tan();
                 }
             } else if let (Some(aspect), Some(ver_fov)) =
                 (perspective.aspect_ratio, perspective.yfov)
@@ -61,16 +63,6 @@ fn ai_camera_from(src_camera: &Camera) -> AiCamera {
     }
 
     out
-}
-
-fn camera_name(src_camera: &Camera, node_name: &str) -> String {
-    if let Some(name) = src_camera.name.as_ref().filter(|name| !name.is_empty()) {
-        return name.clone();
-    }
-    if let Some(id) = src_camera.id.as_ref().filter(|id| !id.is_empty()) {
-        return id.clone();
-    }
-    node_name.to_string()
 }
 
 #[cfg(test)]
@@ -137,7 +129,7 @@ mod tests {
         let cameras = import_cameras(&document);
         assert_eq!(cameras.len(), 1);
         let camera = &cameras[0];
-        assert_eq!(camera.name, "Cam");
+        assert_eq!(camera.name, "CamNode");
         assert_eq!(camera.look_vec, AiVector3D::new(0.0, 0.0, -1.0));
         assert!((camera.horizontal_fov - 90f32.to_radians()).abs() < 1e-5);
         assert!((camera.aspect_ratio - 1.777).abs() < 1e-5);
@@ -162,28 +154,9 @@ mod tests {
             "<perspective><xfov>90</xfov><yfov>45</yfov><znear>1</znear><zfar>10</zfar></perspective>",
         );
         let cameras = import_cameras(&document);
-        let expected = 90f32.to_radians().tan() / 45f32.to_radians().tan();
+        let expected =
+            (90f32.to_radians() * 0.5).tan() / (45f32.to_radians() * 0.5).tan();
         assert!((cameras[0].aspect_ratio - expected).abs() < 1e-5);
-    }
-
-    const OPTICS: &str =
-        "<perspective><xfov>90</xfov><znear>0.1</znear><zfar>1000</zfar></perspective>";
-
-    #[test]
-    fn camera_name_prefers_name_over_id() {
-        let document = camera_document_with(r#"<camera id="Cam" name="NamedCam">"#, OPTICS);
-        assert_eq!(import_cameras(&document)[0].name, "NamedCam");
-    }
-
-    #[test]
-    fn camera_name_falls_back_to_node_name() {
-        let src = Camera::new(ProjectionType::Perspective(dae_parser::Perspective::new(
-            Some(90.0),
-            None,
-            0.1,
-            1000.0,
-        )));
-        assert_eq!(camera_name(&src, "CamNode"), "CamNode");
     }
 
     #[test]
