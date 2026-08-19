@@ -49,7 +49,7 @@ impl ops::MulAssign for AiMatrix4x4 {
             d3: rhs.a3 * self.d1 + rhs.b3 * self.d2 + rhs.c3 * self.d3 + rhs.d3 * self.d4,
             d4: rhs.a4 * self.d1 + rhs.b4 * self.d2 + rhs.c4 * self.d3 + rhs.d4 * self.d4,
         };
-        self.a1 = new_self.a1;
+        *self = new_self;
     }
 }
 
@@ -94,6 +94,42 @@ impl AiMatrix4x4 {
             d2: Default::default(),
             d3: Default::default(),
             d4: one,
+        }
+    }
+
+    pub fn translation(v: &AiVector3D) -> Self {
+        let mut out = Self::identity();
+        out.a4 = v.x;
+        out.b4 = v.y;
+        out.c4 = v.z;
+        out
+    }
+
+    pub fn rotation(angle: AiReal, axis: &AiVector3D) -> Self {
+        let axis = axis.norm();
+        let c = angle.cos();
+        let s = angle.sin();
+        let t = 1.0 - c;
+        let x = axis.x;
+        let y = axis.y;
+        let z = axis.z;
+        Self {
+            a1: t * x * x + c,
+            a2: t * x * y - s * z,
+            a3: t * x * z + s * y,
+            a4: Default::default(),
+            b1: t * x * y + s * z,
+            b2: t * y * y + c,
+            b3: t * y * z - s * x,
+            b4: Default::default(),
+            c1: t * x * z - s * y,
+            c2: t * y * z + s * x,
+            c3: t * z * z + c,
+            c4: Default::default(),
+            d1: Default::default(),
+            d2: Default::default(),
+            d3: Default::default(),
+            d4: <AiReal as Default>::default() + 1 as AiReal,
         }
     }
 }

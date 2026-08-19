@@ -414,6 +414,16 @@ impl AiMaterial {
         None
     }
 
+    pub fn add_binary_property(&mut self, key: &str, data: Vec<u8>) -> bool {
+        self.add_property(
+            key,
+            Some(AiTextureType::None),
+            AiPropertyTypeInfo::Binary,
+            0,
+            data,
+        )
+    }
+
     pub fn add_property(
         &mut self,
         key: &str,
@@ -422,8 +432,9 @@ impl AiMaterial {
         index: u32,
         data: Vec<u8>,
     ) -> bool {
-        if let Some(property) = self.get_property_type_info_mut(key, semantic_type, index) {
-            *property = property_type;
+        if let Some(property) = self.get_property_mut(key, semantic_type, index) {
+            property.property_type = property_type;
+            property.data = data;
             return true;
         } else if let Some(semantic) = semantic_type {
             self.properties.push(AiMaterialProperty {
