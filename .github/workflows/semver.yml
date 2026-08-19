@@ -16,7 +16,7 @@ jobs:
     # Tag releases: failure fails the workflow. Pushes to main: advisory only.
     continue-on-error: ${{ github.ref_type != 'tag' }}
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - name: Cache Cargo Dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
