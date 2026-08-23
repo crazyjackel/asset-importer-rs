@@ -10,8 +10,8 @@ use asset_importer_rs_scene::{
     },
 };
 use dae_parser::{
-    ColorParam, Document, Effect as DocumentEffect, Extra, FloatParam, Material, ProfileCommon,
-    Shader,
+    ColorParam, Document, Effect as DocumentEffect, Extra, FloatParam, LocalMap, Material,
+    ProfileCommon, Shader,
 };
 
 use crate::DaeImportError;
@@ -25,25 +25,6 @@ enum ShadeType {
     Blinn,
     #[default]
     Phong,
-}
-
-#[derive(Clone, Debug, Default)]
-#[allow(dead_code)]
-struct EffectSampler {
-    name: String,
-    uv_channel: String,
-    uv_id: u32,
-}
-
-#[derive(Clone, Debug, Default)]
-#[allow(dead_code)]
-struct EffectTextures {
-    diffuse: EffectSampler,
-    ambient: EffectSampler,
-    specular: EffectSampler,
-    emissive: EffectSampler,
-    transparent: EffectSampler,
-    bump: EffectSampler,
 }
 
 /// A collada effect. Can contain about anything according to the Collada spec,
@@ -90,12 +71,6 @@ impl Default for Effect {
             wireframe: false,
             faceted: false,
         }
-    }
-}
-
-impl From<&ProfileCommon> for EffectTextures {
-    fn from(_profile: &ProfileCommon) -> Self {
-        Self::default()
     }
 }
 
@@ -229,12 +204,10 @@ impl DaeImporter {
     pub(crate) fn import_materials(
         &self,
         document: &Document,
+        effect_map: &LocalMap<'_, DocumentEffect>,
     ) -> Result<(Vec<AiMaterial>, HashMap<String, usize>), DaeImportError> {
         let mut materials = Vec::new();
         let mut material_index_map: HashMap<String, usize> = HashMap::new();
-        let document_local_map = document
-            .local_map::<DocumentEffect>()
-            .map_err(DaeImportError::FileFormatError)?;
         let library_materials = document.library_iter::<Material>();
         for library in library_materials {
             materials.reserve(library.items.len());
@@ -245,11 +218,9 @@ impl DaeImporter {
                 ai_material.add_binary_property(AI_MATKEY_NAME, name.bytes().collect());
 
                 // Handle Instance Effect
-                let instance_effect = document_local_map
-                    .get(&material.instance_effect.url)
-                    .ok_or(DaeImportError::MissingLocalMapEntry(
-                        material.instance_effect.url.to_string(),
-                    ))?;
+                let instance_effect = effect_map.get(&material.instance_effect.url).ok_or(
+                    DaeImportError::MissingLocalMapEntry(material.instance_effect.url.to_string()),
+                )?;
 
                 if let Some(profile) = instance_effect.get_common_profile() {
                     let mut effect = Effect::from(profile);

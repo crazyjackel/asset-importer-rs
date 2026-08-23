@@ -5,6 +5,7 @@ mod light;
 mod material;
 mod mesh;
 mod node;
+mod texture;
 
 pub use error::DaeImportError;
 pub use import::DaeImporter;

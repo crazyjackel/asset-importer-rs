@@ -6,7 +6,7 @@ use std::{
 use asset_importer_rs_scene::{
     AI_MATH_PI, AiCamera, AiLight, AiMatrix4x4, AiMesh, AiNode, AiNodeTree, AiReal, AiVector3D,
 };
-use dae_parser::{Camera, Document, Light, LocalMap, Node, Transform, Url, VisualScene};
+use dae_parser::{Camera, Document, Light, LocalMap, Material, Node, Transform, Url, VisualScene};
 
 use crate::DaeImportError;
 
@@ -18,6 +18,8 @@ pub(crate) struct ImportNodes {
     /// Mesh name → scene mesh index. Kept for animation/controller lookup.
     #[allow(dead_code)]
     pub mesh_name_map: HashMap<String, usize>,
+    /// Material index → effect texcoord name → mesh UV set (`bind_vertex_input`).
+    pub material_uv_map: HashMap<usize, HashMap<String, u32>>,
     pub cameras: Vec<AiCamera>,
     pub lights: Vec<AiLight>,
 }
@@ -27,6 +29,7 @@ impl DaeImporter {
         &self,
         document: &Document,
         visual_scene: &VisualScene,
+        material_map: &LocalMap<'_, Material>,
         material_index_map: &HashMap<String, usize>,
     ) -> Result<ImportNodes, DaeImportError> {
         let node_map = document
@@ -45,6 +48,7 @@ impl DaeImporter {
         let mut scene_cameras = Vec::new();
         let mut scene_lights = Vec::new();
         let mut scene_mesh_name_map = HashMap::new();
+        let mut material_uv_map = HashMap::new();
         let mut seen_node_names: HashMap<String, ()> = HashMap::new();
         let mut node_name_counter = 0u32;
         // Depth-first: pop from the back so the queue's memory usage stays small.
@@ -89,8 +93,14 @@ impl DaeImporter {
                 ..AiNode::default()
             };
 
-            let (local_meshes, local_name_map) =
-                self.build_meshes_for_node(document, node, &mesh_library, material_index_map)?;
+            let (local_meshes, local_name_map) = self.build_meshes_for_node(
+                document,
+                node,
+                &mesh_library,
+                material_map,
+                material_index_map,
+                &mut material_uv_map,
+            )?;
             let offset = scene_meshes.len();
             ai_node.mesh_indexes = (offset..offset + local_meshes.len()).collect();
             for (name, index) in local_name_map {
@@ -118,6 +128,7 @@ impl DaeImporter {
             nodes: tree,
             meshes: scene_meshes,
             mesh_name_map: scene_mesh_name_map,
+            material_uv_map,
             cameras: scene_cameras,
             lights: scene_lights,
         })

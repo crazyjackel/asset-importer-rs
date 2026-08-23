@@ -7,6 +7,8 @@ pub enum DaeImportError {
     MissingLocalMapEntry(String),
     /// Primitive index buffer length or a position index is out of bounds.
     InvalidMeshIndices(String),
+    /// A Collada image has no data and no file reference.
+    InvalidTexture(String),
     MissingVisualScene,
     MissingRootNode,
 }
@@ -25,6 +27,9 @@ impl Display for DaeImportError {
             }
             DaeImportError::InvalidMeshIndices(detail) => {
                 write!(f, "invalid mesh primitive indices: {}", detail)
+            }
+            DaeImportError::InvalidTexture(detail) => {
+                write!(f, "invalid Collada texture: {}", detail)
             }
             DaeImportError::MissingVisualScene => {
                 write!(f, "no visual scene found in DAE file")

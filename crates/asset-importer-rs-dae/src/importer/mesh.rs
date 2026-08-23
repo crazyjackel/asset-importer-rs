@@ -70,7 +70,6 @@ struct InputChannel {
 
 /// Short vertex-index description for effect → mesh semantic mapping.
 #[derive(Clone, Debug, Default)]
-#[allow(dead_code)]
 struct InputSemanticMapEntry {
     set: u32,
     type_: InputType,
@@ -78,10 +77,19 @@ struct InputSemanticMapEntry {
 
 /// Table to map from effect to vertex input semantics.
 #[derive(Clone, Debug, Default)]
-#[allow(dead_code)]
 struct SemanticMappingTable {
     mat_name: String,
     map: HashMap<String, InputSemanticMapEntry>,
+}
+
+impl SemanticMappingTable {
+    fn texcoord_uv_ids(&self) -> HashMap<String, u32> {
+        self.map
+            .iter()
+            .filter(|(_, entry)| entry.type_ == InputType::Texcoord)
+            .map(|(name, entry)| (name.clone(), entry.set))
+            .collect()
+    }
 }
 
 impl From<&InstanceMaterial> for SemanticMappingTable {
@@ -537,13 +545,12 @@ impl DaeImporter {
         document: &Document,
         node: &Node,
         mesh_library: &HashMap<String, Mesh>,
+        material_map: &LocalMap<'_, Material>,
         material_index_map: &HashMap<String, usize>,
+        material_uv_map: &mut HashMap<usize, HashMap<String, u32>>,
     ) -> Result<(Vec<AiMesh>, HashMap<String, usize>), DaeImportError> {
         let controller_map = document
             .local_map::<Controller>()
-            .map_err(DaeImportError::FileFormatError)?;
-        let material_map = document
-            .local_map::<Material>()
             .map_err(DaeImportError::FileFormatError)?;
 
         let mut meshes = Vec::new();
@@ -573,9 +580,21 @@ impl DaeImporter {
                 }
 
                 let table = instance.material_for_symbol(&sub_mesh.material);
-                let mat_name = table.map(|table| table.mat_name.as_str()).unwrap_or("");
-                let material_index =
-                    resolve_material_index(document, mat_name, &material_map, material_index_map);
+                let material_index = resolve_material_index(
+                    document,
+                    table.map(|table| table.mat_name.as_str()).unwrap_or(""),
+                    &material_map,
+                    material_index_map,
+                );
+                if let Some(table) = table {
+                    let uv = table.texcoord_uv_ids();
+                    if !uv.is_empty() {
+                        material_uv_map
+                            .entry(material_index as usize)
+                            .or_default()
+                            .extend(uv);
+                    }
+                }
 
                 let num_vertices = src_mesh.face_size[face_start..face_start + sub_mesh.num_faces]
                     .iter()
@@ -834,8 +853,10 @@ mod tests {
         let library = importer
             .import_mesh_library(&document)
             .expect("mesh library");
-        let (materials, material_index_map) =
-            importer.import_materials(&document).expect("materials");
+        let effect_map = document.local_map().expect("effect map");
+        let (materials, material_index_map) = importer
+            .import_materials(&document, &effect_map)
+            .expect("materials");
         assert_eq!(materials.len(), 1);
 
         let node = document
@@ -844,8 +865,17 @@ mod tests {
             .nodes
             .first()
             .expect("root node");
+        let material_map = document.local_map().expect("material map");
+        let mut material_uv_map = HashMap::new();
         let (meshes, name_map) = importer
-            .build_meshes_for_node(&document, node, &library, &material_index_map)
+            .build_meshes_for_node(
+                &document,
+                node,
+                &library,
+                &material_map,
+                &material_index_map,
+                &mut material_uv_map,
+            )
             .expect("node meshes");
 
         assert_eq!(meshes.len(), 1);
