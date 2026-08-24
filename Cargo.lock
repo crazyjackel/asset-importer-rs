@@ -109,6 +109,7 @@ dependencies = [
  "bytemuck",
  "dae-parser",
  "enumflags2",
+ "image",
 ]
 
 [[package]]

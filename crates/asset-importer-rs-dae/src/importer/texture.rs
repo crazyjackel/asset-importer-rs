@@ -525,24 +525,28 @@ fn find_filename_for_effect_texture(
                 Some("webp") => AiTextureFormat::WEBP,
                 _ => AiTextureFormat::Unknown,
             };
+            let rgba = match format {
+                AiTextureFormat::Unknown => image::load_from_memory(data),
+                hint => image::load_from_memory_with_format(data, hint.into())
+                    .or_else(|_| image::load_from_memory(data)),
+            }
+            .map_err(|err| {
+                DaeImportError::InvalidTexture(format!(
+                    "image '{}' is not a valid embedded image: {err}",
+                    image.id.as_deref().unwrap_or(&current)
+                ))
+            })?
+            .to_rgba8();
             textures.push(AiTexture {
                 filename: image
                     .name
                     .clone()
                     .or_else(|| image.id.clone())
                     .unwrap_or(key),
-                width: data.len() as u32,
-                height: 0,
+                width: rgba.width(),
+                height: rgba.height(),
                 ach_format_hint: format,
-                texel: data
-                    .chunks(4)
-                    .map(|chunk| AiTexel {
-                        r: chunk.first().copied().unwrap_or(0),
-                        g: chunk.get(1).copied().unwrap_or(0),
-                        b: chunk.get(2).copied().unwrap_or(0),
-                        a: chunk.get(3).copied().unwrap_or(0),
-                    })
-                    .collect(),
+                texel: rgba.pixels().map(|pixel| AiTexel::from(pixel.0)).collect(),
             });
             Ok(format!("*{index}"))
         }
@@ -792,21 +796,24 @@ mod tests {
 
     #[test]
     fn embedded_data_image_uses_star_index() {
+        // 1x1 RGBA PNG (black, opaque)
+        const PNG: &str = "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a49444154789c63000100000500010d0a2db40000000049454e44ae426082";
         let (materials, textures) = import_phong(
-            &library_image(r#" name="embedded" format="PNG""#, "<data>89504e47</data>"),
+            &library_image(r#" name="embedded" format="PNG""#, &format!("<data>{PNG}</data>")),
             DIFFUSE_TEX,
             "",
         );
         assert_eq!(tex_file(&materials[0], AiTextureType::Diffuse), "*0");
         assert_eq!(textures.len(), 1);
         assert_eq!(textures[0].filename, "embedded");
-        assert_eq!(textures[0].width, 4);
-        assert_eq!(textures[0].height, 0);
+        assert_eq!(textures[0].width, 1);
+        assert_eq!(textures[0].height, 1);
         assert_eq!(textures[0].ach_format_hint, AiTextureFormat::PNG);
-        assert_eq!(textures[0].texel[0].r, 0x89);
-        assert_eq!(textures[0].texel[0].g, 0x50);
-        assert_eq!(textures[0].texel[0].b, 0x4e);
-        assert_eq!(textures[0].texel[0].a, 0x47);
+        assert_eq!(textures[0].texel.len(), 1);
+        let exported = textures[0]
+            .export(&[AiTextureFormat::PNG])
+            .expect("export decoded texels");
+        assert!(!exported.data.is_empty());
     }
 
     #[test]
