@@ -110,6 +110,7 @@ dependencies = [
  "dae-parser",
  "enumflags2",
  "image",
+ "urlencoding",
 ]
 
 [[package]]

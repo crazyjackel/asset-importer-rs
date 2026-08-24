@@ -15,6 +15,7 @@ dae-parser = {workspace = true}
 enumflags2 = {workspace = true}
 bytemuck = {workspace = true}
 image = {workspace = true}
+urlencoding = {workspace = true}
 
 [features]
 default = []

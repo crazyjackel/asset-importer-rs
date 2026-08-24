@@ -492,7 +492,9 @@ fn find_filename_for_effect_texture(
                 .strip_prefix("file://")
                 .or_else(|| trimmed.strip_prefix("FILE://"))
                 .unwrap_or(trimmed);
-            let decoded = percent_decode(without_file);
+            let decoded = urlencoding::decode(without_file)
+                .map(|s| s.into_owned())
+                .unwrap_or_else(|_| without_file.to_string());
             if decoded.is_empty() {
                 return Err(DaeImportError::InvalidTexture(format!(
                     "image '{}' has no data or file reference",
@@ -551,36 +553,6 @@ fn find_filename_for_effect_texture(
             Ok(format!("*{index}"))
         }
     }
-}
-
-fn percent_decode(input: &str) -> String {
-    let bytes = input.as_bytes();
-    let mut out = Vec::with_capacity(bytes.len());
-    let mut index = 0;
-    while index < bytes.len() {
-        if bytes[index] == b'%' && index + 2 < bytes.len() {
-            let high = match bytes[index + 1] {
-                b'0'..=b'9' => Some(bytes[index + 1] - b'0'),
-                b'a'..=b'f' => Some(bytes[index + 1] - b'a' + 10),
-                b'A'..=b'F' => Some(bytes[index + 1] - b'A' + 10),
-                _ => None,
-            };
-            let low = match bytes[index + 2] {
-                b'0'..=b'9' => Some(bytes[index + 2] - b'0'),
-                b'a'..=b'f' => Some(bytes[index + 2] - b'a' + 10),
-                b'A'..=b'F' => Some(bytes[index + 2] - b'A' + 10),
-                _ => None,
-            };
-            if let (Some(high), Some(low)) = (high, low) {
-                out.push((high << 4) | low);
-                index += 3;
-                continue;
-            }
-        }
-        out.push(bytes[index]);
-        index += 1;
-    }
-    String::from_utf8_lossy(&out).into_owned()
 }
 
 #[cfg(test)]
