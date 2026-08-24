@@ -580,12 +580,25 @@ impl DaeImporter {
                 }
 
                 let table = instance.material_for_symbol(&sub_mesh.material);
-                let resolved_index = resolve_material_index(
-                    document,
-                    table.map(|table| table.mat_name.as_str()).unwrap_or(""),
-                    &material_map,
-                    material_index_map,
-                );
+                let mat_name = table.map(|table| table.mat_name.as_str()).unwrap_or("");
+                let mut resolved_index = None;
+                if !mat_name.is_empty() {
+                    if let Some(material) = material_map.get_str(mat_name) {
+                        if let Some(item_index) =
+                            document.library_iter::<Material>().find_map(|library| {
+                                library
+                                    .items
+                                    .iter()
+                                    .position(|item| std::ptr::eq(item, material))
+                            })
+                        {
+                            resolved_index = material_index_map
+                                .get(&material_key(material, item_index))
+                                .copied()
+                                .map(|index| index as u32);
+                        }
+                    }
+                }
                 if let (Some(table), Some(material_index)) = (table, resolved_index) {
                     let uv = table.texcoord_uv_ids();
                     if !uv.is_empty() {
@@ -658,28 +671,6 @@ fn resolve_mesh<'a>(
     let controller = controller_map.get_str(mesh_or_controller)?;
     let mesh_id = url_key(controller.element.source());
     mesh_library.get(mesh_id)
-}
-
-fn resolve_material_index(
-    document: &Document,
-    mat_name: &str,
-    material_map: &LocalMap<'_, Material>,
-    material_index_map: &HashMap<String, usize>,
-) -> Option<u32> {
-    if mat_name.is_empty() {
-        return None;
-    }
-    let material = material_map.get_str(mat_name)?;
-    let item_index = document.library_iter::<Material>().find_map(|library| {
-        library
-            .items
-            .iter()
-            .position(|item| std::ptr::eq(item, material))
-    })?;
-    material_index_map
-        .get(&material_key(material, item_index))
-        .copied()
-        .map(|index| index as u32)
 }
 
 fn position_reader<'a>(
