@@ -580,13 +580,13 @@ impl DaeImporter {
                 }
 
                 let table = instance.material_for_symbol(&sub_mesh.material);
-                let material_index = resolve_material_index(
+                let resolved_index = resolve_material_index(
                     document,
                     table.map(|table| table.mat_name.as_str()).unwrap_or(""),
                     &material_map,
                     material_index_map,
                 );
-                if let Some(table) = table {
+                if let (Some(table), Some(material_index)) = (table, resolved_index) {
                     let uv = table.texcoord_uv_ids();
                     if !uv.is_empty() {
                         material_uv_map
@@ -595,6 +595,7 @@ impl DaeImporter {
                             .extend(uv);
                     }
                 }
+                let material_index = resolved_index.unwrap_or(0);
 
                 let num_vertices = src_mesh.face_size[face_start..face_start + sub_mesh.num_faces]
                     .iter()
@@ -664,25 +665,21 @@ fn resolve_material_index(
     mat_name: &str,
     material_map: &LocalMap<'_, Material>,
     material_index_map: &HashMap<String, usize>,
-) -> u32 {
+) -> Option<u32> {
     if mat_name.is_empty() {
-        return 0;
+        return None;
     }
-    let Some(material) = material_map.get_str(mat_name) else {
-        return 0;
-    };
-    let Some(item_index) = document.library_iter::<Material>().find_map(|library| {
+    let material = material_map.get_str(mat_name)?;
+    let item_index = document.library_iter::<Material>().find_map(|library| {
         library
             .items
             .iter()
             .position(|item| std::ptr::eq(item, material))
-    }) else {
-        return 0;
-    };
+    })?;
     material_index_map
         .get(&material_key(material, item_index))
         .copied()
-        .unwrap_or(0) as u32
+        .map(|index| index as u32)
 }
 
 fn position_reader<'a>(
