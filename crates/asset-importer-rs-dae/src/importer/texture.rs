@@ -771,7 +771,10 @@ mod tests {
         // 1x1 RGBA PNG (black, opaque)
         const PNG: &str = "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000a49444154789c63000100000500010d0a2db40000000049454e44ae426082";
         let (materials, textures) = import_phong(
-            &library_image(r#" name="embedded" format="PNG""#, &format!("<data>{PNG}</data>")),
+            &library_image(
+                r#" name="embedded" format="PNG""#,
+                &format!("<data>{PNG}</data>"),
+            ),
             DIFFUSE_TEX,
             "",
         );
