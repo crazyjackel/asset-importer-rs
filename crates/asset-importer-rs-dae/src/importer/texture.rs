@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use asset_importer_rs_scene::{
     AiMaterial, AiPropertyTypeInfo, AiTexel, AiTexture, AiTextureFormat, AiTextureMapMode,
@@ -437,7 +437,11 @@ fn find_filename_for_effect_texture(
     embedded_ids: &mut HashMap<String, usize>,
 ) -> Result<String, DaeImportError> {
     let mut current = name.to_string();
-    while let Some(param) = profile.get_param(effect, &current) {
+    let mut visited = HashSet::new();
+    while visited.insert(current.clone()) {
+        let Some(param) = profile.get_param(effect, &current) else {
+            break;
+        };
         if let Some(sampler) = param.ty.as_sampler2d() {
             current = sampler.source.val.clone();
             continue;
@@ -733,6 +737,44 @@ mod tests {
             AiTextureMapMode::Wrap,
         );
         assert_eq!(uvwsrc(&materials[0], AiTextureType::Diffuse), 0);
+    }
+
+    #[test]
+    fn cyclic_param_resolution_does_not_loop() {
+        let document = collada_with(
+            r##"
+  <library_effects>
+    <effect id="fx">
+      <profile_COMMON>
+        <newparam sid="surface">
+          <surface type="2D">
+            <init_from>sampler</init_from>
+          </surface>
+        </newparam>
+        <newparam sid="sampler">
+          <sampler2D>
+            <source>surface</source>
+          </sampler2D>
+        </newparam>
+        <technique sid="common">
+          <phong>
+            <diffuse><texture texture="sampler" texcoord="UVSET0"/></diffuse>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+  </library_effects>
+  <library_materials>
+    <material id="mat" name="Mat">
+      <instance_effect url="#fx"/>
+    </material>
+  </library_materials>"##,
+        );
+        let (materials, _) = import_document(&document);
+        assert_eq!(
+            tex_file(&materials[0], AiTextureType::Diffuse),
+            "sampler.jpg"
+        );
     }
 
     #[test]
