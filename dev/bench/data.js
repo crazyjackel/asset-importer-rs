@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788712456111,
+  "lastUpdate": 1788712948671,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -1907,6 +1907,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 51930624,
             "range": "± 535579",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jackel1020@gmail.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "jackel1020@gmail.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "distinct": true,
+          "id": "16db39bf71c728860b0775ea0309bf1923dd136a",
+          "message": "feat: update release",
+          "timestamp": "2026-09-06T12:39:59-04:00",
+          "tree_id": "763d52116b9c96178eb25f5af08e2260512955c9",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/16db39bf71c728860b0775ea0309bf1923dd136a"
+        },
+        "date": 1788712948008,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 92823373,
+            "range": "± 1451349",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 50856880,
+            "range": "± 138042",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 195891110,
+            "range": "± 257099",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 50763279,
+            "range": "± 145111",
             "unit": "ns/iter"
           }
         ]
