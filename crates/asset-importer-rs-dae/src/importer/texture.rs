@@ -1,4 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    io::Cursor,
+};
 
 use asset_importer_rs_scene::{
     AiMaterial, AiPropertyTypeInfo, AiTexel, AiTexture, AiTextureFormat, AiTextureMapMode,
@@ -21,6 +24,13 @@ use super::{DaeImporter, material::material_key};
 const TEX_OP_MULTIPLY: u8 = 0;
 const TEX_OP_ADD: u8 = 1;
 const TEX_OP_SUBTRACT: u8 = 2;
+
+/// Cap embedded-image dimensions so a hostile header cannot request a huge decode.
+const MAX_EMBEDDED_IMAGE_DIMENSION: u32 = 8_192;
+/// RGBA8 of the max dimensions, plus a conversion buffer for `to_rgba8`.
+const MAX_EMBEDDED_IMAGE_ALLOC: u64 = (MAX_EMBEDDED_IMAGE_DIMENSION as u64)
+    .saturating_mul(MAX_EMBEDDED_IMAGE_DIMENSION as u64)
+    .saturating_mul(8);
 
 #[derive(Clone, Debug)]
 struct EffectSampler {
@@ -428,6 +438,42 @@ fn add_texture(
     );
 }
 
+fn embedded_image_limits() -> image::Limits {
+    let mut limits = image::Limits::default();
+    limits.max_image_width = Some(MAX_EMBEDDED_IMAGE_DIMENSION);
+    limits.max_image_height = Some(MAX_EMBEDDED_IMAGE_DIMENSION);
+    limits.max_alloc = Some(MAX_EMBEDDED_IMAGE_ALLOC);
+    limits
+}
+
+fn decode_embedded_with_limits(
+    data: &[u8],
+    format: Option<image::ImageFormat>,
+    limits: &image::Limits,
+) -> Result<image::DynamicImage, image::ImageError> {
+    let mut reader = match format {
+        Some(format) => image::ImageReader::with_format(Cursor::new(data), format),
+        None => image::ImageReader::new(Cursor::new(data)).with_guessed_format()?,
+    };
+    reader.limits(limits.clone());
+    reader.decode()
+}
+
+fn decode_embedded_rgba(
+    data: &[u8],
+    format: AiTextureFormat,
+) -> Result<image::RgbaImage, image::ImageError> {
+    let limits = embedded_image_limits();
+    let image = match format {
+        AiTextureFormat::Unknown => decode_embedded_with_limits(data, None, &limits)?,
+        hint => decode_embedded_with_limits(data, Some(hint.into()), &limits)
+            .or_else(|_| decode_embedded_with_limits(data, None, &limits))?,
+    };
+    let mut conversion_limits = limits;
+    conversion_limits.reserve_buffer(image.width(), image.height(), image::ColorType::Rgba8)?;
+    Ok(image.into_rgba8())
+}
+
 fn find_filename_for_effect_texture(
     effect: &Effect,
     profile: &ProfileCommon,
@@ -527,18 +573,12 @@ fn find_filename_for_effect_texture(
                 Some("webp") => AiTextureFormat::WEBP,
                 _ => AiTextureFormat::Unknown,
             };
-            let rgba = match format {
-                AiTextureFormat::Unknown => image::load_from_memory(data),
-                hint => image::load_from_memory_with_format(data, hint.into())
-                    .or_else(|_| image::load_from_memory(data)),
-            }
-            .map_err(|err| {
+            let rgba = decode_embedded_rgba(data, format).map_err(|err| {
                 DaeImportError::InvalidTexture(format!(
                     "image '{}' is not a valid embedded image: {err}",
                     image.id.as_deref().unwrap_or(&current)
                 ))
-            })?
-            .to_rgba8();
+            })?;
             textures.push(AiTexture {
                 filename: image
                     .name
@@ -789,6 +829,43 @@ mod tests {
             .export(&[AiTextureFormat::PNG])
             .expect("export decoded texels");
         assert!(!exported.data.is_empty());
+    }
+
+    #[test]
+    fn embedded_png_decodes_when_format_hint_is_wrong_or_missing() {
+        const PNG: &[u8] = &[
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48,
+            0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00,
+            0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41, 0x54, 0x78,
+            0x9C, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
+            0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+        ];
+        let guessed = decode_embedded_rgba(PNG, AiTextureFormat::Unknown).expect("guessed png");
+        let fallback =
+            decode_embedded_rgba(PNG, AiTextureFormat::JPEG).expect("jpeg hint fallback");
+        assert_eq!((guessed.width(), guessed.height()), (1, 1));
+        assert_eq!((fallback.width(), fallback.height()), (1, 1));
+    }
+
+    #[test]
+    fn oversized_or_invalid_embedded_image_is_rejected() {
+        assert!(decode_embedded_rgba(b"not-an-image", AiTextureFormat::Unknown).is_err());
+
+        // IHDR claims 20000x20000 RGBA; CRC matches that header.
+        const HUGE_PNG: &[u8] = &[
+            0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48,
+            0x44, 0x52, 0x00, 0x00, 0x4E, 0x20, 0x00, 0x00, 0x4E, 0x20, 0x08, 0x06, 0x00, 0x00,
+            0x00, 0xE3, 0x70, 0x46, 0x39, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
+            0x42, 0x60, 0x82,
+        ];
+        let err = decode_embedded_rgba(HUGE_PNG, AiTextureFormat::PNG).unwrap_err();
+        assert!(
+            matches!(
+                err,
+                image::ImageError::Limits(_) | image::ImageError::Decoding(_)
+            ),
+            "unexpected error: {err}"
+        );
     }
 
     #[test]
