@@ -3,6 +3,7 @@ name: Release-plz
 on:
   push:
     branches: [ main ]
+  workflow_dispatch:
 
 # Publishes crates after merge; opens/updates a release PR with version bumps and changelogs.
 # Set repo secret CARGO_REGISTRY_TOKEN (crates.io). Enable workflow PR permissions in repo Settings → Actions.
