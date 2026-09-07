@@ -178,9 +178,11 @@ mod tests {
         })
         .unwrap();
 
-        let mut owned = OwnedDocument::default();
-        owned.textures = vec![texture];
-        owned.layered_textures = vec![layered];
+        let owned = OwnedDocument {
+            textures: vec![texture],
+            layered_textures: vec![layered],
+            ..Default::default()
+        };
 
         let textures = material.get_textures(&owned);
         assert_eq!(textures.len(), 1);

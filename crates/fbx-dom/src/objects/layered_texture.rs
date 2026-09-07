@@ -170,8 +170,10 @@ mod tests {
             pp_property_targets: HashMap::new(),
         })
         .unwrap();
-        let mut owned = OwnedDocument::default();
-        owned.textures = vec![texture];
+        let owned = OwnedDocument {
+            textures: vec![texture],
+            ..Default::default()
+        };
         let links = layered.get_textures(&owned);
         assert_eq!(links.len(), 1);
         assert_eq!(links[0].inner().object_index, 903);

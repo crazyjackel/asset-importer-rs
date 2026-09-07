@@ -604,6 +604,7 @@ pub struct ResolveFlatF32ChannelParams<'a> {
 ///   floats) to copy from the data array; index `-1` means “no value” (zeros for that corner’s group).
 ///
 /// All copies use `src..src+components` and `dst..dst+components` so multi-component channels stay aligned.
+#[allow(clippy::needless_range_loop)]
 fn resolve_flat_f32_channel(
     source: &HashMap<String, ElementAttribute>,
     params: ResolveFlatF32ChannelParams<'_>,

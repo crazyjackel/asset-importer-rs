@@ -895,12 +895,14 @@ mod tests {
         })
         .unwrap();
 
-        let mut doc = OwnedDocument::default();
-        doc.models = vec![model];
-        doc.materials = vec![material];
-        doc.unknown_geometries = vec![unknown_geo];
-        doc.lights = vec![light];
-        doc.textures = vec![texture];
+        let doc = OwnedDocument {
+            models: vec![model],
+            materials: vec![material],
+            unknown_geometries: vec![unknown_geo],
+            lights: vec![light],
+            textures: vec![texture],
+            ..Default::default()
+        };
 
         let model = &doc.models[0];
         let mats = model.connected_materials(&doc);

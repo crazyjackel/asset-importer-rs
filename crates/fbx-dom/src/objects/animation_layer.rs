@@ -159,8 +159,10 @@ mod tests {
             pp_property_targets: HashMap::new(),
         })
         .unwrap();
-        let mut owned = OwnedDocument::default();
-        owned.animation_curve_nodes = vec![node];
+        let owned = OwnedDocument {
+            animation_curve_nodes: vec![node],
+            ..Default::default()
+        };
         let links = layer.get_animation_curve_nodes(&owned);
         assert_eq!(links.len(), 1);
         assert_eq!(links[0].inner().object_index, 2001);

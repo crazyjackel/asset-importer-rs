@@ -274,8 +274,10 @@ mod tests {
         })
         .unwrap();
 
-        let mut owned = OwnedDocument::default();
-        owned.models = vec![model];
+        let owned = OwnedDocument {
+            models: vec![model],
+            ..Default::default()
+        };
         assert_eq!(
             cluster
                 .get_target_model(&owned)

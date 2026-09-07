@@ -293,9 +293,9 @@ impl TryFrom<OwnedObject> for ClassifiedFbxObject {
     fn try_from(o: OwnedObject) -> Result<Self, Self::Error> {
         match fbx_object_tag(&o) {
             FbxObjectTag::Model => Ok(ClassifiedFbxObject::Model(Model::try_from(o)?)),
-            FbxObjectTag::MeshGeometry => Ok(ClassifiedFbxObject::MeshGeometry(
+            FbxObjectTag::MeshGeometry => Ok(ClassifiedFbxObject::MeshGeometry(Box::new(
                 MeshGeometry::try_from(o)?,
-            )),
+            ))),
             FbxObjectTag::LineGeometry => Ok(ClassifiedFbxObject::LineGeometry(
                 LineGeometry::try_from(o)?,
             )),
@@ -317,7 +317,9 @@ impl TryFrom<OwnedObject> for ClassifiedFbxObject {
                 LayeredTexture::try_from(o)?,
             )),
             FbxObjectTag::Video => Ok(ClassifiedFbxObject::Video(Video::try_from(o)?)),
-            FbxObjectTag::Cluster => Ok(ClassifiedFbxObject::Cluster(Cluster::try_from(o)?)),
+            FbxObjectTag::Cluster => Ok(ClassifiedFbxObject::Cluster(Box::new(Cluster::try_from(
+                o,
+            )?))),
             FbxObjectTag::Skin => Ok(ClassifiedFbxObject::Skin(Skin::try_from(o)?)),
             FbxObjectTag::BlendShape => {
                 Ok(ClassifiedFbxObject::BlendShape(BlendShape::try_from(o)?))
@@ -346,10 +348,13 @@ impl TryFrom<OwnedObject> for ClassifiedFbxObject {
 /// Success result of classifying an [`OwnedObject`]: a concrete wrapper or an explicit unknown bucket.
 ///
 /// Use [`ClassifiedFbxObject::inner`] to recover the underlying [`OwnedObject`] and connections.
+///
+/// [`MeshGeometry`] and [`Cluster`] are boxed so the enum is not sized to those large layouts;
+/// matching a small variant then copies a pointer instead of hundreds of bytes of unused padding.
 #[derive(Debug, PartialEq)]
 pub enum ClassifiedFbxObject {
     Model(Model),
-    MeshGeometry(MeshGeometry),
+    MeshGeometry(Box<MeshGeometry>),
     LineGeometry(LineGeometry),
     ShapeGeometry(ShapeGeometry),
     Camera(Camera),
@@ -361,7 +366,7 @@ pub enum ClassifiedFbxObject {
     Texture(Texture),
     LayeredTexture(LayeredTexture),
     Video(Video),
-    Cluster(Cluster),
+    Cluster(Box<Cluster>),
     Skin(Skin),
     BlendShape(BlendShape),
     BlendShapeChannel(BlendShapeChannel),

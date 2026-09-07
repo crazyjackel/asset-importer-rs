@@ -100,7 +100,7 @@ impl From<Document> for OwnedDocument {
             };
             match classified {
                 ClassifiedFbxObject::Model(v) => models.push(v),
-                ClassifiedFbxObject::MeshGeometry(v) => mesh_geometries.push(v),
+                ClassifiedFbxObject::MeshGeometry(v) => mesh_geometries.push(*v),
                 ClassifiedFbxObject::LineGeometry(v) => line_geometries.push(v),
                 ClassifiedFbxObject::ShapeGeometry(v) => shape_geometries.push(v),
                 ClassifiedFbxObject::UnknownGeometry(v) => unknown_geometries.push(v),
@@ -114,7 +114,7 @@ impl From<Document> for OwnedDocument {
                 ClassifiedFbxObject::Texture(v) => textures.push(v),
                 ClassifiedFbxObject::LayeredTexture(v) => layered_textures.push(v),
                 ClassifiedFbxObject::Video(v) => videos.push(v),
-                ClassifiedFbxObject::Cluster(v) => clusters.push(v),
+                ClassifiedFbxObject::Cluster(v) => clusters.push(*v),
                 ClassifiedFbxObject::Skin(v) => skins.push(v),
                 ClassifiedFbxObject::BlendShape(v) => blend_shapes.push(v),
                 ClassifiedFbxObject::BlendShapeChannel(v) => blend_shape_channels.push(v),
