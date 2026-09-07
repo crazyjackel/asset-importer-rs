@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 
-use asset_importer_rs_scene::{AiReal, AiScene};
+use asset_importer_rs_scene::{AiReal, AiScene, ai_real_to_f32};
 use gltf_v1::json::{Node, Root, StringIndex};
 
 use crate::{
@@ -13,7 +13,7 @@ impl GltfExporter {
         &self,
         scene: &AiScene,
         root: &mut Root,
-        config_epsilon: f32,
+        config_epsilon: AiReal,
     ) -> Result<HashMap<usize, String>, GltfExportError> {
         if scene.nodes.arena.is_empty() {
             return Ok(HashMap::new());
@@ -43,8 +43,9 @@ impl GltfExporter {
                     .children
                     .push(StringIndex::new(node.name.clone().unwrap()));
             }
-            if !ai_node.transformation.is_identity(config_epsilon as AiReal) {
-                node.matrix = Some(ai_node.transformation.clone().into());
+            if !ai_node.transformation.is_identity(config_epsilon) {
+                let transform_array: [AiReal; 16] = ai_node.transformation.clone().into();
+                node.matrix = Some(transform_array.map(ai_real_to_f32));
             }
             for mesh_index in &ai_node.mesh_indexes {
                 let ai_mesh = &scene.meshes[*mesh_index];

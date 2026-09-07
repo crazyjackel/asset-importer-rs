@@ -111,7 +111,9 @@ impl TryFrom<OwnedObject> for MeshGeometry {
             ));
         };
         let vertices = vertices
-            .as_chunks::<3>().0.iter()
+            .as_chunks::<3>()
+            .0
+            .iter()
             .map(|c| [c[0], c[1], c[2]])
             .collect::<Vec<[f32; 3]>>();
 
@@ -181,7 +183,9 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
             normals = normals_flat
-                .as_chunks::<3>().0.iter()
+                .as_chunks::<3>()
+                .0
+                .iter()
                 .map(|c| [c[0], c[1], c[2]])
                 .collect();
         }
@@ -226,7 +230,9 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
             tangents = tangents_flat
-                .as_chunks::<3>().0.iter()
+                .as_chunks::<3>()
+                .0
+                .iter()
                 .map(|c| [c[0], c[1], c[2]])
                 .collect();
         }
@@ -271,7 +277,9 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
             binormals = binormals_flat
-                .as_chunks::<3>().0.iter()
+                .as_chunks::<3>()
+                .0
+                .iter()
                 .map(|c| [c[0], c[1], c[2]])
                 .collect();
         }
@@ -318,7 +326,12 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                 Ok(v) => v,
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
-            texture_coords[0] = uv_flat.as_chunks::<2>().0.iter().map(|c| [c[0], c[1]]).collect();
+            texture_coords[0] = uv_flat
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|c| [c[0], c[1]])
+                .collect();
         }
 
         let mut vertex_colors: [Vec<[f32; 4]>; MAX_COLOR_SETS] = Default::default();
@@ -356,7 +369,9 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
             vertex_colors[0] = colors_flat
-                .as_chunks::<4>().0.iter()
+                .as_chunks::<4>()
+                .0
+                .iter()
                 .map(|c| [c[0], c[1], c[2], c[3]])
                 .collect();
         }

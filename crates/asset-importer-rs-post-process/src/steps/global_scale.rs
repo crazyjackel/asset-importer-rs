@@ -13,7 +13,7 @@ impl AiPostProcess for GlobalScale {
         steps.contains(AiPostProcessSteps::GlobalScale)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement global scaling
         Ok(())
     }

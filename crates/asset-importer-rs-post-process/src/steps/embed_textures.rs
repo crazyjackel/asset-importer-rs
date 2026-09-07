@@ -13,7 +13,7 @@ impl AiPostProcess for EmbedTextures {
         steps.contains(AiPostProcessSteps::EmbedTextures)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement texture embedding
         Ok(())
     }

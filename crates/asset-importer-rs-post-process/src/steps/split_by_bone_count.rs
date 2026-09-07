@@ -13,7 +13,7 @@ impl AiPostProcess for SplitByBoneCount {
         steps.contains(AiPostProcessSteps::SplitByBoneCount)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement bone count splitting
         Ok(())
     }

@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    path::Path,
-};
+use std::{collections::HashMap, path::Path};
 
 use asset_importer_rs_core::DataLoader;
 use asset_importer_rs_scene::{

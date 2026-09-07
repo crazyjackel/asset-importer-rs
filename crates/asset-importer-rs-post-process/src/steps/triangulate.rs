@@ -514,7 +514,7 @@ mod tests {
                 [3.0, 1.0, 0.0].into(),
             ],
             faces: vec![vec![0, 1, 2], vec![3, 4, 5, 6, 7]],
-            primitive_types: (AiPrimitiveType::Triangle | AiPrimitiveType::Polygon).into(),
+            primitive_types: AiPrimitiveType::Triangle | AiPrimitiveType::Polygon,
             ..Default::default()
         };
         mesh.triangulate();
@@ -541,7 +541,7 @@ mod tests {
                 [0.0, 1.0, 0.0].into(),
             ],
             faces: vec![vec![0, 1, 2]],
-            primitive_types: (AiPrimitiveType::Triangle | AiPrimitiveType::Polygon).into(),
+            primitive_types: AiPrimitiveType::Triangle | AiPrimitiveType::Polygon,
             ..Default::default()
         };
         mesh.triangulate();

@@ -307,7 +307,7 @@ mod tests {
         ];
         let result = calculate_result_transform(&[Matrix::new(values).into()]);
         let as_array: [AiReal; 16] = result.into();
-        assert_eq!(as_array, values);
+        assert_eq!(as_array, values.map(|v| v as AiReal));
     }
 
     #[test]

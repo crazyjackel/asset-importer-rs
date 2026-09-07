@@ -156,11 +156,15 @@ impl ExtractData for gltf::Accessor<'_> {
                     index_data_slice.iter().map(|&byte| byte as usize).collect()
                 }
                 gltf::accessor::sparse::IndexType::U16 => index_data_slice
-                    .as_chunks::<2>().0.iter()
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
                     .map(|chunk| usize::from(u16::from_le_bytes([chunk[0], chunk[1]])))
                     .collect(),
                 gltf::accessor::sparse::IndexType::U32 => index_data_slice
-                    .as_chunks::<4>().0.iter()
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
                     .map(|chunk| {
                         u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]) as usize
                     })
