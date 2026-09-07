@@ -5,21 +5,29 @@ use asset_importer_rs_scene::{
 use earcut::Earcut;
 use enumflags2::BitFlags;
 
-/// Triangulate all meshes
+/// Split n-gons into triangles, matching Assimp's triangulate post-process.
+///
+/// Faces with three indices are NGON-encoded as standalone triangles, quads are
+/// fanned (from a concave vertex when present), and n ≥ 5 are projected to 2D
+/// and earcut. The mesh is flagged `Triangle | NgonEncodingFlag`.
 #[derive(Default)]
 pub struct Triangulate;
 
+/// Mesh-level triangulation used by [`Triangulate`].
 trait TriangulateMesh {
+    /// Replace polygon faces on this mesh with triangles.
     fn triangulate(&mut self);
 }
 
 impl AiPostProcess for Triangulate {
     type Error = String;
 
+    /// Active when [`AiPostProcessSteps::Triangulate`] is set.
     fn prepare(&mut self, steps: BitFlags<AiPostProcessSteps>) -> bool {
         steps.contains(AiPostProcessSteps::Triangulate)
     }
 
+    /// Triangulate every mesh in `scene`.
     fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
         for mesh in scene.meshes.iter_mut() {
             mesh.triangulate();
@@ -66,6 +74,7 @@ fn ngon_encode_quad(
 }
 
 impl TriangulateMesh for AiMesh {
+    /// Split this mesh's faces into triangles and apply NGON encoding.
     fn triangulate(&mut self) {
         // If the mesh does not contain polygons as a primitive type, return early.
         if !self.primitive_types.contains(AiPrimitiveType::Polygon) {
@@ -99,6 +108,10 @@ impl TriangulateMesh for AiMesh {
         // Replacement face list plus reusable earcut scratch (Assimp: out, temp_verts3d, temp_poly).
         let mut output_faces: Vec<AiFace> = Vec::with_capacity(output_faces_count);
         let mut last_ngon_first_index: Option<usize> = None;
+        let mut temp_verts3d: Vec<AiVector3D> = Vec::with_capacity(max_face_size);
+        let mut temp_verts2d: Vec<[AiReal; 2]> = Vec::with_capacity(max_face_size);
+        let mut earcut = Earcut::<AiReal>::new();
+        let mut earcut_indices: Vec<usize> = Vec::new();
 
         self.primitive_types |= AiPrimitiveType::Triangle | AiPrimitiveType::NgonEncodingFlag; // Set triangle and ngon encoding flags.
         self.primitive_types &= !AiPrimitiveType::Polygon; // Remove polygon flag.
@@ -160,10 +173,9 @@ impl TriangulateMesh for AiMesh {
                 _ => {
                     // Set up earcut scratch space
                     let vertices = &self.vertices;
-                    let mut temp_verts3d: Vec<AiVector3D> = Vec::with_capacity(max_face_size);
-                    let mut temp_verts2d: Vec<[AiReal; 2]> = Vec::with_capacity(max_face_size);
-                    let mut earcut = Earcut::<AiReal>::new();
-                    let mut earcut_indices: Vec<usize> = Vec::new();
+                    temp_verts3d.clear();
+                    temp_verts2d.clear();
+                    earcut_indices.clear();
 
                     // fill temp vertices 3d
                     for i in 0..face.len() {
@@ -218,7 +230,7 @@ impl TriangulateMesh for AiMesh {
                     }
 
                     // Earcut the projected 2d vertices to get the new triangle indices.
-                    earcut.earcut(temp_verts2d, &[], &mut earcut_indices);
+                    earcut.earcut(temp_verts2d.iter().copied(), &[], &mut earcut_indices);
 
                     // Earcut returns local ring indices; map them back to mesh vertex ids.
                     for chunk in earcut_indices.as_chunks::<3>().0 {
@@ -238,6 +250,7 @@ impl TriangulateMesh for AiMesh {
 mod tests {
     use super::*;
 
+    /// NGON-encode a triangle that does not share a fan vertex with the previous n-gon.
     #[test]
     fn triangle_keeps_indices_when_not_colliding() {
         let mut last = None;
@@ -247,6 +260,7 @@ mod tests {
         assert_eq!(last, Some(0));
     }
 
+    /// Right-rotate a triangle when its first index matches the last n-gon.
     #[test]
     fn triangle_rotates_when_first_index_matches_last_ngon() {
         let mut last = Some(0);
@@ -256,6 +270,7 @@ mod tests {
         assert_eq!(last, Some(2));
     }
 
+    /// Sequential triangles that share a fan vertex stay separate n-gons.
     #[test]
     fn sequential_triangles_with_same_fan_do_not_merge() {
         let mut last = None;
@@ -268,6 +283,7 @@ mod tests {
         assert_ne!(first[0], second[0]);
     }
 
+    /// A quad keeps a shared fan vertex when it does not collide with the last n-gon.
     #[test]
     fn quad_keeps_shared_fan_when_not_colliding() {
         let mut last = None;
@@ -279,6 +295,7 @@ mod tests {
         assert_eq!(last, Some(0));
     }
 
+    /// A colliding quad fans from the opposite vertex so it does not merge.
     #[test]
     fn quad_fans_from_opposite_vertex_when_colliding() {
         let mut last = Some(0);
@@ -291,6 +308,7 @@ mod tests {
         assert_eq!(last, Some(2));
     }
 
+    /// Build a single-polygon mesh for triangulation tests.
     fn mesh_with_face(verts: Vec<AiVector3D>, indices: Vec<usize>) -> AiMesh {
         AiMesh {
             vertices: verts,
@@ -300,10 +318,12 @@ mod tests {
         }
     }
 
+    /// Build a quad mesh (same as [`mesh_with_face`]).
     fn mesh_with_quad(verts: Vec<AiVector3D>, indices: Vec<usize>) -> AiMesh {
         mesh_with_face(verts, indices)
     }
 
+    /// Assert an n-gon became `n - 2` wound triangles using only the original indices.
     fn assert_valid_triangulation(mesh: &AiMesh, original: &[usize]) {
         let expected = original.len().saturating_sub(2);
         assert_eq!(mesh.faces.len(), expected);
@@ -339,6 +359,7 @@ mod tests {
         );
     }
 
+    /// A convex unit square fans from vertex 0.
     #[test]
     fn convex_quad_fans_from_first_vertex() {
         let mut mesh = mesh_with_quad(
@@ -360,6 +381,7 @@ mod tests {
         assert!(!mesh.primitive_types.contains(AiPrimitiveType::Polygon));
     }
 
+    /// A concave dart fans from the reflex vertex.
     #[test]
     fn concave_quad_fans_from_reflex_vertex() {
         let mut mesh = mesh_with_quad(
@@ -377,6 +399,7 @@ mod tests {
         assert_eq!(mesh.faces[0][0], 2);
     }
 
+    /// A convex pentagon earcuts into three triangles.
     #[test]
     fn convex_pentagon_earcuts_into_three_triangles() {
         let original = vec![0, 1, 2, 3, 4];
@@ -394,6 +417,7 @@ mod tests {
         assert_valid_triangulation(&mesh, &original);
     }
 
+    /// Earcut ring indices are remapped to mesh vertex ids.
     #[test]
     fn earcut_remaps_local_indices_to_mesh_vertex_ids() {
         let original = vec![5, 6, 7, 8, 9];
@@ -413,6 +437,7 @@ mod tests {
         }
     }
 
+    /// A concave pentagon does not emit a hull triangle over the notch.
     #[test]
     fn concave_pentagon_earcuts_without_covering_the_notch() {
         let original = vec![0, 1, 2, 3, 4];
@@ -438,6 +463,7 @@ mod tests {
         }
     }
 
+    /// An XZ-plane pentagon projects to 2D then triangulates.
     #[test]
     fn pentagon_in_xz_plane_projects_and_triangulates() {
         let original = vec![0, 1, 2, 3, 4];
@@ -455,6 +481,7 @@ mod tests {
         assert_valid_triangulation(&mesh, &original);
     }
 
+    /// Clockwise n-gons keep winding after the Newell axis swap.
     #[test]
     fn clockwise_pentagon_keeps_winding() {
         let original = vec![0, 1, 2, 3, 4];
@@ -472,6 +499,7 @@ mod tests {
         assert_valid_triangulation(&mesh, &original);
     }
 
+    /// A triangle plus an n-gon both appear in the output.
     #[test]
     fn mixed_triangle_and_ngon_are_both_emitted() {
         let mut mesh = AiMesh {
@@ -503,6 +531,7 @@ mod tests {
         );
     }
 
+    /// An already-triangle mesh keeps its faces even if `Polygon` is set.
     #[test]
     fn already_triangulated_polygon_flag_mesh_is_left_alone() {
         let mut mesh = AiMesh {

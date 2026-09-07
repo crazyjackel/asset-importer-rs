@@ -392,10 +392,12 @@ impl ops::Sub for &mut AiVector3D {
 ///
 /// Winding follows the vertex order (CCW in the polygon plane → normal toward the viewer).
 pub trait NewellNormal {
+    /// Unnormalized Newell normal of this polygon (zero if fewer than three vertices).
     fn newell_normal(&self) -> AiVector3D;
 }
 
 impl NewellNormal for [AiVector3D] {
+    /// Sum adjacent-edge cross products over the ring.
     fn newell_normal(&self) -> AiVector3D {
         let mut n = AiVector3D::zero();
         if self.len() < 3 {
@@ -413,6 +415,7 @@ impl NewellNormal for [AiVector3D] {
 }
 
 impl NewellNormal for Vec<AiVector3D> {
+    /// Delegate to the slice implementation.
     fn newell_normal(&self) -> AiVector3D {
         self.as_slice().newell_normal()
     }
@@ -422,6 +425,7 @@ impl NewellNormal for Vec<AiVector3D> {
 mod tests {
     use super::*;
 
+    /// A CCW unit square in XY has a +Z Newell normal.
     #[test]
     fn newell_normal_unit_square_xy_points_along_z() {
         let verts = vec![
@@ -436,6 +440,7 @@ mod tests {
         assert!(n.z > 0.0);
     }
 
+    /// Reversing winding flips the sign of the normal.
     #[test]
     fn newell_normal_follows_winding() {
         let ccw = vec![
@@ -448,6 +453,7 @@ mod tests {
         assert!(cw.newell_normal().z < 0.0);
     }
 
+    /// Fewer than three vertices yield a zero normal.
     #[test]
     fn newell_normal_short_polygon_is_zero() {
         let verts = vec![
