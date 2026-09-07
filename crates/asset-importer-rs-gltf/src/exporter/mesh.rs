@@ -27,6 +27,11 @@ use crate::exporter::error::Gltf2ExportError;
 
 use super::exporter::{Gltf2Exporter, generate_unique_name};
 
+pub(crate) struct MeshExportOptions {
+    pub unlimited_bones_per_vertex: bool,
+    pub export_anim_normals: bool,
+}
+
 impl Gltf2Exporter {
     pub(crate) fn export_meshes(
         &self,
@@ -35,11 +40,12 @@ impl Gltf2Exporter {
         unique_names_map: &mut HashMap<String, u32>,
         buffer_data: &mut Vec<u8>,
         node_index_to_meshes: &HashMap<usize, Vec<usize>>,
-        unlimited_bones_per_vertex: bool,
-        //export_anim_sparse: bool,
-        export_anim_normals: bool,
-        //export_skeleton: bool,
+        options: MeshExportOptions,
     ) -> Result<(), Gltf2ExportError> {
+        let MeshExportOptions {
+            unlimited_bones_per_vertex,
+            export_anim_normals,
+        } = options;
         let create_skin = scene.meshes.iter().any(|x| !x.bones.is_empty());
         let mut inverse_bind_matrices_data: Vec<AiMatrix4x4> = Vec::new();
         let mut skin = if create_skin {
@@ -513,8 +519,7 @@ impl AccessorExporter {
             DataType::F32,
             Target::ArrayBuffer,
             Dimensions::Mat4,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -563,8 +568,7 @@ impl AccessorExporter {
             DataType::F32,
             Target::ElementArrayBuffer,
             Dimensions::Vec4,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -601,8 +605,7 @@ impl AccessorExporter {
             DataType::U32,
             Target::ElementArrayBuffer,
             Dimensions::Vec4,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -636,8 +639,7 @@ impl AccessorExporter {
             DataType::U32,
             Target::ElementArrayBuffer,
             Dimensions::Scalar,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -683,8 +685,7 @@ impl AccessorExporter {
             DataType::F32,
             Target::ArrayBuffer,
             Dimensions::Scalar,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -739,8 +740,7 @@ impl AccessorExporter {
             DataType::F32,
             Target::ArrayBuffer,
             Dimensions::Vec2,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -801,8 +801,7 @@ impl AccessorExporter {
             DataType::F32,
             Target::ArrayBuffer,
             Dimensions::Vec3,
-            min,
-            max,
+            (min, max),
         )
     }
     pub(crate) fn export_quaternion(
@@ -874,8 +873,7 @@ impl AccessorExporter {
             DataType::F32,
             Target::ArrayBuffer,
             Dimensions::Vec4,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -948,8 +946,7 @@ impl AccessorExporter {
             DataType::F32,
             Target::ArrayBuffer,
             Dimensions::Vec4,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -960,8 +957,7 @@ impl AccessorExporter {
         component_type: DataType,
         target: Target,
         acc_type: Dimensions,
-        min: Option<Value>,
-        max: Option<Value>,
+        (min, max): (Option<Value>, Option<Value>),
     ) -> Option<Accessor> {
         if data.is_empty() {
             return None;

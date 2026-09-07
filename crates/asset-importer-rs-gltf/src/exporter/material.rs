@@ -34,6 +34,14 @@ use crate::{
     exporter::error::Gltf2ExportError,
 };
 
+struct MaterialExportCtx<'a> {
+    root: &'a mut Root,
+    buffer_data: &'a mut Vec<u8>,
+    unique_names_map: &'a mut HashMap<String, u32>,
+    texture_name_to_index_map: &'a mut HashMap<String, u32>,
+    is_binary: bool,
+}
+
 impl Gltf2Exporter {
     pub(crate) fn export_materials(
         &self,
@@ -44,56 +52,37 @@ impl Gltf2Exporter {
         use_gltf_pbr_specular_glossiness: bool,
     ) -> Result<(), Gltf2ExportError> {
         let mut texture_name_to_index_map: HashMap<String, u32> = HashMap::new();
+        let mut ctx = MaterialExportCtx {
+            root,
+            buffer_data,
+            unique_names_map,
+            texture_name_to_index_map: &mut texture_name_to_index_map,
+            is_binary: self.output_type == Output::Binary,
+        };
         for ai_material in &scene.materials {
             let name = if let Some(prop) =
                 ai_material.get_property(matkey::AI_MATKEY_NAME, Some(AiTextureType::None), 0)
             {
                 let str =
                     String::from_utf8(prop.data.to_vec()).map_err(Gltf2ExportError::Conversion)?;
-                Some(generate_unique_name(&str, unique_names_map))
+                Some(generate_unique_name(&str, ctx.unique_names_map))
             } else {
-                Some(generate_unique_name("material", unique_names_map))
+                Some(generate_unique_name("material", ctx.unique_names_map))
             };
 
             let mut material = Material {
                 name,
                 ..Material::default()
             };
-            handle_pbr(
-                scene,
-                root,
-                buffer_data,
-                unique_names_map,
-                &mut texture_name_to_index_map,
-                ai_material,
-                &mut material,
-                self.output_type == Output::Binary,
-            );
+            handle_pbr(scene, &mut ctx, ai_material, &mut material);
 
-            handle_base(
-                scene,
-                root,
-                buffer_data,
-                unique_names_map,
-                &mut texture_name_to_index_map,
-                ai_material,
-                &mut material,
-                self.output_type == Output::Binary,
-            );
+            handle_base(scene, &mut ctx, ai_material, &mut material);
 
             if use_gltf_pbr_specular_glossiness {
-                root.extensions_used
+                ctx.root
+                    .extensions_used
                     .push("KHR_materials_pbrSpecularGlossiness".to_string());
-                handle_specular_glossiness(
-                    scene,
-                    root,
-                    buffer_data,
-                    unique_names_map,
-                    &mut texture_name_to_index_map,
-                    ai_material,
-                    &mut material,
-                    self.output_type == Output::Binary,
-                );
+                handle_specular_glossiness(scene, &mut ctx, ai_material, &mut material);
             }
 
             let shading = ai_material
@@ -103,7 +92,9 @@ impl Gltf2Exporter {
 
             if shading == AiShadingMode::Unlit {
                 //handle unlit shading
-                root.extensions_used.push("KHR_materials_unlit".to_string());
+                ctx.root
+                    .extensions_used
+                    .push("KHR_materials_unlit".to_string());
             } else {
                 //handle everything else
                 let extensions = material
@@ -115,17 +106,9 @@ impl Gltf2Exporter {
                 let has_specular_glossiness = extensions.pbr_specular_glossiness.is_some();
                 if !has_specular_glossiness {
                     //handle specular
-                    if handle_specular(
-                        scene,
-                        root,
-                        buffer_data,
-                        unique_names_map,
-                        &mut texture_name_to_index_map,
-                        ai_material,
-                        extensions,
-                        self.output_type == Output::Binary,
-                    ) {
-                        root.extensions_used
+                    if handle_specular(scene, &mut ctx, ai_material, extensions) {
+                        ctx.root
+                            .extensions_used
                             .push("KHR_materials_specular".to_string());
                         if let Some(color) = ai_material
                             .get_property_ai_color_rgba(
@@ -144,61 +127,54 @@ impl Gltf2Exporter {
                     //handle clearcoat
 
                     //handle transmission
-                    if handle_transmission(
-                        scene,
-                        root,
-                        buffer_data,
-                        unique_names_map,
-                        &mut texture_name_to_index_map,
-                        ai_material,
-                        extensions,
-                        self.output_type == Output::Binary,
-                    ) && !root
-                        .extensions_used
-                        .contains(&"KHR_materials_transmission".to_string())
+                    if handle_transmission(scene, &mut ctx, ai_material, extensions)
+                        && !ctx
+                            .root
+                            .extensions_used
+                            .contains(&"KHR_materials_transmission".to_string())
                     {
-                        root.extensions_used
+                        ctx.root
+                            .extensions_used
                             .push("KHR_materials_transmission".to_string());
                     }
                     //handle volume
-                    if handle_volume(
-                        scene,
-                        root,
-                        buffer_data,
-                        unique_names_map,
-                        &mut texture_name_to_index_map,
-                        ai_material,
-                        extensions,
-                        self.output_type == Output::Binary,
-                    ) && !root
-                        .extensions_used
-                        .contains(&"KHR_materials_volume".to_string())
+                    if handle_volume(scene, &mut ctx, ai_material, extensions)
+                        && !ctx
+                            .root
+                            .extensions_used
+                            .contains(&"KHR_materials_volume".to_string())
                     {
-                        root.extensions_used
+                        ctx.root
+                            .extensions_used
                             .push("KHR_materials_volume".to_string());
                     }
                     //handle ior
                     if handle_ior(ai_material, extensions)
-                        && !root
+                        && !ctx
+                            .root
                             .extensions_used
                             .contains(&"KHR_materials_ior".to_string())
                     {
-                        root.extensions_used.push("KHR_materials_ior".to_string());
+                        ctx.root
+                            .extensions_used
+                            .push("KHR_materials_ior".to_string());
                     }
                     //handle emissive strength
                     if handle_emissive_strength(ai_material, extensions)
-                        && !root
+                        && !ctx
+                            .root
                             .extensions_used
                             .contains(&"KHR_materials_emissive_strength".to_string())
                     {
-                        root.extensions_used
+                        ctx.root
+                            .extensions_used
                             .push("KHR_materials_emissive_strength".to_string());
                     }
                     //handle anisotropy
                 }
             }
 
-            root.materials.push(material);
+            ctx.root.materials.push(material);
         }
         Ok(())
     }
@@ -207,26 +183,11 @@ impl Gltf2Exporter {
 fn get_material_texture_normal(
     ai_scene: &AiScene,
     ai_material: &AiMaterial,
-    root: &mut Root,
+    ctx: &mut MaterialExportCtx<'_>,
     texture_type: AiTextureType,
-    texture_name_to_index_map: &mut HashMap<String, u32>,
-    unique_names_map: &mut HashMap<String, u32>,
     index: u32,
-    is_binary: bool,
-    buffer: &mut Vec<u8>,
 ) -> Option<NormalTexture> {
-    get_material_texture(
-        ai_scene,
-        ai_material,
-        root,
-        texture_type,
-        texture_name_to_index_map,
-        unique_names_map,
-        index,
-        is_binary,
-        buffer,
-    )
-    .map(|x| {
+    get_material_texture(ai_scene, ai_material, ctx, texture_type, index).map(|x| {
         let scale = ai_material
             .get_property(_AI_MATKEY_GLTF_SCALE_BASE, Some(texture_type), index)
             .and_then(|prop| {
@@ -255,26 +216,11 @@ fn get_material_texture_normal(
 fn get_material_texture_occlusion(
     ai_scene: &AiScene,
     ai_material: &AiMaterial,
-    root: &mut Root,
+    ctx: &mut MaterialExportCtx<'_>,
     texture_type: AiTextureType,
-    texture_name_to_index_map: &mut HashMap<String, u32>,
-    unique_names_map: &mut HashMap<String, u32>,
     index: u32,
-    is_binary: bool,
-    buffer: &mut Vec<u8>,
 ) -> Option<OcclusionTexture> {
-    get_material_texture(
-        ai_scene,
-        ai_material,
-        root,
-        texture_type,
-        texture_name_to_index_map,
-        unique_names_map,
-        index,
-        is_binary,
-        buffer,
-    )
-    .map(|x| {
+    get_material_texture(ai_scene, ai_material, ctx, texture_type, index).map(|x| {
         let texture_strength_key = format!("{}.strength", _AI_MATKEY_TEXTURE_BASE);
         let strength = ai_material
             .get_property(&texture_strength_key, Some(texture_type), index)
@@ -304,14 +250,18 @@ fn get_material_texture_occlusion(
 fn get_material_texture(
     ai_scene: &AiScene,
     ai_material: &AiMaterial,
-    root: &mut Root,
+    ctx: &mut MaterialExportCtx<'_>,
     texture_type: AiTextureType,
-    texture_name_to_index_map: &mut HashMap<String, u32>,
-    unique_names_map: &mut HashMap<String, u32>,
     index: u32,
-    is_binary: bool,
-    buffer: &mut Vec<u8>,
 ) -> Option<Info> {
+    let is_binary = ctx.is_binary;
+    let MaterialExportCtx {
+        root,
+        buffer_data: buffer,
+        unique_names_map,
+        texture_name_to_index_map,
+        ..
+    } = ctx;
     //Get Texture Coordinate
     let tex_coord = ai_material
         .get_property(matkey::_AI_MATKEY_UVWSRC_BASE, Some(texture_type), index)
@@ -547,70 +497,31 @@ fn get_material_texture(
 
 fn handle_pbr(
     scene: &AiScene,
-    root: &mut Root,
-    buffer_data: &mut Vec<u8>,
-    unique_names_map: &mut HashMap<String, u32>,
-    texture_name_to_index_map: &mut HashMap<String, u32>,
+    ctx: &mut MaterialExportCtx<'_>,
     ai_material: &AiMaterial,
     material: &mut Material,
-    is_binary: bool,
 ) {
-    material.pbr_metallic_roughness.base_color_texture = get_material_texture(
-        scene,
-        ai_material,
-        root,
-        AiTextureType::BaseColor,
-        texture_name_to_index_map,
-        unique_names_map,
-        0,
-        is_binary,
-        buffer_data,
-    )
-    .or(get_material_texture(
-        scene,
-        ai_material,
-        root,
-        AiTextureType::Diffuse,
-        texture_name_to_index_map,
-        unique_names_map,
-        0,
-        is_binary,
-        buffer_data,
-    ));
+    material.pbr_metallic_roughness.base_color_texture =
+        get_material_texture(scene, ai_material, ctx, AiTextureType::BaseColor, 0).or(
+            get_material_texture(scene, ai_material, ctx, AiTextureType::Diffuse, 0),
+        );
 
-    material.pbr_metallic_roughness.metallic_roughness_texture = get_material_texture(
-        scene,
-        ai_material,
-        root,
-        AiTextureType::DiffuseRoughness,
-        texture_name_to_index_map,
-        unique_names_map,
-        0,
-        is_binary,
-        buffer_data,
-    )
-    .or(get_material_texture(
-        scene,
-        ai_material,
-        root,
-        AiTextureType::Metalness,
-        texture_name_to_index_map,
-        unique_names_map,
-        0,
-        is_binary,
-        buffer_data,
-    ))
-    .or(get_material_texture(
-        scene,
-        ai_material,
-        root,
-        AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE,
-        texture_name_to_index_map,
-        unique_names_map,
-        0,
-        is_binary,
-        buffer_data,
-    ));
+    material.pbr_metallic_roughness.metallic_roughness_texture =
+        get_material_texture(scene, ai_material, ctx, AiTextureType::DiffuseRoughness, 0)
+            .or(get_material_texture(
+                scene,
+                ai_material,
+                ctx,
+                AiTextureType::Metalness,
+                0,
+            ))
+            .or(get_material_texture(
+                scene,
+                ai_material,
+                ctx,
+                AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE,
+                0,
+            ));
 
     material.pbr_metallic_roughness.base_color_factor = ai_material
         .get_property(AI_MATKEY_BASE_COLOR, Some(AiTextureType::None), 0)
@@ -691,47 +602,16 @@ fn handle_pbr(
 
 fn handle_base(
     scene: &AiScene,
-    root: &mut Root,
-    buffer_data: &mut Vec<u8>,
-    unique_names_map: &mut HashMap<String, u32>,
-    texture_name_to_index_map: &mut HashMap<String, u32>,
+    ctx: &mut MaterialExportCtx<'_>,
     ai_material: &AiMaterial,
     material: &mut Material,
-    is_binary: bool,
 ) {
-    material.normal_texture = get_material_texture_normal(
-        scene,
-        ai_material,
-        root,
-        AiTextureType::Normals,
-        texture_name_to_index_map,
-        unique_names_map,
-        0,
-        is_binary,
-        buffer_data,
-    );
-    material.occlusion_texture = get_material_texture_occlusion(
-        scene,
-        ai_material,
-        root,
-        AiTextureType::Normals,
-        texture_name_to_index_map,
-        unique_names_map,
-        0,
-        is_binary,
-        buffer_data,
-    );
-    material.emissive_texture = get_material_texture(
-        scene,
-        ai_material,
-        root,
-        AiTextureType::Normals,
-        texture_name_to_index_map,
-        unique_names_map,
-        0,
-        is_binary,
-        buffer_data,
-    );
+    material.normal_texture =
+        get_material_texture_normal(scene, ai_material, ctx, AiTextureType::Normals, 0);
+    material.occlusion_texture =
+        get_material_texture_occlusion(scene, ai_material, ctx, AiTextureType::Normals, 0);
+    material.emissive_texture =
+        get_material_texture(scene, ai_material, ctx, AiTextureType::Normals, 0);
 
     material.emissive_factor = ai_material
         .get_property(AI_MATKEY_COLOR_EMISSIVE, Some(AiTextureType::None), 0)
@@ -806,25 +686,17 @@ fn handle_base(
 #[cfg(not(feature = "KHR_materials_pbrSpecularGlossiness"))]
 fn handle_specular_glossiness(
     _scene: &AiScene,
-    _root: &mut Root,
-    _buffer_data: &mut Vec<u8>,
-    _unique_names_map: &mut HashMap<String, u32>,
-    _texture_name_to_index_map: &mut HashMap<String, u32>,
+    _ctx: &mut MaterialExportCtx<'_>,
     _ai_material: &AiMaterial,
     _material: &mut Material,
-    _is_binary: bool,
 ) {
 }
 #[cfg(feature = "KHR_materials_pbrSpecularGlossiness")]
 fn handle_specular_glossiness(
     scene: &AiScene,
-    root: &mut Root,
-    buffer_data: &mut Vec<u8>,
-    unique_names_map: &mut HashMap<String, u32>,
-    texture_name_to_index_map: &mut HashMap<String, u32>,
+    ctx: &mut MaterialExportCtx<'_>,
     ai_material: &AiMaterial,
     material: &mut Material,
-    is_binary: bool,
 ) {
     use gltf::json::extensions::material::{
         PbrDiffuseFactor, PbrSpecularFactor, PbrSpecularGlossiness,
@@ -838,17 +710,7 @@ fn handle_specular_glossiness(
             .get_property_ai_color_rgba(AI_MATKEY_COLOR_DIFFUSE, Some(AiTextureType::None), 0)
             .map(|x| PbrDiffuseFactor([x.r, x.g, x.b, x.a]))
             .unwrap_or_default(),
-        diffuse_texture: get_material_texture(
-            scene,
-            ai_material,
-            root,
-            AiTextureType::Diffuse,
-            texture_name_to_index_map,
-            unique_names_map,
-            0,
-            is_binary,
-            buffer_data,
-        ),
+        diffuse_texture: get_material_texture(scene, ai_material, ctx, AiTextureType::Diffuse, 0),
         specular_factor: ai_material
             .get_property_ai_color_rgb(AI_MATKEY_COLOR_DIFFUSE, Some(AiTextureType::None), 0)
             .map(|x| PbrSpecularFactor([x.r, x.g, x.b]))
@@ -874,13 +736,9 @@ fn handle_specular_glossiness(
         specular_glossiness_texture: get_material_texture(
             scene,
             ai_material,
-            root,
+            ctx,
             AiTextureType::Specular,
-            texture_name_to_index_map,
-            unique_names_map,
             0,
-            is_binary,
-            buffer_data,
         ),
         others: Default::default(),
         extras: Default::default(),
@@ -890,26 +748,18 @@ fn handle_specular_glossiness(
 #[cfg(not(feature = "KHR_materials_specular"))]
 fn handle_specular(
     _scene: &AiScene,
-    _root: &mut Root,
-    _buffer_data: &mut Vec<u8>,
-    _unique_names_map: &mut HashMap<String, u32>,
-    _texture_name_to_index_map: &mut HashMap<String, u32>,
+    _ctx: &mut MaterialExportCtx<'_>,
     _ai_material: &AiMaterial,
     _material: &mut ExtensionMaterial,
-    _is_binary: bool,
 ) -> bool {
     false
 }
 #[cfg(feature = "KHR_materials_specular")]
 fn handle_specular(
     scene: &AiScene,
-    root: &mut Root,
-    buffer_data: &mut Vec<u8>,
-    unique_names_map: &mut HashMap<String, u32>,
-    texture_name_to_index_map: &mut HashMap<String, u32>,
+    ctx: &mut MaterialExportCtx<'_>,
     ai_material: &AiMaterial,
     material: &mut ExtensionMaterial,
-    is_binary: bool,
 ) -> bool {
     use gltf::json::extensions::material::{Specular, SpecularColorFactor, SpecularFactor};
 
@@ -940,17 +790,7 @@ fn handle_specular(
 
     material.specular = Some(Specular {
         specular_factor: SpecularFactor(specular_factory),
-        specular_texture: get_material_texture(
-            scene,
-            ai_material,
-            root,
-            AiTextureType::Specular,
-            texture_name_to_index_map,
-            unique_names_map,
-            0,
-            is_binary,
-            buffer_data,
-        ),
+        specular_texture: get_material_texture(scene, ai_material, ctx, AiTextureType::Specular, 0),
         specular_color_factor: SpecularColorFactor([
             color_specular.r,
             color_specular.g,
@@ -959,13 +799,9 @@ fn handle_specular(
         specular_color_texture: get_material_texture(
             scene,
             ai_material,
-            root,
+            ctx,
             AiTextureType::Specular,
-            texture_name_to_index_map,
-            unique_names_map,
             1,
-            is_binary,
-            buffer_data,
         ),
         extras: Default::default(),
     });
@@ -975,26 +811,18 @@ fn handle_specular(
 #[cfg(not(feature = "KHR_materials_transmission"))]
 fn handle_transmission(
     _scene: &AiScene,
-    _root: &mut Root,
-    _buffer_data: &mut Vec<u8>,
-    _unique_names_map: &mut HashMap<String, u32>,
-    _texture_name_to_index_map: &mut HashMap<String, u32>,
+    _ctx: &mut MaterialExportCtx<'_>,
     _ai_material: &AiMaterial,
     _material: &mut ExtensionMaterial,
-    _is_binary: bool,
 ) -> bool {
     false
 }
 #[cfg(feature = "KHR_materials_transmission")]
 fn handle_transmission(
     scene: &AiScene,
-    root: &mut Root,
-    buffer_data: &mut Vec<u8>,
-    unique_names_map: &mut HashMap<String, u32>,
-    texture_name_to_index_map: &mut HashMap<String, u32>,
+    ctx: &mut MaterialExportCtx<'_>,
     ai_material: &AiMaterial,
     material: &mut ExtensionMaterial,
-    is_binary: bool,
 ) -> bool {
     use gltf::json::extensions::material::{Transmission, TransmissionFactor};
 
@@ -1015,13 +843,9 @@ fn handle_transmission(
         transmission_texture: get_material_texture(
             scene,
             ai_material,
-            root,
+            ctx,
             AI_MATKEY_TRANSMISSION_TEXTURE,
-            texture_name_to_index_map,
-            unique_names_map,
             0,
-            is_binary,
-            buffer_data,
         ),
         extras: Default::default(),
     });
@@ -1031,26 +855,18 @@ fn handle_transmission(
 #[cfg(not(feature = "KHR_materials_volume"))]
 fn handle_volume(
     _scene: &AiScene,
-    _root: &mut Root,
-    _buffer_data: &mut Vec<u8>,
-    _unique_names_map: &mut HashMap<String, u32>,
-    _texture_name_to_index_map: &mut HashMap<String, u32>,
+    _ctx: &mut MaterialExportCtx<'_>,
     _ai_material: &AiMaterial,
     _material: &mut ExtensionMaterial,
-    _is_binary: bool,
 ) -> bool {
     false
 }
 #[cfg(feature = "KHR_materials_volume")]
 fn handle_volume(
     scene: &AiScene,
-    root: &mut Root,
-    buffer_data: &mut Vec<u8>,
-    unique_names_map: &mut HashMap<String, u32>,
-    texture_name_to_index_map: &mut HashMap<String, u32>,
+    ctx: &mut MaterialExportCtx<'_>,
     ai_material: &AiMaterial,
     material: &mut ExtensionMaterial,
-    is_binary: bool,
 ) -> bool {
     use gltf::json::extensions::material::{
         AttenuationColor, AttenuationDistance, ThicknessFactor, Volume,
@@ -1096,13 +912,9 @@ fn handle_volume(
         thickness_texture: get_material_texture(
             scene,
             ai_material,
-            root,
+            ctx,
             AI_MATKEY_VOLUME_THICKNESS_TEXTURE,
-            texture_name_to_index_map,
-            unique_names_map,
             0,
-            is_binary,
-            buffer_data,
         ),
         attenuation_distance: AttenuationDistance(attenuation_distance),
         attenuation_color: AttenuationColor(attenuation_color.into()),

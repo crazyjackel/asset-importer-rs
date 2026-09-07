@@ -13,6 +13,8 @@ use asset_importer_rs_scene::{AiMetadataEntry, AiScene, AiTextureFormat};
 
 use crate::{AI_METADATA_SOURCE_COPYRIGHT, exporter::error::Gltf2ExportError};
 
+use super::mesh::MeshExportOptions;
+
 pub const APPROVED_FORMATS: &[AiTextureFormat] = &[AiTextureFormat::PNG, AiTextureFormat::JPEG];
 
 #[repr(u8)]
@@ -131,8 +133,10 @@ impl AiExport for Gltf2Exporter {
             &mut unique_names_map,
             &mut body_buffer_data,
             &node_index_to_mesh_indexes,
-            unlimited_bones_per_vertex,
-            export_anim_normals,
+            MeshExportOptions {
+                unlimited_bones_per_vertex,
+                export_anim_normals,
+            },
         )?;
 
         //Handle Scene
