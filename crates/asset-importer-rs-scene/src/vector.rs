@@ -387,9 +387,9 @@ impl ops::Sub for &mut AiVector3D {
 /// Newell's method for a polygon normal.
 ///
 /// Newell's normal takes a winded vectors of vertices and sums the component-wise cross products of adjacent edges
-/// The result is a vector perpendicular to the polygon plane with a length equal to twice the polygon area. 
+/// The result is a vector perpendicular to the polygon plane with a length equal to twice the polygon area.
 /// Sign is determined by the winding order.
-/// 
+///
 /// Winding follows the vertex order (CCW in the polygon plane → normal toward the viewer).
 pub trait NewellNormal {
     fn newell_normal(&self) -> AiVector3D;

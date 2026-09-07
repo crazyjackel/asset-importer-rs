@@ -67,7 +67,6 @@ fn ngon_encode_quad(
 
 impl TriangulateMesh for AiMesh {
     fn triangulate(&mut self) {
-
         // If the mesh does not contain polygons as a primitive type, return early.
         if !self.primitive_types.contains(AiPrimitiveType::Polygon) {
             return;
@@ -175,9 +174,21 @@ impl TriangulateMesh for AiMesh {
                     let newell_normal = temp_verts3d.newell_normal();
 
                     // Get the absolute values of the newell normal
-                    let abs_newell_x = if newell_normal.x > 0.0 { newell_normal.x } else { -newell_normal.x };
-                    let abs_newell_y = if newell_normal.y > 0.0 { newell_normal.y } else { -newell_normal.y };
-                    let abs_newell_z = if newell_normal.z > 0.0 { newell_normal.z } else { -newell_normal.z };
+                    let abs_newell_x = if newell_normal.x > 0.0 {
+                        newell_normal.x
+                    } else {
+                        -newell_normal.x
+                    };
+                    let abs_newell_y = if newell_normal.y > 0.0 {
+                        newell_normal.y
+                    } else {
+                        -newell_normal.y
+                    };
+                    let abs_newell_z = if newell_normal.z > 0.0 {
+                        newell_normal.z
+                    } else {
+                        -newell_normal.z
+                    };
 
                     // Determine the primary and secondary components based on the newell normal
                     let mut primary_component: usize = 0;
@@ -188,16 +199,14 @@ impl TriangulateMesh for AiMesh {
                         primary_component = 1;
                         secondary_component = 2;
                         inverse_value = newell_normal.x;
-                    }else if abs_newell_y > abs_newell_z {
+                    } else if abs_newell_y > abs_newell_z {
                         primary_component = 2;
                         secondary_component = 0;
                         inverse_value = newell_normal.y;
                     }
 
                     if inverse_value < 0.0 {
-                        let temp = primary_component;
-                        primary_component = secondary_component;
-                        secondary_component = temp;
+                        std::mem::swap(&mut primary_component, &mut secondary_component);
                     }
 
                     // Fill Temp Vertices 2D using the primary and secondary indices to project the 3d vertices onto the plane
@@ -212,7 +221,7 @@ impl TriangulateMesh for AiMesh {
                     earcut.earcut(temp_verts2d, &[], &mut earcut_indices);
 
                     // Earcut returns local ring indices; map them back to mesh vertex ids.
-                    for chunk in earcut_indices.chunks_exact(3) {
+                    for chunk in earcut_indices.as_chunks::<3>().0 {
                         let mut tri = [face[chunk[0]], face[chunk[1]], face[chunk[2]]];
                         ngon_encode_triangle(&mut tri, &mut last_ngon_first_index);
                         output_faces.push(tri.to_vec());
@@ -299,7 +308,10 @@ mod tests {
         let expected = original.len().saturating_sub(2);
         assert_eq!(mesh.faces.len(), expected);
         assert!(mesh.primitive_types.contains(AiPrimitiveType::Triangle));
-        assert!(mesh.primitive_types.contains(AiPrimitiveType::NgonEncodingFlag));
+        assert!(
+            mesh.primitive_types
+                .contains(AiPrimitiveType::NgonEncodingFlag)
+        );
         assert!(!mesh.primitive_types.contains(AiPrimitiveType::Polygon));
 
         let poly: Vec<AiVector3D> = original.iter().map(|&i| mesh.vertices[i]).collect();
@@ -316,9 +328,15 @@ mod tests {
             let b = mesh.vertices[face[1]];
             let c = mesh.vertices[face[2]];
             let area = (b - a).cross(&(c - a)) * normal;
-            assert!(area > 0.0, "triangle {face:?} has non-positive area along the polygon normal");
+            assert!(
+                area > 0.0,
+                "triangle {face:?} has non-positive area along the polygon normal"
+            );
         }
-        assert!(seen.iter().all(|&v| v), "every original vertex should appear in some triangle");
+        assert!(
+            seen.iter().all(|&v| v),
+            "every original vertex should appear in some triangle"
+        );
     }
 
     #[test]
@@ -335,7 +353,10 @@ mod tests {
         mesh.triangulate();
         assert_eq!(mesh.faces, vec![vec![0, 1, 2], vec![0, 2, 3]]);
         assert!(mesh.primitive_types.contains(AiPrimitiveType::Triangle));
-        assert!(mesh.primitive_types.contains(AiPrimitiveType::NgonEncodingFlag));
+        assert!(
+            mesh.primitive_types
+                .contains(AiPrimitiveType::NgonEncodingFlag)
+        );
         assert!(!mesh.primitive_types.contains(AiPrimitiveType::Polygon));
     }
 
