@@ -72,6 +72,9 @@ syn = "3"
 [workspace.lints.clippy]
 all = "warn"
 
+[lints]
+workspace = true
+
 [dependencies]
 enumflags2 = {workspace = true}
 asset-importer-rs-core = { path = "crates/asset-importer-rs-core", version = "0.4.1" }

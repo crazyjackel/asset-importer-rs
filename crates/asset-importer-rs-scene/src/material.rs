@@ -354,15 +354,9 @@ impl AiMaterial {
         semantic_type: Option<AiTextureType>,
         index: u32,
     ) -> Option<&AiMaterialProperty> {
-        for property in &self.properties {
-            if property.key == key
+        self.properties.iter().find(|&property| property.key == key
                 && (semantic_type.is_none() || semantic_type.unwrap() == property.semantic)
-                && property.index == index
-            {
-                return Some(property);
-            }
-        }
-        None
+                && property.index == index).map(|v| v as _)
     }
 
     pub fn get_property_mut(

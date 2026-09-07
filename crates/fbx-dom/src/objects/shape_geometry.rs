@@ -99,7 +99,7 @@ impl TryFrom<OwnedObject> for ShapeGeometry {
             ));
         };
         let vertices = vertices_unchunked
-            .chunks_exact(3)
+            .as_chunks::<3>().0.iter()
             .map(|c| [c[0], c[1], c[2]])
             .collect::<Vec<[f32; 3]>>();
 
@@ -128,7 +128,7 @@ impl TryFrom<OwnedObject> for ShapeGeometry {
                 .unwrap_or_default(); // If the parse fails, return an empty vector. This is intentional.
 
             normals_result
-                .chunks_exact(3)
+                .as_chunks::<3>().0.iter()
                 .map(|c| [c[0], c[1], c[2]])
                 .collect::<Vec<[f32; 3]>>()
         } else {

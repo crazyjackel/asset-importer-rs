@@ -73,7 +73,7 @@ impl TryFrom<OwnedObject> for LineGeometry {
             ));
         };
         let points = points_unchunked
-            .chunks_exact(3)
+            .as_chunks::<3>().0.iter()
             .map(|c| [c[0], c[1], c[2]])
             .collect::<Vec<[f32; 3]>>();
 

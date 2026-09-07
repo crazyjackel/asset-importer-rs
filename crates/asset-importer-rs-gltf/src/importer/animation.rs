@@ -337,7 +337,7 @@ impl Gltf2Importer {
                                 mesh_morph_key.weights.push(if 0.0 > values[k] {
                                     0.0
                                 } else {
-                                    values[k] as f64
+                                    values[k]
                                 });
                                 k += 1;
                             }

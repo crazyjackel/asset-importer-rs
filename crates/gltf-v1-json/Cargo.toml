@@ -21,3 +21,6 @@ extensions = []
 extras = []
 KHR_binary_glTF = []
 KHR_materials_common = []
+
+[lints]
+workspace = true

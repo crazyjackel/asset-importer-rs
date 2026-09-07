@@ -725,12 +725,12 @@ impl AccessorExporter {
             data.extend_from_slice(&ai_real_to_f32(vector.y).to_le_bytes());
         }
         let min = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(min_x as f64).unwrap()),
-            Value::Number(Number::from_f64(min_y as f64).unwrap()),
+            Value::Number(Number::from_f64(min_x).unwrap()),
+            Value::Number(Number::from_f64(min_y).unwrap()),
         ]));
         let max = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(max_x as f64).unwrap()),
-            Value::Number(Number::from_f64(max_y as f64).unwrap()),
+            Value::Number(Number::from_f64(max_x).unwrap()),
+            Value::Number(Number::from_f64(max_y).unwrap()),
         ]));
         Self::export_data(
             root,
@@ -785,14 +785,14 @@ impl AccessorExporter {
             data.extend_from_slice(&ai_real_to_f32(vector.z).to_le_bytes());
         }
         let min = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(min_x as f64).unwrap()),
-            Value::Number(Number::from_f64(min_y as f64).unwrap()),
-            Value::Number(Number::from_f64(min_z as f64).unwrap()),
+            Value::Number(Number::from_f64(min_x).unwrap()),
+            Value::Number(Number::from_f64(min_y).unwrap()),
+            Value::Number(Number::from_f64(min_z).unwrap()),
         ]));
         let max = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(max_x as f64).unwrap()),
-            Value::Number(Number::from_f64(max_y as f64).unwrap()),
-            Value::Number(Number::from_f64(max_z as f64).unwrap()),
+            Value::Number(Number::from_f64(max_x).unwrap()),
+            Value::Number(Number::from_f64(max_y).unwrap()),
+            Value::Number(Number::from_f64(max_z).unwrap()),
         ]));
         Self::export_data(
             root,
@@ -856,16 +856,16 @@ impl AccessorExporter {
             data.extend_from_slice(&ai_real_to_f32(vector.w).to_le_bytes());
         }
         let min = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(min_x as f64).unwrap()),
-            Value::Number(Number::from_f64(min_y as f64).unwrap()),
-            Value::Number(Number::from_f64(min_z as f64).unwrap()),
-            Value::Number(Number::from_f64(min_w as f64).unwrap()),
+            Value::Number(Number::from_f64(min_x).unwrap()),
+            Value::Number(Number::from_f64(min_y).unwrap()),
+            Value::Number(Number::from_f64(min_z).unwrap()),
+            Value::Number(Number::from_f64(min_w).unwrap()),
         ]));
         let max = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(max_x as f64).unwrap()),
-            Value::Number(Number::from_f64(max_y as f64).unwrap()),
-            Value::Number(Number::from_f64(max_z as f64).unwrap()),
-            Value::Number(Number::from_f64(max_w as f64).unwrap()),
+            Value::Number(Number::from_f64(max_x).unwrap()),
+            Value::Number(Number::from_f64(max_y).unwrap()),
+            Value::Number(Number::from_f64(max_z).unwrap()),
+            Value::Number(Number::from_f64(max_w).unwrap()),
         ]));
         Self::export_data(
             root,

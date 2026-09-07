@@ -347,7 +347,7 @@ mod tests {
         assert_eq!(light.decay_type(), LightDecay::Quadratic);
         assert_eq!(light.intensity(), 100.0);
         assert_eq!(light.outer_angle(), 45.0);
-        assert_eq!(light.cast_shadows(), true);
+        assert!(light.cast_shadows());
         assert_eq!(light.file_name(), "");
     }
 
@@ -398,10 +398,10 @@ mod tests {
         let light = Light::try_from(o).unwrap();
         assert_eq!(light.color(), [0.2, 0.3, 0.4]);
         assert_eq!(light.light_type(), LightType::Spot);
-        assert_eq!(light.cast_light_on_object(), true);
-        assert_eq!(light.draw_volumetric_light(), false);
-        assert_eq!(light.draw_ground_projection(), false);
-        assert_eq!(light.draw_front_facing_volumetric_light(), true);
+        assert!(light.cast_light_on_object());
+        assert!(!light.draw_volumetric_light());
+        assert!(!light.draw_ground_projection());
+        assert!(light.draw_front_facing_volumetric_light());
         assert_eq!(light.intensity(), 250.0);
         assert_eq!(light.inner_angle(), 5.0);
         assert_eq!(light.outer_angle(), 30.0);
@@ -409,19 +409,19 @@ mod tests {
         assert_eq!(light.decay_type(), LightDecay::Linear);
         assert_eq!(light.decay_start(), 2.0);
         assert_eq!(light.file_name(), "gobo.png");
-        assert_eq!(light.enable_near_attenuation(), true);
+        assert!(light.enable_near_attenuation());
         assert_eq!(light.near_attenuation_start(), 1.0);
         assert_eq!(light.near_attenuation_end(), 2.0);
-        assert_eq!(light.enable_far_attenuation(), true);
+        assert!(light.enable_far_attenuation());
         assert_eq!(light.far_attenuation_start(), 20.0);
         assert_eq!(light.far_attenuation_end(), 30.0);
-        assert_eq!(light.cast_shadows(), false);
+        assert!(!light.cast_shadows());
         assert_eq!(light.shadow_color(), [0.1, 0.1, 0.1]);
         assert_eq!(light.area_light_shape(), 3);
         assert_eq!(light.left_barn_door(), 11.0);
         assert_eq!(light.right_barn_door(), 12.0);
         assert_eq!(light.top_barn_door(), 13.0);
         assert_eq!(light.bottom_barn_door(), 14.0);
-        assert_eq!(light.enable_barn_door(), false);
+        assert!(!light.enable_barn_door());
     }
 }

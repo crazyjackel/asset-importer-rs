@@ -13,7 +13,7 @@ use fbxscii::{Element, ElementAmphitheatre};
 use crate::{
     document::{
         Document, DocumentLoader, DocumentParseError, ImportSettings, LazyObject,
-        ObjectPropertyConnection, Property, PropertyDetails, Template,
+        ObjectPropertyConnection, Property, PropertyDetails,
     },
     loader::{LOWEST_SUPPORTED_VERSION, UPPER_SUPPORTED_VERSION},
 };
@@ -93,7 +93,7 @@ impl AttributeInto<i32> for AttributeValue {
     fn into_attribute(&self) -> Option<i32> {
         match self {
             AttributeValue::I16(value) => Some(*value as i32),
-            AttributeValue::I32(value) => Some((*value)),
+            AttributeValue::I32(value) => Some(*value),
             AttributeValue::I64(value) => Some(*value as i32),
             _ => None,
         }

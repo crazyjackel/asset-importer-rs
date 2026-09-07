@@ -109,8 +109,8 @@ mod tests {
         };
         let layer = AnimationLayer::try_from(o_empty).unwrap();
         assert_eq!(layer.weight(), 100.0);
-        assert_eq!(layer.mute(), false);
-        assert_eq!(layer.solo(), false);
+        assert!(!layer.mute());
+        assert!(!layer.solo());
 
         let mut properties = HashMap::new();
         properties.insert("Weight".to_string(), Property::Float(50.0));
@@ -129,8 +129,8 @@ mod tests {
         };
         let layer = AnimationLayer::try_from(o).unwrap();
         assert_eq!(layer.weight(), 50.0);
-        assert_eq!(layer.mute(), true);
-        assert_eq!(layer.solo(), true);
+        assert!(layer.mute());
+        assert!(layer.solo());
     }
 
     #[test]

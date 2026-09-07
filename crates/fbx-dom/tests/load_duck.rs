@@ -110,15 +110,13 @@ fn test_load_duck_fbx() {
         "OO: Video -> Texture::file2"
     );
 
-    for result in document.objects() {
-        if let Ok(object) = result {
-            let owned_object: OwnedObject = object.into();
-            println!("Object: {}", owned_object.name);
-            println!("Type Name: {}", owned_object.type_name);
-            println!("Class Name: {}", owned_object.class_name);
-            println!("Properties: {:?}", owned_object.properties);
-            println!("Attributes: {:?}", owned_object.attributes);
-        }
+    for object in document.objects().flatten() {
+        let owned_object: OwnedObject = object.into();
+        println!("Object: {}", owned_object.name);
+        println!("Type Name: {}", owned_object.type_name);
+        println!("Class Name: {}", owned_object.class_name);
+        println!("Properties: {:?}", owned_object.properties);
+        println!("Attributes: {:?}", owned_object.attributes);
     }
 }
 

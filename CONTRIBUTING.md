@@ -27,6 +27,7 @@ Code Guidelines are ever-evolving and difficult to ascertain, being for the most
 
  * We follow the [Rust API guidelines](https://github.com/rust-lang-nursery/api-guidelines).
  * Format code using rustfmt
+ * Match CI Clippy locally: `cargo clippy --workspace --all-targets --all-features --locked -- -D warnings`
  * Modules (refering to built-in asset importers and their respective code) should have a distinctive prefix appended to all files names.
  * Features Flags should be minimal and prefixed by respective module flags. They should be grouped together into minimal, default, and extra variants of the module.
  * test function names should begin with either 'test_' or 'external_'. External requires that the tester brings in extra exterior files. The name should be followed by the module name.
