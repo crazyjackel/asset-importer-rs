@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788712948671,
+  "lastUpdate": 1788803351170,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -1955,6 +1955,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 50763279,
             "range": "± 145111",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fedd9a5c5db32db0920224ccff4eacf197f7e2dd",
+          "message": "Merge pull request #91 from crazyjackel/jlevitt/triangulate\n\nTriangulation Post-Processing",
+          "timestamp": "2026-09-07T13:46:44-04:00",
+          "tree_id": "fff8ab4c3556c31a5b458800445a0cfd7549a7bf",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/fedd9a5c5db32db0920224ccff4eacf197f7e2dd"
+        },
+        "date": 1788803350501,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 101515739,
+            "range": "± 404243",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 52569360,
+            "range": "± 580690",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 203628605,
+            "range": "± 496161",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 53185840,
+            "range": "± 2028257",
             "unit": "ns/iter"
           }
         ]
