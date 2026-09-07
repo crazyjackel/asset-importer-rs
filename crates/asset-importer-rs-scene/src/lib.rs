@@ -65,6 +65,7 @@ pub use texture::AiTextureFormat;
 pub use type_def::base_types;
 pub use vector::AiVector2D;
 pub use vector::AiVector3D;
+pub use vector::NewellNormal;
 
 pub use quaternion::AiQuaternion;
 

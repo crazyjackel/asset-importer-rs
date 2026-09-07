@@ -383,3 +383,77 @@ impl ops::Sub for &mut AiVector3D {
         }
     }
 }
+
+/// Newell's method for a polygon normal.
+///
+/// Newell's normal takes a winded vectors of vertices and sums the component-wise cross products of adjacent edges
+/// The result is a vector perpendicular to the polygon plane with a length equal to twice the polygon area. 
+/// Sign is determined by the winding order.
+/// 
+/// Winding follows the vertex order (CCW in the polygon plane → normal toward the viewer).
+pub trait NewellNormal {
+    fn newell_normal(&self) -> AiVector3D;
+}
+
+impl NewellNormal for [AiVector3D] {
+    fn newell_normal(&self) -> AiVector3D {
+        let mut n = AiVector3D::zero();
+        if self.len() < 3 {
+            return n;
+        }
+        let mut prev = self[self.len() - 1];
+        for &curr in self {
+            n.x += (prev.y - curr.y) * (prev.z + curr.z);
+            n.y += (prev.z - curr.z) * (prev.x + curr.x);
+            n.z += (prev.x - curr.x) * (prev.y + curr.y);
+            prev = curr;
+        }
+        n
+    }
+}
+
+impl NewellNormal for Vec<AiVector3D> {
+    fn newell_normal(&self) -> AiVector3D {
+        self.as_slice().newell_normal()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn newell_normal_unit_square_xy_points_along_z() {
+        let verts = vec![
+            AiVector3D::new(0.0, 0.0, 0.0),
+            AiVector3D::new(1.0, 0.0, 0.0),
+            AiVector3D::new(1.0, 1.0, 0.0),
+            AiVector3D::new(0.0, 1.0, 0.0),
+        ];
+        let n = verts.newell_normal();
+        assert_eq!(n.x, 0.0);
+        assert_eq!(n.y, 0.0);
+        assert!(n.z > 0.0);
+    }
+
+    #[test]
+    fn newell_normal_follows_winding() {
+        let ccw = vec![
+            AiVector3D::new(0.0, 0.0, 0.0),
+            AiVector3D::new(1.0, 0.0, 0.0),
+            AiVector3D::new(0.0, 1.0, 0.0),
+        ];
+        let cw = vec![ccw[0], ccw[2], ccw[1]];
+        assert!(ccw.newell_normal().z > 0.0);
+        assert!(cw.newell_normal().z < 0.0);
+    }
+
+    #[test]
+    fn newell_normal_short_polygon_is_zero() {
+        let verts = vec![
+            AiVector3D::new(0.0, 0.0, 0.0),
+            AiVector3D::new(1.0, 0.0, 0.0),
+        ];
+        assert_eq!(verts.newell_normal(), AiVector3D::zero());
+    }
+}
