@@ -10,6 +10,17 @@ Thank you for your interest in contributing to 'asset-importer-rs.' Your time an
  * Participate in code reviews.
  * Submit PRs to fix acknowledged issues
 
+## Security audit
+
+Run RustSec `cargo-audit` against the workspace lockfile before merging dependency changes:
+
+```sh
+cargo install cargo-audit
+cargo audit
+```
+
+CI runs the same check on PRs, `main`, and a weekly schedule. Known false positives or unfixable transitive advisories belong in `.cargo/audit.toml` (`[advisories].ignore`) with a comment explaining why.
+
 ## Code Guidelines
 
 Code Guidelines are ever-evolving and difficult to ascertain, being for the most part discretionary. Here're some important details to give a good idea though on what direction we wish to take code:
