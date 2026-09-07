@@ -14,7 +14,7 @@ use asset_importer_rs_scene::{AiQuaternion, AiScene, AiVector3D};
 use crate::exporter::error::Gltf2ExportError;
 
 use super::{
-    exporter::{Gltf2Exporter, generate_unique_name},
+    export::{Gltf2Exporter, generate_unique_name},
     mesh::AccessorExporter,
 };
 

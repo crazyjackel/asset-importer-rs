@@ -7,7 +7,7 @@ use asset_importer_rs_scene::{
 
 use crate::importer::error::Gltf2ImportError;
 
-use super::{importer::Gltf2Importer, mesh::ExtractData};
+use super::{import::Gltf2Importer, mesh::ExtractData};
 
 const MILLISECONDS_TO_SECONDS: f64 = 1000.0;
 

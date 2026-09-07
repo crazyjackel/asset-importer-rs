@@ -25,7 +25,7 @@ use matkey::{
     AI_MATKEY_ROUGHNESS_FACTOR, AI_MATKEY_SHADING_MODEL, AI_MATKEY_SHININESS, AI_MATKEY_TWOSIDED,
 };
 
-use super::exporter::{APPROVED_FORMATS, Gltf2Exporter, Output, generate_unique_name};
+use super::export::{APPROVED_FORMATS, Gltf2Exporter, Output, generate_unique_name};
 
 use crate::{
     _AI_MATKEY_GLTF_MAPPINGFILTER_MAG_BASE, _AI_MATKEY_GLTF_MAPPINGFILTER_MIN_BASE,

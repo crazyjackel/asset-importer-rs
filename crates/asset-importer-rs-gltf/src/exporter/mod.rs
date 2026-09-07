@@ -1,10 +1,10 @@
 mod animation;
 mod camera;
 mod error;
-mod exporter;
+mod export;
 mod material;
 mod mesh;
 mod node;
 
 pub use error::Gltf2ExportError;
-pub use exporter::{Gltf2Exporter, Output};
+pub use export::{Gltf2Exporter, Output};

@@ -13,7 +13,7 @@ use asset_importer_rs_scene::{
 
 use crate::importer::error::Gltf2ImportError;
 
-use super::{importer::Gltf2Importer, mesh::ExtractData};
+use super::{import::Gltf2Importer, mesh::ExtractData};
 
 impl Gltf2Importer {
     pub(crate) fn import_nodes(

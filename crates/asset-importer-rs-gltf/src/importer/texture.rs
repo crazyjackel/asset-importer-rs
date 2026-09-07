@@ -12,7 +12,7 @@ use image::ImageFormat;
 
 use crate::importer::error::Gltf2ImportError;
 
-use super::importer::Gltf2Importer;
+use super::import::Gltf2Importer;
 
 impl Gltf2Importer {
     pub fn from_source<R: Read + Seek, F: Fn(&Path) -> io::Result<R>>(

@@ -25,7 +25,7 @@ use serde_json::{Number, Value};
 
 use crate::exporter::error::Gltf2ExportError;
 
-use super::exporter::{Gltf2Exporter, generate_unique_name};
+use super::export::{Gltf2Exporter, generate_unique_name};
 
 pub(crate) struct MeshExportOptions {
     pub unlimited_bones_per_vertex: bool,

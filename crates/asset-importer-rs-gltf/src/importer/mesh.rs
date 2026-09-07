@@ -8,7 +8,7 @@ use asset_importer_rs_scene::{
 
 use crate::importer::error::MeshError;
 
-use super::{error::Gltf2ImportError, importer::Gltf2Importer};
+use super::{error::Gltf2ImportError, import::Gltf2Importer};
 
 pub(crate) trait ExtractData {
     fn extract_data<T>(
