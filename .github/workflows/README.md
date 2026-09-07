@@ -4,6 +4,12 @@ This directory contains CI/CD workflows for the project.
 
 ## Workflows
 
+### `audit.yml` - Security Audit
+Runs `cargo audit` against the workspace `Cargo.lock` (RustSec advisories).
+Ignores live in `.cargo/audit.toml`.
+
+**Triggers:** Push and pull requests to `main`; weekly schedule (Monday 00:00 UTC); `workflow_dispatch`
+
 ### `cargo.yml` - Base Tests
 Runs standard Rust quality checks:
 - Documentation tests
