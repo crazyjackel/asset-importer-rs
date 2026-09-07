@@ -12,6 +12,7 @@ documentation = "https://docs.rs/asset-importer-rs-post-process"
 asset-importer-rs-core = {workspace = true}
 asset-importer-rs-scene = {workspace = true}
 bytemuck = {workspace = true}
+earcut = { workspace = true, optional = true }
 enumflags2 = {workspace = true}
 
 [features]
@@ -69,7 +70,7 @@ all = [
 calc-tangent-spaces = []
 join-identical-vertices = []
 make-left-handed = []
-triangulate = []
+triangulate = ["dep:earcut"]
 remove-component = []
 gen-normals = []
 gen-smooth-normals = []
