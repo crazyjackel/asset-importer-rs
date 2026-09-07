@@ -10,6 +10,15 @@ use crate::importer::error::MeshError;
 
 use super::{error::Gltf2ImportError, import::Gltf2Importer};
 
+/// glTF meshes flattened to Assimp meshes (one glTF mesh can be many primitives).
+pub(crate) struct ImportMeshes {
+    pub meshes: Vec<AiMesh>,
+    /// Document mesh index → start offset in [`Self::meshes`], with a trailing end sentinel.
+    pub mesh_offsets: Vec<u32>,
+    /// Per-mesh vertex remap used when attaching skins/nodes.
+    pub remapping_tables: Vec<Vec<usize>>,
+}
+
 pub(crate) trait ExtractData {
     fn extract_data<T>(
         &self,
@@ -194,7 +203,7 @@ impl Gltf2Importer {
         document: &'a Document,
         buffer_data: &'a [buffer::Data],
         last_material_index: usize,
-    ) -> Result<(Vec<AiMesh>, Vec<u32>, Vec<Vec<usize>>), Gltf2ImportError> {
+    ) -> Result<ImportMeshes, Gltf2ImportError> {
         let asset_meshes: Vec<Mesh<'_>> = document.meshes().collect();
 
         //Maps Document Mesh Index to Offset. Lets us add all primitives to a Node as Meshes
@@ -828,6 +837,10 @@ impl Gltf2Importer {
                 meshes.push(ai_mesh);
             }
         }
-        Ok((meshes, mesh_offsets, vertex_remapping_tables))
+        Ok(ImportMeshes {
+            meshes,
+            mesh_offsets,
+            remapping_tables: vertex_remapping_tables,
+        })
     }
 }
