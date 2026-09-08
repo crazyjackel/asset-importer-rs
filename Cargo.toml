@@ -39,8 +39,6 @@ asset-importer-rs-gltf-v1 = { path = "crates/asset-importer-rs-gltf-v1", version
 asset-importer-rs-obj = { path = "crates/asset-importer-rs-obj", version = "0.4.1" }
 asset-importer-rs-dae = { path = "crates/asset-importer-rs-dae", version = "0.4.1" }
 asset-importer-rs-post-process = { path = "crates/asset-importer-rs-post-process", version = "0.4.1" }
-dae-parser = "0.11.0"
-earcut = "0.4.10"
 base64 = "0.23"
 bytemuck = { version = "1.21.0", features = ["derive"] }
 byteorder = "1.3"
