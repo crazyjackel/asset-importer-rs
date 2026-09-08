@@ -39,7 +39,7 @@ jobs:
         with:
           components: clippy
       - name: Clippy
-        run: cargo clippy --all-features
+        run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 
   rustfmt:
     permissions:

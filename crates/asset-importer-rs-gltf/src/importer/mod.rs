@@ -1,7 +1,7 @@
 mod animation;
 mod camera;
 mod error;
-mod importer;
+mod import;
 mod light;
 mod material;
 mod mesh;
@@ -11,4 +11,4 @@ mod texture;
 
 pub use error::Gltf2ImportError;
 pub use error::MeshError;
-pub use importer::Gltf2Importer;
+pub use import::Gltf2Importer;

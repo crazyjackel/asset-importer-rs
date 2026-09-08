@@ -2,12 +2,12 @@ use gltf::{Document, animation::Interpolation, buffer};
 
 use asset_importer_rs_scene::{
     AiAnimInterpolation, AiAnimation, AiMeshMorphAnim, AiMeshMorphKey, AiNodeAnim, AiQuatKey,
-    AiQuaternion, AiReal, AiVector3D, AiVectorKey,
+    AiQuaternion, AiReal, AiVector3D, AiVectorKey, ai_real_to_f64,
 };
 
 use crate::importer::error::Gltf2ImportError;
 
-use super::{importer::Gltf2Importer, mesh::ExtractData};
+use super::{import::Gltf2Importer, mesh::ExtractData};
 
 const MILLISECONDS_TO_SECONDS: f64 = 1000.0;
 
@@ -331,15 +331,11 @@ impl Gltf2Importer {
                             }
                             mesh_morph_key.time = time;
 
-                            let mut k = stride * time_index + offset;
+                            let base = stride * time_index + offset;
                             for j in 0..num_morphs {
+                                let value = values[base + j];
                                 mesh_morph_key.values.push(j as u32);
-                                mesh_morph_key.weights.push(if 0.0 > values[k] {
-                                    0.0
-                                } else {
-                                    values[k] as f64
-                                });
-                                k += 1;
+                                mesh_morph_key.weights.push(ai_real_to_f64(value.max(0.0)));
                             }
                             ai_morph_anim.keys.push(mesh_morph_key);
                         }

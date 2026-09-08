@@ -111,7 +111,9 @@ impl TryFrom<OwnedObject> for MeshGeometry {
             ));
         };
         let vertices = vertices
-            .chunks_exact(3)
+            .as_chunks::<3>()
+            .0
+            .iter()
             .map(|c| [c[0], c[1], c[2]])
             .collect::<Vec<[f32; 3]>>();
 
@@ -138,11 +140,16 @@ impl TryFrom<OwnedObject> for MeshGeometry {
             ));
         };
 
-        let (vertices, face_vertex_counts, mapping_counts, mapping_offsets, mappings) =
-            match expand_mesh_polygon_vertices(&vertices, &temp_faces) {
-                Ok(v) => v,
-                Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
-            };
+        let ExpandedPolygonVertices {
+            expanded_vertices: vertices,
+            face_vertex_counts,
+            mapping_counts,
+            mapping_offsets,
+            mappings,
+        } = match expand_mesh_polygon_vertices(&vertices, &temp_faces) {
+            Ok(v) => v,
+            Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
+        };
         let vertex_count = vertices.len();
 
         let mut normals = Vec::new();
@@ -181,7 +188,9 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
             normals = normals_flat
-                .chunks_exact(3)
+                .as_chunks::<3>()
+                .0
+                .iter()
                 .map(|c| [c[0], c[1], c[2]])
                 .collect();
         }
@@ -226,7 +235,9 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
             tangents = tangents_flat
-                .chunks_exact(3)
+                .as_chunks::<3>()
+                .0
+                .iter()
                 .map(|c| [c[0], c[1], c[2]])
                 .collect();
         }
@@ -271,7 +282,9 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
             binormals = binormals_flat
-                .chunks_exact(3)
+                .as_chunks::<3>()
+                .0
+                .iter()
                 .map(|c| [c[0], c[1], c[2]])
                 .collect();
         }
@@ -318,7 +331,12 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                 Ok(v) => v,
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
-            texture_coords[0] = uv_flat.chunks_exact(2).map(|c| [c[0], c[1]]).collect();
+            texture_coords[0] = uv_flat
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .map(|c| [c[0], c[1]])
+                .collect();
         }
 
         let mut vertex_colors: [Vec<[f32; 4]>; MAX_COLOR_SETS] = Default::default();
@@ -356,7 +374,9 @@ impl TryFrom<OwnedObject> for MeshGeometry {
                 Err(reason) => return Err(FbxTypeMismatch::new(o, reason)),
             };
             vertex_colors[0] = colors_flat
-                .chunks_exact(4)
+                .as_chunks::<4>()
+                .0
+                .iter()
                 .map(|c| [c[0], c[1], c[2], c[3]])
                 .collect();
         }
@@ -435,6 +455,29 @@ fn parse_i32_array(attr: &ElementAttribute) -> Result<Vec<i32>, ParseIntError> {
         .collect()
 }
 
+/// Per-corner expansion of an FBX mesh vertex pool, plus remap tables for layer channels.
+///
+/// Returned by [`expand_mesh_polygon_vertices`]. Positions are duplicated so each polygon corner
+/// has its own row; `mapping_*` describe how those corners group back to pool vertices for
+/// [`resolve_flat_f32_channel`].
+pub(crate) struct ExpandedPolygonVertices {
+    /// Pool position copied once per corner, in `PolygonVertexIndex` order (sign on the last
+    /// index of each face is ignored). Length is the corner count.
+    pub(crate) expanded_vertices: Vec<[f32; 3]>,
+    /// Corner count per polygon, from the running count reset on each negative index.
+    pub(crate) face_vertex_counts: Vec<u32>,
+    /// After expansion, number of corners that reference pool vertex `i` (same as pass 1; rebuilt
+    /// in pass 3 while filling [`Self::mappings`]).
+    pub(crate) mapping_counts: Vec<u32>,
+    /// Start offset in corner space for pool vertex `i` (prefix sum of how many corners
+    /// reference that pool vertex).
+    pub(crate) mapping_offsets: Vec<u32>,
+    /// Length = corner count. For each corner in face order (global index `cursor`),
+    /// `mappings[slot] = cursor` where `slot` is the next free index in
+    /// `[mapping_offsets[absi] ..)` for pool vertex `absi`.
+    pub(crate) mappings: Vec<u32>,
+}
+
 /// Expand FBX mesh indices into a **per-polygon-vertex** (“corner”) linear layout and build tables to
 /// remap **per-corner** data from FBX’s indexed vertex pool.
 ///
@@ -456,21 +499,7 @@ fn parse_i32_array(attr: &ElementAttribute) -> Result<Vec<i32>, ParseIntError> {
 /// We must also know, for each pool index `i`, which contiguous slice of “corner slots” belongs to
 /// that pool vertex so channels can be scattered into the expanded order.
 ///
-/// ## Outputs
-///
-/// - **`expanded_vertices`**: `temp_verts[absi]` appended once per corner, in `temp_faces` order
-///   (ignoring sign on the last index of each face).
-/// - **`face_vertex_counts`**: number of corners per polygon (from running `count` reset on each
-///   negative index).
-/// - **`mapping_offsets[i]`**: start offset in corner space for pool vertex `i` (prefix sum of how
-///   many corners reference pool vertex `i`).
-/// - **`mapping_counts`**: after this function returns, again the number of corners referencing each
-///   pool vertex `i` (same as after pass 1; rebuilt during pass 3).
-/// - **`mappings`**: length = corner count. For each corner in `temp_faces` order (global corner
-///   index `cursor`), `mappings[slot] = cursor` where `slot` is the next free slot in the slice
-///   `[mapping_offsets[absi] ..)` reserved for pool vertex `absi`. So `mappings` ties pool-vertex
-///   corner slots to the global expanded corner index for channel gather/scatter in
-///   [`resolve_flat_f32_channel`].
+/// Output tables are documented on [`ExpandedPolygonVertices`].
 ///
 /// ## Three passes (same as Assimp)
 ///
@@ -484,7 +513,7 @@ fn parse_i32_array(attr: &ElementAttribute) -> Result<Vec<i32>, ParseIntError> {
 fn expand_mesh_polygon_vertices(
     temp_verts: &[[f32; 3]],
     temp_faces: &[i32],
-) -> Result<(Vec<[f32; 3]>, Vec<u32>, Vec<u32>, Vec<u32>, Vec<u32>), FbxTryFromReason> {
+) -> Result<ExpandedPolygonVertices, FbxTryFromReason> {
     let vertex_count = temp_verts.len();
     let mut mapping_counts = vec![0u32; vertex_count];
     let mut expanded_vertices = Vec::new();
@@ -542,13 +571,13 @@ fn expand_mesh_polygon_vertices(
         cursor += 1;
     }
 
-    Ok((
+    Ok(ExpandedPolygonVertices {
         expanded_vertices,
         face_vertex_counts,
         mapping_counts,
         mapping_offsets,
         mappings,
-    ))
+    })
 }
 
 pub struct ResolveFlatF32ChannelParams<'a> {
@@ -575,6 +604,7 @@ pub struct ResolveFlatF32ChannelParams<'a> {
 ///   floats) to copy from the data array; index `-1` means “no value” (zeros for that corner’s group).
 ///
 /// All copies use `src..src+components` and `dst..dst+components` so multi-component channels stay aligned.
+#[allow(clippy::needless_range_loop)]
 fn resolve_flat_f32_channel(
     source: &HashMap<String, ElementAttribute>,
     params: ResolveFlatF32ChannelParams<'_>,

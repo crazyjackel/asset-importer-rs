@@ -140,6 +140,7 @@ pub mod matkey {
     pub const _AI_MATKEY_TEXFLAGS_BASE: &str = "$tex.flags";
 }
 
+#[allow(dead_code)]
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum AiTextureOp {
@@ -175,6 +176,7 @@ impl TryFrom<u8> for AiTextureMapMode {
     }
 }
 
+#[allow(dead_code)]
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum AiTextureMapping {
@@ -266,6 +268,7 @@ pub enum AiShadingMode {
     PBR,
 }
 
+#[allow(dead_code)]
 #[bitflags]
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -275,6 +278,7 @@ enum AiTextureFlags {
     IgnoreAlpha = 0x04,
 }
 
+#[allow(dead_code)]
 #[repr(u8)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 enum AiBlendMode {
@@ -354,17 +358,17 @@ impl AiMaterial {
         semantic_type: Option<AiTextureType>,
         index: u32,
     ) -> Option<&AiMaterialProperty> {
-        for property in &self.properties {
-            if property.key == key
-                && (semantic_type.is_none() || semantic_type.unwrap() == property.semantic)
-                && property.index == index
-            {
-                return Some(property);
-            }
-        }
-        None
+        self.properties
+            .iter()
+            .find(|&property| {
+                property.key == key
+                    && (semantic_type.is_none() || semantic_type.unwrap() == property.semantic)
+                    && property.index == index
+            })
+            .map(|v| v as _)
     }
 
+    #[allow(clippy::manual_find)]
     pub fn get_property_mut(
         &mut self,
         key: &str,

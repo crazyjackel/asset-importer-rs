@@ -13,7 +13,7 @@ impl AiPostProcess for GenBoundingBoxes {
         steps.contains(AiPostProcessSteps::GenBoundingBoxes)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement bounding box generation
         Ok(())
     }

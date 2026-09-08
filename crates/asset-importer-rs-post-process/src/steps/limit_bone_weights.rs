@@ -13,7 +13,7 @@ impl AiPostProcess for LimitBoneWeights {
         steps.contains(AiPostProcessSteps::LimitBoneWeights)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement bone weight limiting
         Ok(())
     }

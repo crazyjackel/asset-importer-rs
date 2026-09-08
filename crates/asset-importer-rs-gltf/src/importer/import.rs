@@ -9,6 +9,8 @@ use asset_importer_rs_scene::{AiMaterial, AiScene, AiSceneFlag};
 
 use crate::importer::error::Gltf2ImportError;
 
+use super::mesh::ImportMeshes;
+
 #[derive(Debug, Default)]
 pub struct Gltf2Importer;
 
@@ -168,8 +170,11 @@ impl AiImporter for Gltf2Importer {
         //add default material
         embedded_materials.push(AiMaterial::default());
         //import meshes
-        let (mut meshes, mesh_offsets, remapping_tables) =
-            Gltf2Importer::import_meshes(&document, &buffer_data, embedded_materials.len() - 1)?;
+        let ImportMeshes {
+            mut meshes,
+            mesh_offsets,
+            remapping_tables,
+        } = Gltf2Importer::import_meshes(&document, &buffer_data, embedded_materials.len() - 1)?;
 
         //import cameras
         let mut cameras = Gltf2Importer::import_cameras(&document)?;

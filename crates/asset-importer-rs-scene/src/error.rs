@@ -1,6 +1,7 @@
 use core::error;
 use std::fmt::Display;
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct AiFailure;
 
@@ -12,6 +13,7 @@ impl Display for AiFailure {
 
 impl error::Error for AiFailure {}
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct AiOutOfMemory;
 
@@ -23,6 +25,7 @@ impl Display for AiOutOfMemory {
 
 impl error::Error for AiOutOfMemory {}
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub enum AiReturnError {
     Failure(AiFailure),

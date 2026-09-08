@@ -4,7 +4,7 @@ use asset_importer_rs_scene::{AiCamera, AiVector3D};
 
 use crate::importer::error::Gltf2ImportError;
 
-use super::importer::Gltf2Importer;
+use super::import::Gltf2Importer;
 
 impl Gltf2Importer {
     pub(crate) fn import_cameras(document: &Document) -> Result<Vec<AiCamera>, Gltf2ImportError> {

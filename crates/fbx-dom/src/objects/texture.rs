@@ -198,8 +198,10 @@ mod tests {
             pp_property_targets: HashMap::new(),
         })
         .unwrap();
-        let mut doc = OwnedDocument::default();
-        doc.videos = vec![video];
+        let doc = OwnedDocument {
+            videos: vec![video],
+            ..Default::default()
+        };
         assert_eq!(
             texture
                 .get_media_video(&doc)

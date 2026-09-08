@@ -175,8 +175,10 @@ mod tests {
 
         let matching = mk_cluster(1, vec![500]);
         let non_matching = mk_cluster(2, vec![999]);
-        let mut owned = OwnedDocument::default();
-        owned.clusters = vec![matching, non_matching];
+        let owned = OwnedDocument {
+            clusters: vec![matching, non_matching],
+            ..Default::default()
+        };
 
         let clusters = skin.get_clusters(&owned);
         assert_eq!(clusters.len(), 1);

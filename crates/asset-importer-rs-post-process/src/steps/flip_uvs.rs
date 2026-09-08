@@ -1,7 +1,6 @@
 use asset_importer_rs_core::{AiPostProcess, AiPostProcessSteps};
 use asset_importer_rs_scene::{
-    AI_MATH_PI, AiMaterial, AiMesh, AiPropertyTypeInfo, AiReal, AiScene, AiUvTransform, AiVector3D,
-    matkey,
+    AI_MATH_PI, AiMaterial, AiMesh, AiReal, AiScene, AiUvTransform, AiVector3D, matkey,
 };
 use bytemuck;
 use enumflags2::BitFlags;
@@ -25,9 +24,10 @@ impl std::fmt::Display for FlipUVsError {
 }
 impl std::error::Error for FlipUVsError {}
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub enum UvFlipVariant {
     X,
+    #[default]
     Y,
 }
 impl UvFlipVariant {
@@ -48,11 +48,6 @@ impl UvFlipVariant {
             UvFlipVariant::X => uv.x = -uv.x + 1.0 as AiReal,
             UvFlipVariant::Y => uv.y = -uv.y + 1.0 as AiReal,
         }
-    }
-}
-impl Default for UvFlipVariant {
-    fn default() -> Self {
-        Self::Y
     }
 }
 
@@ -129,8 +124,7 @@ impl AiPostProcess for FlipUVs {
 mod tests {
     use super::*;
     use asset_importer_rs_scene::{
-        AI_MAX_NUMBER_OF_TEXTURECOORDS, AiFace, AiMesh, AiPrimitiveType, AiSceneFlag,
-        AiTextureType, AiVector2D, AiVector3D,
+        AI_MAX_NUMBER_OF_TEXTURECOORDS, AiMesh, AiPropertyTypeInfo, AiTextureType,
     };
     use enumflags2::BitFlags;
 

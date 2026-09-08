@@ -11,3 +11,6 @@ documentation = "https://docs.rs/fbxscii"
 [dependencies]
 
 [features]
+
+[lints]
+workspace = true

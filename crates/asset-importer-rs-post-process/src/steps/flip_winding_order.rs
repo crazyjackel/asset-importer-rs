@@ -13,7 +13,7 @@ impl AiPostProcess for FlipWindingOrder {
         steps.contains(AiPostProcessSteps::FlipWindingOrder)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement winding order flipping
         Ok(())
     }

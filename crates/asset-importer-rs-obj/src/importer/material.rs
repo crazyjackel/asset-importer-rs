@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    path::{Path, PathBuf},
-};
+use std::{collections::HashMap, path::Path};
 
 use asset_importer_rs_core::DataLoader;
 use asset_importer_rs_scene::{
@@ -260,7 +257,7 @@ fn import_texture(
             loader(&file_path).map_err(|x| ObjImportError::FileOpenError(x, file_path.clone()))?;
         let mut buffer: Vec<u8> = Vec::new();
         data.read_to_end(&mut buffer)
-            .map_err(|x| ObjImportError::FileReadError(x))?;
+            .map_err(ObjImportError::FileReadError)?;
 
         //Guess Format
         let format = match file_path.extension().and_then(|ext| ext.to_str()) {
@@ -707,7 +704,7 @@ mod tests {
 
                 let name_prop0_data = &name_props[0].data;
                 if !name_prop0_data.is_empty() {
-                    String::from_utf8_lossy(&name_prop0_data).to_string()
+                    String::from_utf8_lossy(name_prop0_data).to_string()
                 } else {
                     String::new()
                 }

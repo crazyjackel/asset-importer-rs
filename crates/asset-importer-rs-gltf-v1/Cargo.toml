@@ -20,3 +20,6 @@ base64 = {workspace = true}
 [features]
 default = ["KHR_materials_common"]
 KHR_materials_common = ["gltf-v1/KHR_materials_common"]
+
+[lints]
+workspace = true

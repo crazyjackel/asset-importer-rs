@@ -13,7 +13,7 @@ impl AiPostProcess for RemoveComponent {
         steps.contains(AiPostProcessSteps::RemoveComponent)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement component removal
         Ok(())
     }

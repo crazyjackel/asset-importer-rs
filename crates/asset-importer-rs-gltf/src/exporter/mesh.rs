@@ -19,13 +19,22 @@ use gltf::{
 
 use asset_importer_rs_scene::{
     AiColor4D, AiMatrix4x4, AiPrimitiveType, AiQuaternion, AiReal, AiScene, AiVector2D, AiVector3D,
-    ai_real_to_f32,
+    ai_real_to_f32, ai_real_to_f64,
 };
 use serde_json::{Number, Value};
 
 use crate::exporter::error::Gltf2ExportError;
 
-use super::exporter::{Gltf2Exporter, generate_unique_name};
+use super::export::{Gltf2Exporter, generate_unique_name};
+
+fn json_real(value: AiReal) -> Value {
+    Value::Number(Number::from_f64(ai_real_to_f64(value)).unwrap())
+}
+
+pub(crate) struct MeshExportOptions {
+    pub unlimited_bones_per_vertex: bool,
+    pub export_anim_normals: bool,
+}
 
 impl Gltf2Exporter {
     pub(crate) fn export_meshes(
@@ -35,11 +44,12 @@ impl Gltf2Exporter {
         unique_names_map: &mut HashMap<String, u32>,
         buffer_data: &mut Vec<u8>,
         node_index_to_meshes: &HashMap<usize, Vec<usize>>,
-        unlimited_bones_per_vertex: bool,
-        //export_anim_sparse: bool,
-        export_anim_normals: bool,
-        //export_skeleton: bool,
+        options: MeshExportOptions,
     ) -> Result<(), Gltf2ExportError> {
+        let MeshExportOptions {
+            unlimited_bones_per_vertex,
+            export_anim_normals,
+        } = options;
         let create_skin = scene.meshes.iter().any(|x| !x.bones.is_empty());
         let mut inverse_bind_matrices_data: Vec<AiMatrix4x4> = Vec::new();
         let mut skin = if create_skin {
@@ -341,8 +351,7 @@ impl Gltf2Exporter {
         }
 
         //finish skin export
-        if skin.is_some() {
-            let mut skin_ref = skin.unwrap();
+        if let Some(mut skin_ref) = skin {
             //export inverse_bind_matrices
             let inverse_mat_data =
                 AccessorExporter::export_mat4(root, buffer_data, inverse_bind_matrices_data);
@@ -408,54 +417,11 @@ impl AccessorExporter {
         buffer_data: &mut Vec<u8>,
         vector_data: Vec<AiMatrix4x4>,
     ) -> Option<Accessor> {
-        let mut min = if vector_data.is_empty() {
-            [
-                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-            ]
-        } else {
-            [
-                f32::MAX,
-                f32::MAX,
-                f32::MAX,
-                f32::MAX,
-                f32::MAX,
-                f32::MAX,
-                f32::MAX,
-                f32::MAX,
-                f32::MAX,
-                f32::MAX,
-                f32::MAX,
-                f32::MAX,
-                f32::MAX,
-                f32::MAX,
-                f32::MAX,
-                f32::MAX,
-            ]
-        };
-        let mut max = if vector_data.is_empty() {
-            [
-                0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-            ]
-        } else {
-            [
-                f32::MIN,
-                f32::MIN,
-                f32::MIN,
-                f32::MIN,
-                f32::MIN,
-                f32::MIN,
-                f32::MIN,
-                f32::MIN,
-                f32::MIN,
-                f32::MIN,
-                f32::MIN,
-                f32::MIN,
-                f32::MIN,
-                f32::MIN,
-                f32::MIN,
-                f32::MIN,
-            ]
-        };
+        if vector_data.is_empty() {
+            return None;
+        }
+        let mut min = [f32::MAX; 16];
+        let mut max = [f32::MIN; 16];
         let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4 * 16);
         for vector_base in vector_data {
             let matrix: [AiReal; 16] = vector_base.into();
@@ -513,8 +479,7 @@ impl AccessorExporter {
             DataType::F32,
             Target::ArrayBuffer,
             Dimensions::Mat4,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -526,16 +491,8 @@ impl AccessorExporter {
         if vector_data.is_empty() {
             return None;
         }
-        let mut min_x = if vector_data.is_empty() {
-            0.0
-        } else {
-            f32::MAX
-        };
-        let mut max_x = if vector_data.is_empty() {
-            0.0
-        } else {
-            f32::MIN
-        };
+        let mut min_x = f32::MAX;
+        let mut max_x = f32::MIN;
         let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4 * 4);
         for vector_base in vector_data {
             for vector in vector_base {
@@ -563,8 +520,7 @@ impl AccessorExporter {
             DataType::F32,
             Target::ElementArrayBuffer,
             Dimensions::Vec4,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -576,8 +532,8 @@ impl AccessorExporter {
         if vector_data.is_empty() {
             return None;
         }
-        let mut min_x = if vector_data.is_empty() { 0 } else { u32::MAX } as usize;
-        let mut max_x = if vector_data.is_empty() { 0 } else { u32::MIN } as usize;
+        let mut min_x = u32::MAX as usize;
+        let mut max_x = 0usize;
         let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4 * 4);
         for vector_base in vector_data {
             for vector in vector_base {
@@ -601,8 +557,7 @@ impl AccessorExporter {
             DataType::U32,
             Target::ElementArrayBuffer,
             Dimensions::Vec4,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -614,8 +569,8 @@ impl AccessorExporter {
         if vector_data.is_empty() {
             return None;
         }
-        let mut min_x = if vector_data.is_empty() { 0 } else { u32::MAX };
-        let mut max_x = if vector_data.is_empty() { 0 } else { u32::MIN };
+        let mut min_x = u32::MAX;
+        let mut max_x = 0u32;
         let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4);
         for vector in vector_data {
             if vector < &min_x {
@@ -636,8 +591,7 @@ impl AccessorExporter {
             DataType::U32,
             Target::ElementArrayBuffer,
             Dimensions::Scalar,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -649,16 +603,8 @@ impl AccessorExporter {
         if vector_data.is_empty() {
             return None;
         }
-        let mut min_x = if vector_data.is_empty() {
-            0.0
-        } else {
-            f32::MAX
-        };
-        let mut max_x = if vector_data.is_empty() {
-            0.0
-        } else {
-            f32::MIN
-        };
+        let mut min_x = f32::MAX;
+        let mut max_x = f32::MIN;
         let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4);
         for vector in vector_data {
             if vector < &min_x {
@@ -683,8 +629,7 @@ impl AccessorExporter {
             DataType::F32,
             Target::ArrayBuffer,
             Dimensions::Scalar,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -696,16 +641,8 @@ impl AccessorExporter {
         if vector_data.is_empty() {
             return None;
         }
-        let (mut min_x, mut min_y) = if vector_data.is_empty() {
-            (0.0, 0.0)
-        } else {
-            (AiReal::MAX, AiReal::MAX)
-        };
-        let (mut max_x, mut max_y) = if vector_data.is_empty() {
-            (0.0, 0.0)
-        } else {
-            (AiReal::MIN, AiReal::MIN)
-        };
+        let (mut min_x, mut min_y) = (AiReal::MAX, AiReal::MAX);
+        let (mut max_x, mut max_y) = (AiReal::MIN, AiReal::MIN);
         let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 2 * 4);
         for vector in vector_data {
             if vector.x < min_x {
@@ -724,14 +661,8 @@ impl AccessorExporter {
             data.extend_from_slice(&ai_real_to_f32(vector.x).to_le_bytes());
             data.extend_from_slice(&ai_real_to_f32(vector.y).to_le_bytes());
         }
-        let min = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(min_x as f64).unwrap()),
-            Value::Number(Number::from_f64(min_y as f64).unwrap()),
-        ]));
-        let max = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(max_x as f64).unwrap()),
-            Value::Number(Number::from_f64(max_y as f64).unwrap()),
-        ]));
+        let min = Some(Value::Array(vec![json_real(min_x), json_real(min_y)]));
+        let max = Some(Value::Array(vec![json_real(max_x), json_real(max_y)]));
         Self::export_data(
             root,
             buffer_data,
@@ -739,8 +670,7 @@ impl AccessorExporter {
             DataType::F32,
             Target::ArrayBuffer,
             Dimensions::Vec2,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -749,16 +679,11 @@ impl AccessorExporter {
         buffer_data: &mut Vec<u8>,
         vector_data: &Vec<AiVector3D>,
     ) -> Option<Accessor> {
-        let (mut min_x, mut min_y, mut min_z) = if vector_data.is_empty() {
-            (0.0, 0.0, 0.0)
-        } else {
-            (AiReal::MAX, AiReal::MAX, AiReal::MAX)
-        };
-        let (mut max_x, mut max_y, mut max_z) = if vector_data.is_empty() {
-            (0.0, 0.0, 0.0)
-        } else {
-            (AiReal::MIN, AiReal::MIN, AiReal::MIN)
-        };
+        if vector_data.is_empty() {
+            return None;
+        }
+        let (mut min_x, mut min_y, mut min_z) = (AiReal::MAX, AiReal::MAX, AiReal::MAX);
+        let (mut max_x, mut max_y, mut max_z) = (AiReal::MIN, AiReal::MIN, AiReal::MIN);
         let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 3 * 4);
         for vector in vector_data {
             if vector.x < min_x {
@@ -785,14 +710,14 @@ impl AccessorExporter {
             data.extend_from_slice(&ai_real_to_f32(vector.z).to_le_bytes());
         }
         let min = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(min_x as f64).unwrap()),
-            Value::Number(Number::from_f64(min_y as f64).unwrap()),
-            Value::Number(Number::from_f64(min_z as f64).unwrap()),
+            json_real(min_x),
+            json_real(min_y),
+            json_real(min_z),
         ]));
         let max = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(max_x as f64).unwrap()),
-            Value::Number(Number::from_f64(max_y as f64).unwrap()),
-            Value::Number(Number::from_f64(max_z as f64).unwrap()),
+            json_real(max_x),
+            json_real(max_y),
+            json_real(max_z),
         ]));
         Self::export_data(
             root,
@@ -801,8 +726,7 @@ impl AccessorExporter {
             DataType::F32,
             Target::ArrayBuffer,
             Dimensions::Vec3,
-            min,
-            max,
+            (min, max),
         )
     }
     pub(crate) fn export_quaternion(
@@ -813,16 +737,10 @@ impl AccessorExporter {
         if vector_data.is_empty() {
             return None;
         }
-        let (mut min_x, mut min_y, mut min_z, mut min_w) = if vector_data.is_empty() {
-            (0.0, 0.0, 0.0, 0.0)
-        } else {
-            (AiReal::MAX, AiReal::MAX, AiReal::MAX, AiReal::MAX)
-        };
-        let (mut max_x, mut max_y, mut max_z, mut max_w) = if vector_data.is_empty() {
-            (0.0, 0.0, 0.0, 0.0)
-        } else {
-            (AiReal::MIN, AiReal::MIN, AiReal::MIN, AiReal::MIN)
-        };
+        let (mut min_x, mut min_y, mut min_z, mut min_w) =
+            (AiReal::MAX, AiReal::MAX, AiReal::MAX, AiReal::MAX);
+        let (mut max_x, mut max_y, mut max_z, mut max_w) =
+            (AiReal::MIN, AiReal::MIN, AiReal::MIN, AiReal::MIN);
         let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 3 * 4);
         for vector in vector_data {
             if vector.x < min_x {
@@ -856,16 +774,16 @@ impl AccessorExporter {
             data.extend_from_slice(&ai_real_to_f32(vector.w).to_le_bytes());
         }
         let min = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(min_x as f64).unwrap()),
-            Value::Number(Number::from_f64(min_y as f64).unwrap()),
-            Value::Number(Number::from_f64(min_z as f64).unwrap()),
-            Value::Number(Number::from_f64(min_w as f64).unwrap()),
+            json_real(min_x),
+            json_real(min_y),
+            json_real(min_z),
+            json_real(min_w),
         ]));
         let max = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(max_x as f64).unwrap()),
-            Value::Number(Number::from_f64(max_y as f64).unwrap()),
-            Value::Number(Number::from_f64(max_z as f64).unwrap()),
-            Value::Number(Number::from_f64(max_w as f64).unwrap()),
+            json_real(max_x),
+            json_real(max_y),
+            json_real(max_z),
+            json_real(max_w),
         ]));
         Self::export_data(
             root,
@@ -874,8 +792,7 @@ impl AccessorExporter {
             DataType::F32,
             Target::ArrayBuffer,
             Dimensions::Vec4,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -887,16 +804,8 @@ impl AccessorExporter {
         if vector_data.is_empty() {
             return None;
         }
-        let (mut min_x, mut min_y, mut min_z, mut min_w) = if vector_data.is_empty() {
-            (0.0, 0.0, 0.0, 0.0)
-        } else {
-            (f32::MAX, f32::MAX, f32::MAX, f32::MAX)
-        };
-        let (mut max_x, mut max_y, mut max_z, mut max_w) = if vector_data.is_empty() {
-            (0.0, 0.0, 0.0, 0.0)
-        } else {
-            (f32::MIN, f32::MIN, f32::MIN, f32::MAX)
-        };
+        let (mut min_x, mut min_y, mut min_z, mut min_w) = (f32::MAX, f32::MAX, f32::MAX, f32::MAX);
+        let (mut max_x, mut max_y, mut max_z, mut max_w) = (f32::MIN, f32::MIN, f32::MIN, f32::MIN);
         let mut data: Vec<u8> = Vec::with_capacity(vector_data.len() * 4 * 4);
         for vector in vector_data {
             if vector.r < min_x {
@@ -948,8 +857,7 @@ impl AccessorExporter {
             DataType::F32,
             Target::ArrayBuffer,
             Dimensions::Vec4,
-            min,
-            max,
+            (min, max),
         )
     }
 
@@ -960,8 +868,7 @@ impl AccessorExporter {
         component_type: DataType,
         target: Target,
         acc_type: Dimensions,
-        min: Option<Value>,
-        max: Option<Value>,
+        (min, max): (Option<Value>, Option<Value>),
     ) -> Option<Accessor> {
         if data.is_empty() {
             return None;

@@ -172,8 +172,10 @@ mod tests {
         })
         .unwrap();
 
-        let mut owned = OwnedDocument::default();
-        owned.shape_geometries = vec![shape];
+        let owned = OwnedDocument {
+            shape_geometries: vec![shape],
+            ..Default::default()
+        };
         let linked = channel.get_shape_geometries(&owned);
         assert_eq!(linked.len(), 1);
         assert_eq!(linked[0].inner().object_index, 41);

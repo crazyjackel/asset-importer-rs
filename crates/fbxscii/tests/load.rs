@@ -110,7 +110,7 @@ fn duck_fbx_fixture_semantics_match_fbx_dom_asset() {
         .map(|h| h.children().filter(|ch| ch.key() == "C").count())
         .collect();
     assert!(
-        connection_row_counts.iter().any(|&n| n == 10),
+        connection_row_counts.contains(&10),
         "expected a Connections block with ten C rows, got per-block counts {connection_row_counts:?}"
     );
 }

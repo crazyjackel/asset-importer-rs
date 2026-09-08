@@ -13,7 +13,7 @@ impl AiPostProcess for PopulateArmatureData {
         steps.contains(AiPostProcessSteps::PopulateArmatureData)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement armature data population
         Ok(())
     }

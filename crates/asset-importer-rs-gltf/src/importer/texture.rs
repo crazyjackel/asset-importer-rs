@@ -12,7 +12,7 @@ use image::ImageFormat;
 
 use crate::importer::error::Gltf2ImportError;
 
-use super::importer::Gltf2Importer;
+use super::import::Gltf2Importer;
 
 impl Gltf2Importer {
     pub fn from_source<R: Read + Seek, F: Fn(&Path) -> io::Result<R>>(
@@ -210,22 +210,30 @@ impl Gltf2Importer {
                     .collect(),
                 gltf::image::Format::R8G8 => data
                     .pixels
-                    .chunks_exact(2)
+                    .as_chunks::<2>()
+                    .0
+                    .iter()
                     .map(|x| AiTexel::new(x[0], x[1], 0, 255))
                     .collect(),
                 gltf::image::Format::R8G8B8 => data
                     .pixels
-                    .chunks_exact(3)
+                    .as_chunks::<3>()
+                    .0
+                    .iter()
                     .map(|chunk| AiTexel::new(chunk[0], chunk[1], chunk[2], 255))
                     .collect(),
                 gltf::image::Format::R8G8B8A8 => data
                     .pixels
-                    .chunks_exact(4)
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
                     .map(|chunk| AiTexel::new(chunk[0], chunk[1], chunk[2], chunk[3]))
                     .collect(),
                 gltf::image::Format::R16 => {
                     data.pixels
-                        .chunks_exact(2)
+                        .as_chunks::<2>()
+                        .0
+                        .iter()
                         .map(|chunk| {
                             let r = chunk[0]; // Take the most significant byte
                             AiTexel::new(r, r, r, 255)
@@ -234,22 +242,30 @@ impl Gltf2Importer {
                 }
                 gltf::image::Format::R16G16 => data
                     .pixels
-                    .chunks_exact(4)
+                    .as_chunks::<4>()
+                    .0
+                    .iter()
                     .map(|chunk| AiTexel::new(chunk[0], chunk[2], 0, 255))
                     .collect(),
                 gltf::image::Format::R16G16B16 => data
                     .pixels
-                    .chunks_exact(6)
+                    .as_chunks::<6>()
+                    .0
+                    .iter()
                     .map(|chunk| AiTexel::new(chunk[0], chunk[2], chunk[4], 255))
                     .collect(),
                 gltf::image::Format::R16G16B16A16 => data
                     .pixels
-                    .chunks_exact(8)
+                    .as_chunks::<8>()
+                    .0
+                    .iter()
                     .map(|chunk| AiTexel::new(chunk[0], chunk[2], chunk[4], chunk[6]))
                     .collect(),
                 gltf::image::Format::R32G32B32FLOAT => data
                     .pixels
-                    .chunks_exact(12)
+                    .as_chunks::<12>()
+                    .0
+                    .iter()
                     .map(|chunk| {
                         let r = f32::from_le_bytes(chunk[0..4].try_into().unwrap());
                         let g = f32::from_le_bytes(chunk[4..8].try_into().unwrap());
@@ -264,7 +280,9 @@ impl Gltf2Importer {
                     .collect(),
                 gltf::image::Format::R32G32B32A32FLOAT => data
                     .pixels
-                    .chunks_exact(16)
+                    .as_chunks::<16>()
+                    .0
+                    .iter()
                     .map(|chunk| {
                         let r = f32::from_le_bytes(chunk[0..4].try_into().unwrap());
                         let g = f32::from_le_bytes(chunk[4..8].try_into().unwrap());

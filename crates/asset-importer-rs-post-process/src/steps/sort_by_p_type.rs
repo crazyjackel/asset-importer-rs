@@ -13,7 +13,7 @@ impl AiPostProcess for SortByPType {
         steps.contains(AiPostProcessSteps::SortByPType)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement primitive type sorting
         Ok(())
     }

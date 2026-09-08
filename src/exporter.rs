@@ -37,6 +37,7 @@ impl ExportFormatEntry {
 
 #[derive(Default)]
 pub struct Exporter {
+    #[allow(dead_code)]
     exporters: Vec<ExportFormatEntry>,
 }
 

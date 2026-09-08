@@ -11,7 +11,7 @@ use fbxscii::{ElementAmphitheatre, ElementHandle};
 
 use crate::document::{
     Document, DocumentLoader, DocumentParseError, ImportSettings, LazyObject,
-    ObjectPropertyConnection, Property, PropertyDetails, PropertyParseError, Template,
+    ObjectPropertyConnection, Property, PropertyDetails, PropertyParseError,
 };
 
 /// Minimum `FBXVersion` supported by the ASCII loader (below this → [`DocumentParseError::UnsupportedVersion`]).

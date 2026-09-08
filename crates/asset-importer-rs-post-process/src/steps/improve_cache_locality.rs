@@ -13,7 +13,7 @@ impl AiPostProcess for ImproveCacheLocality {
         steps.contains(AiPostProcessSteps::ImproveCacheLocality)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement cache locality improvement
         Ok(())
     }

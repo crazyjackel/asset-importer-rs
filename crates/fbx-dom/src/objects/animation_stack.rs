@@ -168,8 +168,10 @@ mod tests {
             pp_property_targets: HashMap::new(),
         })
         .unwrap();
-        let mut owned = OwnedDocument::default();
-        owned.animation_layers = vec![layer];
+        let owned = OwnedDocument {
+            animation_layers: vec![layer],
+            ..Default::default()
+        };
         let links = stack.get_animation_layers(&owned);
         assert_eq!(links.len(), 1);
         assert_eq!(links[0].inner().object_index, 1001);

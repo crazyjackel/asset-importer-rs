@@ -13,7 +13,7 @@ Ignores live in `.cargo/audit.toml`.
 ### `cargo.yml` - Base Tests
 Runs standard Rust quality checks:
 - Documentation tests
-- Clippy linting
+- Clippy: `cargo clippy --workspace --all-targets --all-features --locked -- -D warnings`
 - Code formatting (rustfmt)
 
 **Triggers:** Push and pull requests to `main` branch

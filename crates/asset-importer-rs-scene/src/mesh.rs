@@ -34,6 +34,7 @@ pub struct AiBone {
 }
 
 impl AiBone {
+    #[allow(dead_code)]
     fn copy_vertex_weights(&mut self, other: AiBone) {
         if other.weights.is_empty() {
             self.weights.clear();
@@ -103,6 +104,7 @@ unsafe impl ::enumflags2::_internal::RawBitFlags for AiPrimitiveType {
 impl ::enumflags2::BitFlag for AiPrimitiveType {}
 
 impl AiPrimitiveType {
+    #[allow(dead_code)]
     const fn primitive_type_for_n_indices(n: u8) -> AiPrimitiveType {
         match n {
             4u8..=u8::MAX => AiPrimitiveType::Polygon,
@@ -127,6 +129,7 @@ pub struct AiAnimMesh {
 }
 
 impl AiAnimMesh {
+    #[allow(dead_code)]
     fn has_vertex_color(&self, p_index: usize) -> bool {
         if p_index >= AI_MAX_NUMBER_OF_COLORS_SETS {
             false
@@ -134,6 +137,7 @@ impl AiAnimMesh {
             p_index < self.colors.len()
         }
     }
+    #[allow(dead_code)]
     fn has_texture_coord(&self, p_index: usize) -> bool {
         if p_index >= AI_MAX_NUMBER_OF_TEXTURECOORDS {
             false
@@ -174,6 +178,7 @@ pub struct AiMesh {
 }
 
 impl AiMesh {
+    #[allow(dead_code)]
     fn get_num_uv_channels(&self) -> u32 {
         let mut n: u32 = 0;
         for i in 0..AI_MAX_NUMBER_OF_TEXTURECOORDS {
@@ -184,6 +189,7 @@ impl AiMesh {
         n
     }
 
+    #[allow(dead_code)]
     fn get_num_color_channels(&self) -> u32 {
         let mut n: u32 = 0;
         while n < AI_MAX_NUMBER_OF_COLORS_SETS.try_into().unwrap_or(u32::MAX)

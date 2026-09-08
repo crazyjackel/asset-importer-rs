@@ -99,3 +99,6 @@ embed-textures = []
 force-gen-normals = []
 drop-normals = []
 gen-bounding-boxes = []
+
+[lints]
+workspace = true
