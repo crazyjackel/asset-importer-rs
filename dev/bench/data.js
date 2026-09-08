@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788819914364,
+  "lastUpdate": 1788827862378,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -2147,6 +2147,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 51160112,
             "range": "± 1885032",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e7c03b34bd3bc84f33fbfd8fa792cb0aee568efb",
+          "message": "Merge pull request #102 from crazyjackel/jlevitt/clippy-fixes\n\nClippy Fixes",
+          "timestamp": "2026-09-07T20:35:11-04:00",
+          "tree_id": "69cbad92265941d1d91dedf93e1db3d1f5084255",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/e7c03b34bd3bc84f33fbfd8fa792cb0aee568efb"
+        },
+        "date": 1788827861666,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 91892219,
+            "range": "± 250101",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 49850650,
+            "range": "± 248372",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 194053122,
+            "range": "± 319312",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 49956590,
+            "range": "± 2950783",
             "unit": "ns/iter"
           }
         ]
