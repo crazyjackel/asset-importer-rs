@@ -19,13 +19,17 @@ use gltf::{
 
 use asset_importer_rs_scene::{
     AiColor4D, AiMatrix4x4, AiPrimitiveType, AiQuaternion, AiReal, AiScene, AiVector2D, AiVector3D,
-    ai_real_to_f32,
+    ai_real_to_f32, ai_real_to_f64,
 };
 use serde_json::{Number, Value};
 
 use crate::exporter::error::Gltf2ExportError;
 
 use super::export::{Gltf2Exporter, generate_unique_name};
+
+fn json_real(value: AiReal) -> Value {
+    Value::Number(Number::from_f64(ai_real_to_f64(value)).unwrap())
+}
 
 pub(crate) struct MeshExportOptions {
     pub unlimited_bones_per_vertex: bool,
@@ -657,14 +661,8 @@ impl AccessorExporter {
             data.extend_from_slice(&ai_real_to_f32(vector.x).to_le_bytes());
             data.extend_from_slice(&ai_real_to_f32(vector.y).to_le_bytes());
         }
-        let min = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(min_x).unwrap()),
-            Value::Number(Number::from_f64(min_y).unwrap()),
-        ]));
-        let max = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(max_x).unwrap()),
-            Value::Number(Number::from_f64(max_y).unwrap()),
-        ]));
+        let min = Some(Value::Array(vec![json_real(min_x), json_real(min_y)]));
+        let max = Some(Value::Array(vec![json_real(max_x), json_real(max_y)]));
         Self::export_data(
             root,
             buffer_data,
@@ -712,14 +710,14 @@ impl AccessorExporter {
             data.extend_from_slice(&ai_real_to_f32(vector.z).to_le_bytes());
         }
         let min = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(min_x).unwrap()),
-            Value::Number(Number::from_f64(min_y).unwrap()),
-            Value::Number(Number::from_f64(min_z).unwrap()),
+            json_real(min_x),
+            json_real(min_y),
+            json_real(min_z),
         ]));
         let max = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(max_x).unwrap()),
-            Value::Number(Number::from_f64(max_y).unwrap()),
-            Value::Number(Number::from_f64(max_z).unwrap()),
+            json_real(max_x),
+            json_real(max_y),
+            json_real(max_z),
         ]));
         Self::export_data(
             root,
@@ -776,16 +774,16 @@ impl AccessorExporter {
             data.extend_from_slice(&ai_real_to_f32(vector.w).to_le_bytes());
         }
         let min = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(min_x).unwrap()),
-            Value::Number(Number::from_f64(min_y).unwrap()),
-            Value::Number(Number::from_f64(min_z).unwrap()),
-            Value::Number(Number::from_f64(min_w).unwrap()),
+            json_real(min_x),
+            json_real(min_y),
+            json_real(min_z),
+            json_real(min_w),
         ]));
         let max = Some(Value::Array(vec![
-            Value::Number(Number::from_f64(max_x).unwrap()),
-            Value::Number(Number::from_f64(max_y).unwrap()),
-            Value::Number(Number::from_f64(max_z).unwrap()),
-            Value::Number(Number::from_f64(max_w).unwrap()),
+            json_real(max_x),
+            json_real(max_y),
+            json_real(max_z),
+            json_real(max_w),
         ]));
         Self::export_data(
             root,

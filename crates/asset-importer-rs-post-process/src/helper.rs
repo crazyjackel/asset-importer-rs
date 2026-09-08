@@ -28,6 +28,7 @@ impl EpsilonCompute for AiMesh {
                 max_vec.z = vertex.z;
             }
         }
-        (max_vec - min_vec).len() * AiReal::from(1e-4)
+        let epsilon_scale: AiReal = 1e-4;
+        (max_vec - min_vec).len() * epsilon_scale
     }
 }
