@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3](https://github.com/crazyjackel/asset-importer-rs/compare/fbxscii-v0.1.2...fbxscii-v0.1.3) - 2026-09-08
+
+### Added
+
+- update clippy linting
+
 ## [0.1.2](https://github.com/crazyjackel/asset-importer-rs/compare/fbxscii-v0.1.1...fbxscii-v0.1.2) - 2026-09-06
 
 ### Fixed

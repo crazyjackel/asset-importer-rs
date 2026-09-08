@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3](https://github.com/crazyjackel/asset-importer-rs/compare/fbx-dom-v0.1.2...fbx-dom-v0.1.3) - 2026-09-08
+
+### Added
+
+- adjusted to use decode
+
+### Other
+
+- Merge branch 'dependabot/cargo/base64-0.23.1' of https://github.com/crazyjackel/asset-importer-rs into dependabot/cargo/base64-0.23.1
+
 ## [0.1.2](https://github.com/crazyjackel/asset-importer-rs/compare/fbx-dom-v0.1.1...fbx-dom-v0.1.2) - 2026-09-06
 
 ### Fixed

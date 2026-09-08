@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2](https://github.com/crazyjackel/asset-importer-rs/compare/asset-importer-rs-v0.4.1...asset-importer-rs-v0.4.2) - 2026-09-08
+
+### Added
+
+- adjusted to use decode
+- added triangulation post-processing
+
+### Fixed
+
+- bad merge
+
+### Other
+
+- Merge branch 'dependabot/cargo/base64-0.23.1' of https://github.com/crazyjackel/asset-importer-rs into dependabot/cargo/base64-0.23.1
+- *(deps)* bump base64 from 0.13.1 to 0.23.1
+
 ## [0.4.1](https://github.com/crazyjackel/asset-importer-rs/compare/asset-importer-rs-v0.4.0...asset-importer-rs-v0.4.1) - 2026-09-06
 
 ### Added
