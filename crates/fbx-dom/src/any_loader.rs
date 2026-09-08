@@ -4,6 +4,7 @@
 //! values are coerced to [`crate::document::Property`] where possible; connection rows become
 //! `OO` / `OP` / `PP` entries. See [`crate::document`] for semantics.
 
+use base64::Engine as _;
 use fbxcel::{
     low::{FbxVersion, v7400::AttributeValue},
     tree::{any::AnyTree, v7400::NodeHandle},
@@ -418,7 +419,7 @@ fn attribute_value_to_ascii_token(value: &AttributeValue) -> String {
         AttributeValue::F32(v) => format!("{v}"),
         AttributeValue::F64(v) => format!("{v}"),
         AttributeValue::String(s) => s.clone(),
-        AttributeValue::Binary(bytes) => base64::encode(bytes),
+        AttributeValue::Binary(bytes) => base64::engine::general_purpose::STANDARD.encode(bytes),
         AttributeValue::ArrBool(values) => values
             .iter()
             .map(|b| if *b { "1" } else { "0" })

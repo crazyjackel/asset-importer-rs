@@ -9,6 +9,7 @@ use asset_importer_rs_scene::{
         AI_MATKEY_TWOSIDED,
     },
 };
+use base64::Engine as _;
 use gltf_v1::json::{
     Image, Material, Root, Sampler, StringIndex, Texture,
     material::ParameterValue,
@@ -257,8 +258,11 @@ fn export_material_texture(
                     source.name = Some(texture.filename.clone());
                     if let Ok(data) = texture.export(&[]) {
                         let mimetype = data.format.get_mime_type();
-                        source.uri =
-                            format!("data:{};base64,{}", mimetype, base64::encode(data.data));
+                        source.uri = format!(
+                            "data:{};base64,{}",
+                            mimetype,
+                            base64::engine::general_purpose::STANDARD.encode(data.data)
+                        );
                     }
                 }
             } else {

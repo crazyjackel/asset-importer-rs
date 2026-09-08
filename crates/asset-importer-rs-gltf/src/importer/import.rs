@@ -2,6 +2,7 @@ use std::io::{self, Read, Seek};
 
 use std::path::Path;
 
+use base64::Engine as _;
 use gltf::{Document, Gltf, buffer};
 
 use asset_importer_rs_core::{AiImporter, AiImporterDesc, AiImporterFlags, AiImporterInfo};
@@ -35,10 +36,15 @@ impl Gltf2Importer {
                             let mut it = rest.split(";base64,");
 
                             match (it.next(), it.next()) {
-                                (_, Some(match1)) => base64::decode(match1)
-                                    .map_err(|arg0: base64::DecodeError| gltf::Error::Base64(arg0)),
-                                (Some(match0), _) => {
-                                    base64::decode(match0).map_err(gltf::Error::Base64)
+                                (_, Some(payload)) | (Some(payload), None) => {
+                                    base64::engine::general_purpose::STANDARD
+                                        .decode(payload)
+                                        .map_err(|err| {
+                                            gltf::Error::Io(io::Error::new(
+                                                io::ErrorKind::InvalidData,
+                                                err,
+                                            ))
+                                        })
                                 }
                                 _ => Err(gltf::Error::UnsupportedScheme),
                             }
