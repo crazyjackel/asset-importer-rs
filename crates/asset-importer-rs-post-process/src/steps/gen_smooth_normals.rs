@@ -26,7 +26,7 @@ impl std::error::Error for GenSmoothNormalsError {}
 /// Generate smooth normals for meshes
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct GenSmoothNormals {
-    pub smooth_angle: f32,
+    pub smooth_angle: AiReal,
     pub force_gen_normals: bool,
     pub flip_winding_order: bool,
     pub left_handed: bool,
@@ -526,9 +526,9 @@ mod tests {
 
         // Check default values
         assert_eq!(gen_smooth_normals.smooth_angle, degrees_to_radians(175.0));
-        assert_eq!(gen_smooth_normals.force_gen_normals, false);
-        assert_eq!(gen_smooth_normals.flip_winding_order, false);
-        assert_eq!(gen_smooth_normals.left_handed, false);
+        assert!(!gen_smooth_normals.force_gen_normals);
+        assert!(!gen_smooth_normals.flip_winding_order);
+        assert!(!gen_smooth_normals.left_handed);
     }
 
     #[test]
@@ -538,9 +538,9 @@ mod tests {
         // Test with GenSmoothNormals step
         let steps = BitFlags::from(AiPostProcessSteps::GenSmoothNormals);
         assert!(gen_smooth_normals.prepare(steps));
-        assert_eq!(gen_smooth_normals.force_gen_normals, false);
-        assert_eq!(gen_smooth_normals.flip_winding_order, false);
-        assert_eq!(gen_smooth_normals.left_handed, false);
+        assert!(!gen_smooth_normals.force_gen_normals);
+        assert!(!gen_smooth_normals.flip_winding_order);
+        assert!(!gen_smooth_normals.left_handed);
 
         // Test with additional steps
         let steps = AiPostProcessSteps::GenSmoothNormals
@@ -548,9 +548,9 @@ mod tests {
             | AiPostProcessSteps::FlipWindingOrder
             | AiPostProcessSteps::MakeLeftHanded;
         assert!(gen_smooth_normals.prepare(steps));
-        assert_eq!(gen_smooth_normals.force_gen_normals, true);
-        assert_eq!(gen_smooth_normals.flip_winding_order, true);
-        assert_eq!(gen_smooth_normals.left_handed, true);
+        assert!(gen_smooth_normals.force_gen_normals);
+        assert!(gen_smooth_normals.flip_winding_order);
+        assert!(gen_smooth_normals.left_handed);
 
         // Test without GenSmoothNormals step
         let steps = BitFlags::from(AiPostProcessSteps::ForceGenNormals);

@@ -119,8 +119,10 @@ mod tests {
         })
         .unwrap();
 
-        let mut owned = OwnedDocument::default();
-        owned.blend_shape_channels = vec![channel];
+        let owned = OwnedDocument {
+            blend_shape_channels: vec![channel],
+            ..Default::default()
+        };
         let linked = blend_shape.get_blend_shape_channels(&owned);
         assert_eq!(linked.len(), 1);
         assert_eq!(linked[0].inner().object_index, 51);

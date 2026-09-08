@@ -4,7 +4,7 @@ use asset_importer_rs_scene::{AiMetadata, AiMetadataEntry};
 
 use crate::importer::error::Gltf2ImportError;
 
-use super::importer::Gltf2Importer;
+use super::import::Gltf2Importer;
 
 use crate::{
     AI_METADATA_SOURCE_COPYRIGHT, AI_METADATA_SOURCE_FORMAT_VERSION, AI_METADATA_SOURCE_GENERATOR,

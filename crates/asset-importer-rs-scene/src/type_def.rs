@@ -19,6 +19,11 @@ pub mod base_types {
     pub fn ai_real_to_f32(value: AiReal) -> f32 {
         value as f32
     }
+
+    #[inline]
+    pub fn ai_real_to_f64(value: AiReal) -> f64 {
+        value
+    }
 }
 #[cfg(not(feature = "double_precision"))]
 pub mod base_types {
@@ -41,6 +46,11 @@ pub mod base_types {
     #[inline]
     pub fn ai_real_to_f32(value: AiReal) -> f32 {
         value
+    }
+
+    #[inline]
+    pub fn ai_real_to_f64(value: AiReal) -> f64 {
+        value as f64
     }
 }
 

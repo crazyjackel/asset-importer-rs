@@ -37,9 +37,7 @@ impl GltfExporter {
             let name_option = ai_material
                 .get_property(matkey::AI_MATKEY_NAME, Some(AiTextureType::None), 0)
                 .map(|prop| {
-                    let str =
-                        String::from_utf8(prop.data.to_vec()).map_err(GltfExportError::UTFError);
-                    str
+                    String::from_utf8(prop.data.to_vec()).map_err(GltfExportError::UTFError)
                 });
             let name = if let Some(name) = name_option {
                 generate_unique_name(&name?, unique_names_map)

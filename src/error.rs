@@ -1,5 +1,6 @@
 use std::{error::Error, fmt::Display};
 
+#[allow(clippy::enum_variant_names)]
 #[non_exhaustive]
 #[derive(Debug)]
 pub enum AiImporterError {
@@ -38,6 +39,7 @@ impl Display for AiImporterError {
 
 impl Error for AiImporterError {}
 
+#[allow(clippy::enum_variant_names)]
 #[non_exhaustive]
 #[derive(Debug)]
 pub enum AiExporterError {

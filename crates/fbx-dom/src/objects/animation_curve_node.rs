@@ -262,9 +262,11 @@ mod tests {
         })
         .unwrap();
 
-        let mut owned = OwnedDocument::default();
-        owned.models = vec![model];
-        owned.animation_curves = vec![curve];
+        let owned = OwnedDocument {
+            models: vec![model],
+            animation_curves: vec![curve],
+            ..Default::default()
+        };
 
         assert_eq!(
             node.get_target_model(&owned)
@@ -310,8 +312,10 @@ mod tests {
         })
         .unwrap();
 
-        let mut owned = OwnedDocument::default();
-        owned.cameras = vec![camera];
+        let owned = OwnedDocument {
+            cameras: vec![camera],
+            ..Default::default()
+        };
         let target = node.get_target_node_attribute(&owned).unwrap();
         assert!(matches!(target, NodeAttributeRef::Camera(_)));
     }
@@ -334,18 +338,20 @@ mod tests {
         })
         .unwrap();
 
-        let mut owned = OwnedDocument::default();
-        owned.unknown_deformers = vec![OwnedObject {
-            object_index: 3201,
-            name: "Deformer::Custom".into(),
-            type_name: DEFORMER_TYPE_NAME.into(),
-            class_name: "CustomDeformer".into(),
-            properties: HashMap::new(),
-            attributes: HashMap::new(),
-            connected_object_ids: vec![],
-            object_property_targets: vec![],
-            pp_property_targets: HashMap::new(),
-        }];
+        let owned = OwnedDocument {
+            unknown_deformers: vec![OwnedObject {
+                object_index: 3201,
+                name: "Deformer::Custom".into(),
+                type_name: DEFORMER_TYPE_NAME.into(),
+                class_name: "CustomDeformer".into(),
+                properties: HashMap::new(),
+                attributes: HashMap::new(),
+                connected_object_ids: vec![],
+                object_property_targets: vec![],
+                pp_property_targets: HashMap::new(),
+            }],
+            ..Default::default()
+        };
 
         let target = node.get_target_deformer(&owned).unwrap();
         assert_eq!(target.object_index, 3201);

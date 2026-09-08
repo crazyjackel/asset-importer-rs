@@ -622,7 +622,7 @@ mod tests {
         let m = Model::try_from(o).unwrap();
         assert_eq!(m.shading(), "Phong");
         assert_eq!(m.culling(), "CullingOff");
-        assert_eq!(m.show(), false);
+        assert!(!m.show());
         assert_eq!(m.rotation_order(), ModelRotationOrder::EulerZYX);
         assert_eq!(m.inherit_type(), ModelTransformInheritance::Rrs);
     }
@@ -645,9 +645,9 @@ mod tests {
         assert_eq!(m.culling(), "");
         assert_eq!(m.scaling_max(), [1.0, 1.0, 1.0]);
         assert_eq!(m.geometric_scaling(), [1.0, 1.0, 1.0]);
-        assert_eq!(m.show(), true);
-        assert_eq!(m.lod_box(), false);
-        assert_eq!(m.freeze(), false);
+        assert!(m.show());
+        assert!(!m.lod_box());
+        assert!(!m.freeze());
         assert_eq!(m.rotation_order(), ModelRotationOrder::EulerXYZ);
         assert_eq!(m.inherit_type(), ModelTransformInheritance::RrSs);
     }
@@ -748,42 +748,42 @@ mod tests {
         assert_eq!(m.rotation_pivot(), [0.4, 0.5, 0.6]);
         assert_eq!(m.scaling_offset(), [0.7, 0.8, 0.9]);
         assert_eq!(m.scaling_pivot(), [1.0, 1.1, 1.2]);
-        assert_eq!(m.translation_active(), true);
+        assert!(m.translation_active());
         assert_eq!(m.translation_min(), [1.0, 2.0, 3.0]);
         assert_eq!(m.translation_max(), [4.0, 5.0, 6.0]);
-        assert_eq!(m.translation_min_x(), true);
-        assert_eq!(m.translation_max_x(), false);
-        assert_eq!(m.translation_min_y(), false);
-        assert_eq!(m.translation_max_y(), true);
-        assert_eq!(m.translation_min_z(), true);
-        assert_eq!(m.translation_max_z(), false);
+        assert!(m.translation_min_x());
+        assert!(!m.translation_max_x());
+        assert!(!m.translation_min_y());
+        assert!(m.translation_max_y());
+        assert!(m.translation_min_z());
+        assert!(!m.translation_max_z());
         assert_eq!(m.rotation_order(), ModelRotationOrder::SphericXYZ);
-        assert_eq!(m.rotation_space_for_limit_only(), true);
+        assert!(m.rotation_space_for_limit_only());
         assert_eq!(m.rotation_stiffness_x(), 0.11);
         assert_eq!(m.rotation_stiffness_y(), 0.22);
         assert_eq!(m.rotation_stiffness_z(), 0.33);
         assert_eq!(m.axis_len(), 9.5);
         assert_eq!(m.pre_rotation(), [10.0, 20.0, 30.0]);
         assert_eq!(m.post_rotation(), [40.0, 50.0, 60.0]);
-        assert_eq!(m.rotation_active(), true);
+        assert!(m.rotation_active());
         assert_eq!(m.rotation_min(), [-1.0, -2.0, -3.0]);
         assert_eq!(m.rotation_max(), [1.0, 2.0, 3.0]);
-        assert_eq!(m.rotation_min_x(), true);
-        assert_eq!(m.rotation_max_x(), false);
-        assert_eq!(m.rotation_min_y(), false);
-        assert_eq!(m.rotation_max_y(), true);
-        assert_eq!(m.rotation_min_z(), true);
-        assert_eq!(m.rotation_max_z(), false);
+        assert!(m.rotation_min_x());
+        assert!(!m.rotation_max_x());
+        assert!(!m.rotation_min_y());
+        assert!(m.rotation_max_y());
+        assert!(m.rotation_min_z());
+        assert!(!m.rotation_max_z());
         assert_eq!(m.inherit_type(), ModelTransformInheritance::RSrs);
-        assert_eq!(m.scaling_active(), true);
+        assert!(m.scaling_active());
         assert_eq!(m.scaling_min(), [0.5, 0.6, 0.7]);
         assert_eq!(m.scaling_max(), [2.0, 2.5, 3.0]);
-        assert_eq!(m.scaling_min_x(), true);
-        assert_eq!(m.scaling_max_x(), false);
-        assert_eq!(m.scaling_min_y(), false);
-        assert_eq!(m.scaling_max_y(), true);
-        assert_eq!(m.scaling_min_z(), true);
-        assert_eq!(m.scaling_max_z(), false);
+        assert!(m.scaling_min_x());
+        assert!(!m.scaling_max_x());
+        assert!(!m.scaling_min_y());
+        assert!(m.scaling_max_y());
+        assert!(m.scaling_min_z());
+        assert!(!m.scaling_max_z());
         assert_eq!(m.geometric_translation(), [7.0, 8.0, 9.0]);
         assert_eq!(m.geometric_rotation(), [0.01, 0.02, 0.03]);
         assert_eq!(m.geometric_scaling(), [1.5, 2.5, 3.5]);
@@ -802,9 +802,9 @@ mod tests {
         assert_eq!(m.preferred_angle_x(), 2.1);
         assert_eq!(m.preferred_angle_y(), 2.2);
         assert_eq!(m.preferred_angle_z(), 2.3);
-        assert_eq!(m.show(), false);
-        assert_eq!(m.lod_box(), true);
-        assert_eq!(m.freeze(), true);
+        assert!(!m.show());
+        assert!(m.lod_box());
+        assert!(m.freeze());
 
         let inner = m.into_inner();
         assert_eq!(inner.object_index, 600);
@@ -895,12 +895,14 @@ mod tests {
         })
         .unwrap();
 
-        let mut doc = OwnedDocument::default();
-        doc.models = vec![model];
-        doc.materials = vec![material];
-        doc.unknown_geometries = vec![unknown_geo];
-        doc.lights = vec![light];
-        doc.textures = vec![texture];
+        let doc = OwnedDocument {
+            models: vec![model],
+            materials: vec![material],
+            unknown_geometries: vec![unknown_geo],
+            lights: vec![light],
+            textures: vec![texture],
+            ..Default::default()
+        };
 
         let model = &doc.models[0];
         let mats = model.connected_materials(&doc);

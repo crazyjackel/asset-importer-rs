@@ -2,7 +2,7 @@ use asset_importer_rs_scene::{AiColor3D, AiLight, AiLightSourceType, AiVector3D}
 
 use crate::importer::error::Gltf2ImportError;
 
-use super::importer::Gltf2Importer;
+use super::import::Gltf2Importer;
 
 use gltf::Document;
 

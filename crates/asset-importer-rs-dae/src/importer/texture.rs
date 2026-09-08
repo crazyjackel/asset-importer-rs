@@ -4,7 +4,7 @@ use std::{
 };
 
 use asset_importer_rs_scene::{
-    AiMaterial, AiPropertyTypeInfo, AiTexel, AiTexture, AiTextureFormat, AiTextureMapMode,
+    AiMaterial, AiPropertyTypeInfo, AiReal, AiTexel, AiTexture, AiTextureFormat, AiTextureMapMode,
     AiTextureType, AiUvTransform,
     matkey::{
         _AI_MATKEY_MAPPINGMODE_U_BASE, _AI_MATKEY_MAPPINGMODE_V_BASE, _AI_MATKEY_TEXBLEND_BASE,
@@ -325,27 +325,27 @@ fn apply_texture_extras(sampler: &mut EffectSampler, extra: &Extra) {
                     }
                 }
                 "offsetu" => {
-                    if let Ok(value) = text.parse::<f32>() {
+                    if let Ok(value) = text.parse::<AiReal>() {
                         sampler.transform.translation.x = value;
                     }
                 }
                 "offsetv" => {
-                    if let Ok(value) = text.parse::<f32>() {
+                    if let Ok(value) = text.parse::<AiReal>() {
                         sampler.transform.translation.y = value;
                     }
                 }
                 "repeatu" => {
-                    if let Ok(value) = text.parse::<f32>() {
+                    if let Ok(value) = text.parse::<AiReal>() {
                         sampler.transform.scaling.x = value;
                     }
                 }
                 "repeatv" => {
-                    if let Ok(value) = text.parse::<f32>() {
+                    if let Ok(value) = text.parse::<AiReal>() {
                         sampler.transform.scaling.y = value;
                     }
                 }
                 "rotateuv" => {
-                    if let Ok(value) = text.parse::<f32>() {
+                    if let Ok(value) = text.parse::<AiReal>() {
                         sampler.transform.rotation = value;
                     }
                 }
@@ -492,11 +492,11 @@ fn find_filename_for_effect_texture(
             current = sampler.source.val.clone();
             continue;
         }
-        if let Some(surface) = param.ty.as_surface() {
-            if let SurfaceInit::From { image, .. } = &surface.init {
-                current = image.val.clone();
-                continue;
-            }
+        if let Some(surface) = param.ty.as_surface()
+            && let SurfaceInit::From { image, .. } = &surface.init
+        {
+            current = image.val.clone();
+            continue;
         }
         break;
     }

@@ -39,10 +39,10 @@ fn ai_camera_from(src_camera: &Camera) -> AiCamera {
             if let Some(aspect) = ortho.aspect_ratio {
                 out.aspect_ratio = aspect;
             }
-            if let (Some(xmag), Some(ymag)) = (ortho.xmag, ortho.ymag) {
-                if ymag != 0.0 {
-                    out.aspect_ratio = xmag / ymag;
-                }
+            if let (Some(xmag), Some(ymag)) = (ortho.xmag, ortho.ymag)
+                && ymag != 0.0
+            {
+                out.aspect_ratio = xmag / ymag;
             }
             if let Some(xmag) = ortho.xmag {
                 out.orthographic_width = xmag;

@@ -21,7 +21,7 @@ use crate::{
     importer::error::Gltf2ImportError,
 };
 
-use super::importer::Gltf2Importer;
+use super::import::Gltf2Importer;
 
 trait ImportTexture<'a> {
     fn texture(&self) -> gltf::Texture<'a>;

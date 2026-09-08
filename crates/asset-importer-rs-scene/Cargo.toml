@@ -17,3 +17,6 @@ image = { workspace = true }
 
 [features]
 double_precision = []
+
+[lints]
+workspace = true

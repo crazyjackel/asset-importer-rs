@@ -46,3 +46,6 @@ KHR_materials_pbrSpecularGlossiness = [
 ]
 KHR_materials_emissive_strength = ["gltf/KHR_materials_emissive_strength"]
 KHR_lights_punctual = ["gltf/KHR_lights_punctual"]
+
+[lints]
+workspace = true

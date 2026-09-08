@@ -10,12 +10,24 @@ Thank you for your interest in contributing to 'asset-importer-rs.' Your time an
  * Participate in code reviews.
  * Submit PRs to fix acknowledged issues
 
+## Security audit
+
+Run RustSec `cargo-audit` against the workspace lockfile before merging dependency changes:
+
+```sh
+cargo install cargo-audit
+cargo audit
+```
+
+CI runs the same check on PRs, `main`, and a weekly schedule. Known false positives or unfixable transitive advisories belong in `.cargo/audit.toml` (`[advisories].ignore`) with a comment explaining why.
+
 ## Code Guidelines
 
 Code Guidelines are ever-evolving and difficult to ascertain, being for the most part discretionary. Here're some important details to give a good idea though on what direction we wish to take code:
 
  * We follow the [Rust API guidelines](https://github.com/rust-lang-nursery/api-guidelines).
  * Format code using rustfmt
+ * Match CI Clippy locally: `cargo clippy --workspace --all-targets --all-features --locked -- -D warnings`
  * Modules (refering to built-in asset importers and their respective code) should have a distinctive prefix appended to all files names.
  * Features Flags should be minimal and prefixed by respective module flags. They should be grouped together into minimal, default, and extra variants of the module.
  * test function names should begin with either 'test_' or 'external_'. External requires that the tester brings in extra exterior files. The name should be followed by the module name.

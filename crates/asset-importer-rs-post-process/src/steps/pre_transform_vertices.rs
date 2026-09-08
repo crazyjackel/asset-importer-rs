@@ -13,7 +13,7 @@ impl AiPostProcess for PreTransformVertices {
         steps.contains(AiPostProcessSteps::PreTransformVertices)
     }
 
-    fn process(&self, scene: &mut AiScene) -> Result<(), Self::Error> {
+    fn process(&self, _scene: &mut AiScene) -> Result<(), Self::Error> {
         // TODO: Implement vertex pre-transformation
         Ok(())
     }

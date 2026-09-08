@@ -1,0 +1,9 @@
+# cargo-audit config. Ignore IDs only with a comment explaining why.
+# See https://github.com/rustsec/rustsec/blob/main/cargo-audit/audit.toml.example
+
+[advisories]
+# Transitive via dae-parser → minidom-14 0.17 (`quick-xml ^0.36`). Fix needs quick-xml >= 0.41.
+ignore = ["RUSTSEC-2026-0194", "RUSTSEC-2026-0195"]
+
+[yanked]
+enabled = true

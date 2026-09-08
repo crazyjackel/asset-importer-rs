@@ -45,9 +45,11 @@ impl PartialOrd for AiVectorKey {
 }
 
 impl AiVectorKey {
+    #[allow(dead_code)]
     pub fn val_eq(&self, other: &Self) -> bool {
         self.value == other.value
     }
+    #[allow(dead_code)]
     pub fn val_ne(&self, other: &Self) -> bool {
         self.value != other.value
     }
@@ -86,9 +88,11 @@ impl PartialOrd for AiQuatKey {
     }
 }
 impl AiQuatKey {
+    #[allow(dead_code)]
     pub fn val_eq(&self, other: &Self) -> bool {
         self.value == other.value
     }
+    #[allow(dead_code)]
     pub fn val_ne(&self, other: &Self) -> bool {
         self.value != other.value
     }
@@ -116,9 +120,11 @@ impl PartialOrd for AiMeshKey {
 }
 
 impl AiMeshKey {
+    #[allow(dead_code)]
     pub fn val_eq(&self, other: &Self) -> bool {
         self.value == other.value
     }
+    #[allow(dead_code)]
     pub fn val_ne(&self, other: &Self) -> bool {
         self.value != other.value
     }

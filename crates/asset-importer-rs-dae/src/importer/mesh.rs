@@ -582,22 +582,20 @@ impl DaeImporter {
                 let table = instance.material_for_symbol(&sub_mesh.material);
                 let mat_name = table.map(|table| table.mat_name.as_str()).unwrap_or("");
                 let mut resolved_index = None;
-                if !mat_name.is_empty() {
-                    if let Some(material) = material_map.get_str(mat_name) {
-                        if let Some(item_index) =
-                            document.library_iter::<Material>().find_map(|library| {
-                                library
-                                    .items
-                                    .iter()
-                                    .position(|item| std::ptr::eq(item, material))
-                            })
-                        {
-                            resolved_index = material_index_map
-                                .get(&material_key(material, item_index))
-                                .copied()
-                                .map(|index| index as u32);
-                        }
-                    }
+                if !mat_name.is_empty()
+                    && let Some(material) = material_map.get_str(mat_name)
+                    && let Some(item_index) =
+                        document.library_iter::<Material>().find_map(|library| {
+                            library
+                                .items
+                                .iter()
+                                .position(|item| std::ptr::eq(item, material))
+                        })
+                {
+                    resolved_index = material_index_map
+                        .get(&material_key(material, item_index))
+                        .copied()
+                        .map(|index| index as u32);
                 }
                 if let (Some(table), Some(material_index)) = (table, resolved_index) {
                     let uv = table.texcoord_uv_ids();
