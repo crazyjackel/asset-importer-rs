@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2](https://github.com/crazyjackel/asset-importer-rs/compare/asset-importer-rs-scene-v0.4.1...asset-importer-rs-scene-v0.4.2) - 2026-09-08
+
+### Added
+
+- update clippy linting
+- added triangulation post-processing
+
+### Fixed
+
+- gltf issues
+- clippy fixes related to double_precision, if chains, extra into(), bad asserts, as_chunks vs. chunks_exact
+
+### Other
+
+- improved docstrings and memory-sharing for scratchpad
+- lint and clippy changes
+
 ## [0.4.1](https://github.com/crazyjackel/asset-importer-rs/compare/asset-importer-rs-scene-v0.4.0...asset-importer-rs-scene-v0.4.1) - 2026-09-06
 
 ### Added

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2](https://github.com/crazyjackel/asset-importer-rs/compare/asset-importer-rs-core-v0.4.1...asset-importer-rs-core-v0.4.2) - 2026-09-08
+
+### Added
+
+- update clippy linting
+
 ## [0.4.1](https://github.com/crazyjackel/asset-importer-rs/compare/asset-importer-rs-core-v0.4.0...asset-importer-rs-core-v0.4.1) - 2026-09-06
 
 ### Fixed

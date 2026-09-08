@@ -1,6 +1,6 @@
 [package]
 name = "asset-importer-rs"
-version = "0.4.1"
+version = "0.4.2"
 edition = "2024"
 description = "Assimp, but in Rust"
 license = "MIT OR Apache-2.0"
@@ -25,20 +25,20 @@ members = [
 ]
 
 [workspace.package]
-version = "0.4.1"
+version = "0.4.2"
 authors = ["Jackson Levitt <jackel1020@gmail.com>"]
 edition = "2024"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/crazyjackel/asset-importer-rs"
 
 [workspace.dependencies]
-asset-importer-rs-core = { path = "crates/asset-importer-rs-core", version = "0.4.1" }
-asset-importer-rs-scene = { path = "crates/asset-importer-rs-scene", version = "0.4.1" }
-asset-importer-rs-gltf = { path = "crates/asset-importer-rs-gltf", version = "0.4.1" }
-asset-importer-rs-gltf-v1 = { path = "crates/asset-importer-rs-gltf-v1", version = "0.4.1" }
-asset-importer-rs-obj = { path = "crates/asset-importer-rs-obj", version = "0.4.1" }
-asset-importer-rs-dae = { path = "crates/asset-importer-rs-dae", version = "0.4.1" }
-asset-importer-rs-post-process = { path = "crates/asset-importer-rs-post-process", version = "0.4.1" }
+asset-importer-rs-core = { path = "crates/asset-importer-rs-core", version = "0.4.2" }
+asset-importer-rs-scene = { path = "crates/asset-importer-rs-scene", version = "0.4.2" }
+asset-importer-rs-gltf = { path = "crates/asset-importer-rs-gltf", version = "0.4.2" }
+asset-importer-rs-gltf-v1 = { path = "crates/asset-importer-rs-gltf-v1", version = "0.4.2" }
+asset-importer-rs-obj = { path = "crates/asset-importer-rs-obj", version = "0.4.2" }
+asset-importer-rs-dae = { path = "crates/asset-importer-rs-dae", version = "0.4.2" }
+asset-importer-rs-post-process = { path = "crates/asset-importer-rs-post-process", version = "0.4.2" }
 base64 = "0.23"
 bytemuck = { version = "1.21.0", features = ["derive"] }
 byteorder = "1.3"
@@ -46,11 +46,11 @@ dae-parser = "0.11.0"
 earcut = "0.4.10"
 enumflags2 = "0.7.10"
 fbxcel = { version = "0.9.0"}
-fbxscii = { path = "crates/fbxscii", version = "0.1.2" }
+fbxscii = { path = "crates/fbxscii", version = "0.1.3" }
 gltf = { version = "1.4.1" }
-gltf-v1 = { path = "crates/gltf-v1", version = "0.4.1" }
-gltf-v1-derive = { path = "crates/gltf-v1-derive", version = "0.4.1" }
-gltf-v1-json = { path = "crates/gltf-v1-json", version = "0.4.1" }
+gltf-v1 = { path = "crates/gltf-v1", version = "0.4.2" }
+gltf-v1-derive = { path = "crates/gltf-v1-derive", version = "0.4.2" }
+gltf-v1-json = { path = "crates/gltf-v1-json", version = "0.4.2" }
 image = { version = "0.25.5", features = [
     "png",
     "jpeg",
@@ -77,18 +77,18 @@ workspace = true
 
 [dependencies]
 enumflags2 = {workspace = true}
-asset-importer-rs-core = { path = "crates/asset-importer-rs-core", version = "0.4.1" }
-asset-importer-rs-scene = { path = "crates/asset-importer-rs-scene", version = "0.4.1" }
-asset-importer-rs-gltf = { path = "crates/asset-importer-rs-gltf", optional = true, default-features = false, version = "0.4.1" }
-asset-importer-rs-gltf-v1 = { path = "crates/asset-importer-rs-gltf-v1", optional = true, default-features = false, version = "0.4.1" }
-asset-importer-rs-obj = { path = "crates/asset-importer-rs-obj", optional = true, default-features = false, version = "0.4.1" }
-asset-importer-rs-dae = { path = "crates/asset-importer-rs-dae", optional = true, default-features = false, version = "0.4.1" }
-asset-importer-rs-post-process = { path = "crates/asset-importer-rs-post-process", optional = true, default-features = false, version = "0.4.1" }
+asset-importer-rs-core = { path = "crates/asset-importer-rs-core", version = "0.4.2" }
+asset-importer-rs-scene = { path = "crates/asset-importer-rs-scene", version = "0.4.2" }
+asset-importer-rs-gltf = { path = "crates/asset-importer-rs-gltf", optional = true, default-features = false, version = "0.4.2" }
+asset-importer-rs-gltf-v1 = { path = "crates/asset-importer-rs-gltf-v1", optional = true, default-features = false, version = "0.4.2" }
+asset-importer-rs-obj = { path = "crates/asset-importer-rs-obj", optional = true, default-features = false, version = "0.4.2" }
+asset-importer-rs-dae = { path = "crates/asset-importer-rs-dae", optional = true, default-features = false, version = "0.4.2" }
+asset-importer-rs-post-process = { path = "crates/asset-importer-rs-post-process", optional = true, default-features = false, version = "0.4.2" }
 
 [dev-dependencies]
 criterion = "0.8.2"
-asset-importer-rs-gltf = { path = "crates/asset-importer-rs-gltf", version = "0.4.1" }
-asset-importer-rs-gltf-v1 = { path = "crates/asset-importer-rs-gltf-v1", version = "0.4.1" }
+asset-importer-rs-gltf = { path = "crates/asset-importer-rs-gltf", version = "0.4.2" }
+asset-importer-rs-gltf-v1 = { path = "crates/asset-importer-rs-gltf-v1", version = "0.4.2" }
 
 [features]
 default = ["gltf", "gltf2", "gltf-default", "gltf2-default", "obj", "obj-default", "post-process", "post-process-default"]
