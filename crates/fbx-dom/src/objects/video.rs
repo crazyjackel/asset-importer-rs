@@ -6,6 +6,7 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 
+use base64::Engine as _;
 use fbxscii::ElementAttribute;
 
 use crate::{OwnedObject, objects::AttrExtractorExt};
@@ -65,8 +66,9 @@ fn decode_optional_content(
         } else {
             s
         };
-        let decoded =
-            base64::decode(payload).map_err(|e| FbxTryFromReason::InvalidAttributeFormat {
+        let decoded = base64::engine::general_purpose::STANDARD
+            .decode(payload)
+            .map_err(|e| FbxTryFromReason::InvalidAttributeFormat {
                 name: CONTENT_ATTR.to_string(),
                 detail: format!("base64 decode (token {i}): {e}"),
             })?;

@@ -4,6 +4,7 @@ use std::{
     path::Path,
 };
 
+use base64::Engine as _;
 use gltf::{Document, buffer};
 
 use asset_importer_rs_scene::{AiTexel, AiTexture, AiTextureFormat};
@@ -42,7 +43,11 @@ impl Gltf2Importer {
                             (Some(match0), _) => Ok((None, match0)),
                             _ => Err(gltf::Error::UnsupportedScheme),
                         }?;
-                        let encoded_image = base64::decode(base64).map_err(gltf::Error::Base64)?;
+                        let encoded_image = base64::engine::general_purpose::STANDARD
+                            .decode(base64)
+                            .map_err(|err| {
+                                gltf::Error::Io(io::Error::new(io::ErrorKind::InvalidData, err))
+                            })?;
 
                         // Determine image format either by MIME type or guessing
                         let encoded_format = match annoying_case {

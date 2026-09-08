@@ -1,3 +1,4 @@
+use base64::Engine as _;
 use indexmap::IndexMap;
 
 use crate::{GLTF_Error, buffer, document::Document, error::Result, image};
@@ -38,7 +39,9 @@ impl Scheme<'_> {
         match Scheme::parse(uri) {
             // The path may be unused in the Scheme::Data case
             // Example: "uri" : "data:application/octet-stream;base64,wsVHPgA...."
-            Scheme::Data(_, base64) => base64::decode(base64).map_err(GLTF_Error::Base64),
+            Scheme::Data(_, payload) => base64::engine::general_purpose::STANDARD
+                .decode(payload)
+                .map_err(GLTF_Error::Base64),
             Scheme::File(path) if base.is_some() => read_to_end(path),
             Scheme::Relative(path) if base.is_some() => read_to_end(base.unwrap().join(&*path)),
             Scheme::Unsupported => Err(GLTF_Error::UnsupportedScheme),
@@ -135,7 +138,9 @@ impl image::Data {
         let decoded_image = match source {
             image::Source::Uri(uri) if base.is_some() => match Scheme::parse(uri) {
                 Scheme::Data(Some(annoying_case), base64) => {
-                    let encoded_image = base64::decode(base64).map_err(GLTF_Error::Base64)?;
+                    let encoded_image = base64::engine::general_purpose::STANDARD
+                        .decode(base64)
+                        .map_err(GLTF_Error::Base64)?;
                     let encoded_format = match annoying_case {
                         "image/png" => image_crate::ImageFormat::Png,
                         "image/jpeg" => image_crate::ImageFormat::Jpeg,
