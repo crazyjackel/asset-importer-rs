@@ -4,8 +4,8 @@ use std::path::Path;
 use asset_importer_rs_core::{
     AiImporter, AiImporterDesc, AiImporterFlags, AiImporterInfo, DataLoader,
 };
-use asset_importer_rs_scene::AiScene;
-use dae_parser::Document;
+use asset_importer_rs_scene::{AiMatrix4x4, AiNodeTree, AiReal, AiScene};
+use dae_parser::{Document, UpAxis};
 use enumflags2::BitFlags;
 
 use super::DaeImportError;
@@ -15,11 +15,46 @@ use super::node::ImportNodes;
 pub struct DaeImporter {
     /// When true, prefer Collada `name` over `id`/`sid` for node names.
     pub use_collada_name: bool,
+    /// When true, skip `<asset>` unit scale on the scene root.
+    pub ignore_unit_size: bool,
+    /// When true, skip `<asset>` up-axis conversion on the scene root.
+    pub ignore_up_direction: bool,
 }
 
 impl DaeImporter {
     pub fn new() -> Self {
         Self::default()
+    }
+
+    fn apply_unit_and_up_axis(&self, document: &Document, nodes: &mut AiNodeTree) {
+        let Some(root) = nodes.root else {
+            return;
+        };
+        let transform = &mut nodes.arena[root].transformation;
+        if !self.ignore_unit_size {
+            let meter = document.asset.unit.meter as AiReal;
+            *transform *= AiMatrix4x4::from([
+                meter, 0.0, 0.0, 0.0, 0.0, meter, 0.0, 0.0, 0.0, 0.0, meter, 0.0, 0.0, 0.0, 0.0,
+                1.0,
+            ]);
+        }
+        if !self.ignore_up_direction {
+            match document.asset.up_axis {
+                UpAxis::XUp => {
+                    *transform *= AiMatrix4x4::from([
+                        0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+                        1.0,
+                    ]);
+                }
+                UpAxis::ZUp => {
+                    *transform *= AiMatrix4x4::from([
+                        1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                        1.0,
+                    ]);
+                }
+                UpAxis::YUp => {}
+            }
+        }
     }
 }
 
@@ -93,7 +128,7 @@ impl AiImporter for DaeImporter {
             .map_err(DaeImportError::FileFormatError)?;
         let (mut materials, material_index_map) = self.import_materials(&document, &effect_map)?;
         let ImportNodes {
-            nodes,
+            mut nodes,
             meshes,
             cameras,
             lights,
@@ -107,9 +142,9 @@ impl AiImporter for DaeImporter {
             &material_index_map,
             &material_uv_map,
         )?;
-        // TODO: import remaining Collada libraries into AiScene
-        let animations = Vec::new();
-        let metadata = Default::default();
+        self.apply_unit_and_up_axis(&document, &mut nodes);
+        let metadata = self.import_metadata(&document)?;
+        let animations = self.import_animations(&document)?;
 
         Ok(AiScene {
             name: scene_name,
