@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789916218350,
+  "lastUpdate": 1789916262734,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -2291,6 +2291,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 50671952,
             "range": "± 422424",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "409d1d9c8056805f7e7470a2dde6eafc7c7f2737",
+          "message": "Merge pull request #104 from crazyjackel/dependabot/github_actions/release-plz/action-0.5.136\n\nbuild(deps): bump release-plz/action from 0.5.132 to 0.5.136",
+          "timestamp": "2026-09-20T10:54:49-04:00",
+          "tree_id": "a6ce1430f41a48377cd0fa2e6da5467c16165254",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/409d1d9c8056805f7e7470a2dde6eafc7c7f2737"
+        },
+        "date": 1789916261673,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 93545831,
+            "range": "± 320073",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 49345108,
+            "range": "± 189020",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 194909411,
+            "range": "± 946132",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 50228808,
+            "range": "± 473286",
             "unit": "ns/iter"
           }
         ]
