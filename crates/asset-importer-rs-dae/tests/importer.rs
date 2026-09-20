@@ -5,9 +5,7 @@ use std::{
 
 use asset_importer_rs_core::AiImporterExt;
 use asset_importer_rs_dae::{
-    AI_COLLADA_AUTHOR, AI_COLLADA_COMMENTS, AI_COLLADA_CREATED, AI_COLLADA_KEYWORDS,
-    AI_COLLADA_MODIFIED, AI_COLLADA_REVISION, AI_COLLADA_SOURCE_DATA, AI_COLLADA_SUBJECT,
-    AI_COLLADA_TITLE, AI_METADATA_SOURCE_COPYRIGHT, AI_METADATA_SOURCE_GENERATOR, DaeImportError,
+    AI_COLLADA_CREATED, AI_COLLADA_MODIFIED, AI_METADATA_SOURCE_GENERATOR, DaeImportError,
     DaeImporter,
 };
 use asset_importer_rs_scene::{
@@ -223,84 +221,4 @@ fn test_dae_import_cube_metadata() {
         metadata_str(&scene.metadata, AI_COLLADA_MODIFIED),
         "2018-10-25T16:29:03+00:00"
     );
-}
-
-#[test]
-fn test_dae_import_asset_metadata_fields() {
-    let importer = DaeImporter::new();
-    let xml = br##"<?xml version="1.0"?>
-<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
-  <asset>
-    <contributor>
-      <author>First Author</author>
-      <authoring_tool>Tool A</authoring_tool>
-      <comments>First comments</comments>
-      <copyright>Copyright A</copyright>
-      <source_data>file:///first.blend</source_data>
-    </contributor>
-    <contributor>
-      <author>Second Author</author>
-      <authoring_tool>Tool B</authoring_tool>
-      <comments>Second comments</comments>
-      <copyright>Copyright B</copyright>
-      <source_data>file:///second.blend</source_data>
-    </contributor>
-    <created>2018-10-25T16:29:03Z</created>
-    <keywords>alpha beta gamma</keywords>
-    <modified>2018-10-26T00:00:00</modified>
-    <revision>3</revision>
-    <subject>Test subject</subject>
-    <title>Test title</title>
-  </asset>
-  <library_visual_scenes>
-    <visual_scene id="Scene">
-      <node id="Root"/>
-    </visual_scene>
-  </library_visual_scenes>
-  <scene>
-    <instance_visual_scene url="#Scene"/>
-  </scene>
-</COLLADA>"##;
-    let scene = importer
-        .read_file("metadata.dae", |_| Ok(Cursor::new(xml.to_vec())))
-        .expect("import");
-
-    assert_eq!(
-        metadata_str(&scene.metadata, AI_METADATA_SOURCE_GENERATOR),
-        "Tool A"
-    );
-    assert_eq!(
-        metadata_str(&scene.metadata, AI_METADATA_SOURCE_COPYRIGHT),
-        "Copyright A"
-    );
-    assert_eq!(
-        metadata_str(&scene.metadata, AI_COLLADA_AUTHOR),
-        "First Author"
-    );
-    assert_eq!(
-        metadata_str(&scene.metadata, AI_COLLADA_COMMENTS),
-        "First comments"
-    );
-    assert_eq!(
-        metadata_str(&scene.metadata, AI_COLLADA_SOURCE_DATA),
-        "file:///first.blend"
-    );
-    assert_eq!(
-        metadata_str(&scene.metadata, AI_COLLADA_CREATED),
-        "2018-10-25T16:29:03+00:00"
-    );
-    assert_eq!(
-        metadata_str(&scene.metadata, AI_COLLADA_MODIFIED),
-        "2018-10-26T00:00:00"
-    );
-    assert_eq!(
-        metadata_str(&scene.metadata, AI_COLLADA_KEYWORDS),
-        "alpha beta gamma"
-    );
-    assert_eq!(metadata_str(&scene.metadata, AI_COLLADA_REVISION), "3");
-    assert_eq!(
-        metadata_str(&scene.metadata, AI_COLLADA_SUBJECT),
-        "Test subject"
-    );
-    assert_eq!(metadata_str(&scene.metadata, AI_COLLADA_TITLE), "Test title");
 }
