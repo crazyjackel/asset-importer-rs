@@ -1,6 +1,6 @@
 [package]
 name = "fbxscii"
-version = "0.1.2"
+version = "0.1.3"
 edition = {workspace = true}
 description = "ASCII FBX Parser"
 license = {workspace = true}
