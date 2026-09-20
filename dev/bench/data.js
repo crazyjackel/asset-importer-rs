@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1788828992246,
+  "lastUpdate": 1789916218350,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -2243,6 +2243,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 46694758,
             "range": "± 411319",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "92ad7912a777fbe1b71f8797c08ec7709c66ac38",
+          "message": "Merge pull request #105 from crazyjackel/dependabot/cargo/syn-3.0.5\n\nbuild(deps): bump syn from 3.0.4 to 3.0.5",
+          "timestamp": "2026-09-20T10:54:31-04:00",
+          "tree_id": "14b9e11f89f46e93fbd04249a71cc03d0458dd57",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/92ad7912a777fbe1b71f8797c08ec7709c66ac38"
+        },
+        "date": 1789916217605,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 92182759,
+            "range": "± 291694",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 50123043,
+            "range": "± 105766",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 188715408,
+            "range": "± 616443",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 50671952,
+            "range": "± 422424",
             "unit": "ns/iter"
           }
         ]
