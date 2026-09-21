@@ -1,49 +1,113 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
-use asset_importer_rs_scene::AiAnimation;
-use dae_parser::{AnimationClip, Channel, Document, LocalMap};
+use asset_importer_rs_scene::{AiAnimation, AiNodeTree};
+use dae_parser::{Animation, AnimationClip, Document, LocalMaps, Sampler, Semantic, Source};
 
 use crate::DaeImportError;
 
 use super::DaeImporter;
 
-/// Assimp `Collada::AnimationChannel`.
-#[derive(Clone, Debug, Default, PartialEq)]
-struct AnimationChannel {
-    target: String,
-    #[allow(dead_code)]
-    source_times: String,
-    #[allow(dead_code)]
-    source_values: String,
-    #[allow(dead_code)]
-    in_tan_values: String,
-    #[allow(dead_code)]
-    out_tan_values: String,
-    #[allow(dead_code)]
-    interpolation_values: String,
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum TargetComponent {
+    Whole,
+    X,
+    Y,
+    Z,
+    Angle,
+    Matrix(usize),
 }
 
-impl From<&Channel> for AnimationChannel {
-    fn from(channel: &Channel) -> Self {
-        Self {
-            target: channel.target.0.clone(),
-            ..Default::default()
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct AnimationTarget<'a> {
+    node: &'a str,
+    property: &'a str,
+    component: TargetComponent,
+}
+
+impl<'a> TryFrom<&'a str> for AnimationTarget<'a> {
+    type Error = ();
+
+    fn try_from(target: &'a str) -> Result<Self, Self::Error> {
+        // Collada addresses animation targets as `node/property`, with optional
+        // component selection:
+        // - `node/translate` applies the complete sampled value.
+        // - `node/translate.X` selects X, Y, Z, or ANGLE.
+        // - `node/matrix(2)(3)` selects one matrix element by row and column.
+        // Targets with missing or additional path segments are unsupported.
+        let (node, selector) = target.split_once('/').ok_or(())?;
+        if node.is_empty() || selector.is_empty() || selector.contains('/') {
+            return Err(());
         }
+
+        let (property, component) = match (selector.find('('), selector.split_once('.')) {
+            // Matrix element: `matrix(row)(column)`.
+            (Some(open), _) => {
+                let property = &selector[..open];
+                let (row, rest) = selector[open + 1..].split_once(')').ok_or(())?;
+                let rest = rest.strip_prefix('(').ok_or(())?;
+                let (column, rest) = rest.split_once(')').ok_or(())?;
+                let (row, column) = (
+                    row.parse::<usize>().map_err(|_| ())?,
+                    column.parse::<usize>().map_err(|_| ())?,
+                );
+                if !rest.is_empty() || row >= 4 || column >= 4 {
+                    return Err(());
+                }
+                (property, TargetComponent::Matrix(column * 4 + row))
+            }
+            // Single component: `property.X`, `.Y`, `.Z`, or `.ANGLE`.
+            (None, Some((property, component))) => {
+                let component = match component {
+                    "X" => TargetComponent::X,
+                    "Y" => TargetComponent::Y,
+                    "Z" => TargetComponent::Z,
+                    "ANGLE" => TargetComponent::Angle,
+                    _ => return Err(()),
+                };
+                (property, component)
+            }
+            // Whole property: `translate`, `rotate`, `scale`, etc.
+            (None, None) => (selector, TargetComponent::Whole),
+        };
+        if property.is_empty() {
+            return Err(());
+        }
+
+        Ok(Self {
+            node,
+            property,
+            component,
+        })
     }
+}
+
+#[allow(dead_code)]
+struct ChannelEntry<'a> {
+    target: AnimationTarget<'a>,
+    node_index: usize,
+    sampler: &'a Sampler,
+    time_source: &'a Source,
+    value_source: &'a Source,
 }
 
 impl DaeImporter {
     pub(crate) fn import_animations(
         &self,
         document: &Document,
+        nodes: &AiNodeTree,
+        node_index_map: &HashMap<String, usize>,
     ) -> Result<Vec<AiAnimation>, DaeImportError> {
         // Collect maps from document.
-        let anim_map = document
-            .local_map::<dae_parser::Animation>()
-            .map_err(DaeImportError::FileFormatError)?;
-        let clip_map = document
-            .local_map::<AnimationClip>()
-            .map_err(DaeImportError::FileFormatError)?;
+        let maps = LocalMaps::default()
+            .set::<Animation>()
+            .set::<AnimationClip>()
+            .set::<Sampler>()
+            .set::<Source>()
+            .collect(document);
+        let anim_map = maps.get_map::<Animation>().expect("animation map enabled");
+        let clip_map = maps
+            .get_map::<AnimationClip>()
+            .expect("animation clip map enabled");
 
         // Seed the stack with animations from library.
         let mut stack: Vec<(&dae_parser::Animation, String)> = Vec::new();
@@ -93,7 +157,7 @@ impl DaeImporter {
 
             // Create the animation if it has channels.
             if !src.channel.is_empty()
-                && let Some(anim) = create_animation(src, &name, &anim_map)
+                && let Some(anim) = create_animation(src, &name, nodes, node_index_map, &maps)
             {
                 anims.push(anim);
             }
@@ -108,10 +172,64 @@ impl DaeImporter {
 
 /// Sampling, matrix decompose, rotate subsample, and morph-weights are not implemented yet.
 fn create_animation(
-    _src: &dae_parser::Animation,
+    src: &Animation,
     _name: &str,
-    _anim_map: &LocalMap<'_, dae_parser::Animation>,
+    nodes: &AiNodeTree,
+    node_index_map: &HashMap<String, usize>,
+    maps: &LocalMaps<'_>,
 ) -> Option<AiAnimation> {
+    // Collect the channel entries for the animation.
+    let mut entries = Vec::new();
+    for channel in &src.channel {
+        // Parse the target of the channel.
+        let Ok(target) = AnimationTarget::try_from(channel.target.0.as_str()) else {
+            continue;
+        };
+        // Get the index of the node.
+        let Some(&node_index) = node_index_map.get(target.node) else {
+            continue;
+        };
+        // Skip if the node is not found.
+        if nodes.arena.get(node_index).is_none() {
+            continue;
+        }
+        // Get the sampler for the channel.
+        let Some(sampler) = maps.get(&channel.source) else {
+            continue;
+        };
+        // Get the time input for the channel.
+        let Some(time_input) = sampler
+            .inputs
+            .iter()
+            .find(|input| input.semantic == Semantic::Input)
+        else {
+            continue;
+        };
+        // Get the value input for the channel.
+        let Some(value_input) = sampler
+            .inputs
+            .iter()
+            .find(|input| input.semantic == Semantic::Output)
+        else {
+            continue;
+        };
+        let (Some(time_source), Some(value_source)) = (
+            maps.get_raw::<Source>(&time_input.source),
+            maps.get_raw::<Source>(&value_input.source),
+        ) else {
+            continue;
+        };
+        // Add the channel entry to the list.
+        entries.push(ChannelEntry {
+            target,
+            node_index,
+            sampler,
+            time_source,
+            value_source,
+        });
+    }
+
+    let _ = entries;
     None
 }
 
@@ -204,9 +322,7 @@ mod tests {
         let anim_map = document
             .local_map::<dae_parser::Animation>()
             .expect("animation map");
-        let clip_map = document
-            .local_map::<AnimationClip>()
-            .expect("clip map");
+        let clip_map = document.local_map::<AnimationClip>().expect("clip map");
         let mut names = Vec::new();
         let mut stack: Vec<(&dae_parser::Animation, String)> = Vec::new();
         if clip_map.0.is_empty() {
@@ -316,7 +432,7 @@ mod tests {
     }
 
     #[test]
-    fn maps_channel_target() {
+    fn parses_channel_target() {
         let channel_src = "#samp";
         let channel_target = "Root/translate";
         let document = document_with(&format!(
@@ -336,8 +452,38 @@ mod tests {
             .items
             .first()
             .unwrap();
-        let channel = AnimationChannel::from(&src.channel[0]);
-        assert_eq!(channel.target, "Root/translate");
+        let target = AnimationTarget::try_from(src.channel[0].target.0.as_str()).unwrap();
+        assert_eq!(
+            target,
+            AnimationTarget {
+                node: "Root",
+                property: "translate",
+                component: TargetComponent::Whole,
+            }
+        );
+    }
+
+    #[test]
+    fn parses_channel_target_components() {
+        assert_eq!(
+            AnimationTarget::try_from("Root/location.X")
+                .unwrap()
+                .component,
+            TargetComponent::X
+        );
+        assert_eq!(
+            AnimationTarget::try_from("Root/rotation.ANGLE")
+                .unwrap()
+                .component,
+            TargetComponent::Angle
+        );
+        assert_eq!(
+            AnimationTarget::try_from("Root/matrix(2)(3)")
+                .unwrap()
+                .component,
+            TargetComponent::Matrix(14)
+        );
+        assert!(AnimationTarget::try_from("Root/location.W").is_err());
     }
 
     #[test]
@@ -452,7 +598,7 @@ mod tests {
             sources = sampler_sources("samp", "times", "values")
         ));
         let anims = DaeImporter::new()
-            .import_animations(&document)
+            .import_animations(&document, &AiNodeTree::default(), &HashMap::new())
             .expect("import");
         assert!(anims.is_empty());
     }

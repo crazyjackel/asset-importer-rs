@@ -1,8 +1,6 @@
 mod importer;
 
-pub use asset_importer_rs_core::{
-    AI_METADATA_SOURCE_COPYRIGHT, AI_METADATA_SOURCE_GENERATOR,
-};
+pub use asset_importer_rs_core::{AI_METADATA_SOURCE_COPYRIGHT, AI_METADATA_SOURCE_GENERATOR};
 pub use importer::DaeImportError;
 pub use importer::DaeImporter;
 
@@ -20,4 +18,3 @@ pub const AI_COLLADA_TITLE: &str = "Title";
 pub const AI_COLLADA_ID: &str = "Collada_id";
 /// Node metadata when `use_collada_name` is set (Assimp `Collada_sid`).
 pub const AI_COLLADA_SID: &str = "Collada_sid";
-

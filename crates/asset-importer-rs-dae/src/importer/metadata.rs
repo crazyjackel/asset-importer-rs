@@ -14,7 +14,6 @@ impl DaeImporter {
         &self,
         document: &Document,
     ) -> Result<AiMetadata, DaeImportError> {
-
         let asset = &document.asset;
         let mut metadata = AiMetadata::new();
 
@@ -129,7 +128,10 @@ mod tests {
             "#,
         );
 
-        assert_eq!(metadata_str(&metadata, AI_METADATA_SOURCE_GENERATOR), "Tool A");
+        assert_eq!(
+            metadata_str(&metadata, AI_METADATA_SOURCE_GENERATOR),
+            "Tool A"
+        );
         assert_eq!(
             metadata_str(&metadata, AI_METADATA_SOURCE_COPYRIGHT),
             "Copyright A"

@@ -196,10 +196,7 @@ fn test_dae_ignore_unit_size_and_up_direction() {
     );
 }
 
-fn metadata_str<'a>(
-    metadata: &'a asset_importer_rs_scene::AiMetadata,
-    key: &str,
-) -> &'a str {
+fn metadata_str<'a>(metadata: &'a asset_importer_rs_scene::AiMetadata, key: &str) -> &'a str {
     match metadata.get(key) {
         Some(AiMetadataEntry::AiStr(s)) => s,
         other => panic!("expected string metadata for {key}, got {other:?}"),

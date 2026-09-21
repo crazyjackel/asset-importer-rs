@@ -130,6 +130,7 @@ impl AiImporter for DaeImporter {
         let ImportNodes {
             mut nodes,
             meshes,
+            node_index_map,
             cameras,
             lights,
             material_uv_map,
@@ -144,7 +145,7 @@ impl AiImporter for DaeImporter {
         )?;
         self.apply_unit_and_up_axis(&document, &mut nodes);
         let metadata = self.import_metadata(&document)?;
-        let animations = self.import_animations(&document)?;
+        let animations = self.import_animations(&document, &nodes, &node_index_map)?;
 
         Ok(AiScene {
             name: scene_name,
