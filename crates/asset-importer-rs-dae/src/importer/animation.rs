@@ -1,6 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
-use asset_importer_rs_scene::{AiAnimation, AiNodeTree};
+use asset_importer_rs_scene::{
+    AiAnimInterpolation, AiAnimation, AiMatrix4x4, AiNodeAnim, AiNodeTree, AiQuatKey, AiReal,
+    AiVector3D, AiVectorKey,
+};
 use dae_parser::{
     Animation, AnimationClip, ArrayElement, Document, LocalMaps, Sampler, Semantic, Source,
 };
@@ -179,10 +182,10 @@ impl DaeImporter {
     }
 }
 
-/// Sampling, matrix decompose, rotate subsample, and morph-weights are not implemented yet.
+/// Morph-weight animation is not implemented yet.
 fn create_animation(
     src: &Animation,
-    _name: &str,
+    name: &str,
     nodes: &AiNodeTree,
     node_index_map: &HashMap<String, usize>,
     maps: &LocalMaps<'_>,
@@ -326,8 +329,272 @@ fn create_animation(
         return Ok(None);
     }
 
-    let _ = entries_by_node;
-    Ok(None)
+    let mut node_anims = Vec::with_capacity(entries_by_node.len());
+    for (node_index, group) in entries_by_node {
+        let Some(node) = nodes.arena.get(node_index) else {
+            continue;
+        };
+
+        // Evaluate at every unique key time used by any channel for this node.
+        let mut evaluation_times = Vec::new();
+        for entry in &group.entries {
+            let Some(time_source_id) = entry.time_source.id.as_deref() else {
+                continue;
+            };
+            let Some(times) = source_data.get(time_source_id) else {
+                continue;
+            };
+            for index in 0..entry.time_source.accessor.count {
+                evaluation_times.push(times[index * entry.time_source.accessor.stride]);
+            }
+
+            // Axis-angle interpolation can take the long path through a rotation. Add
+            // intermediate samples so consecutive quaternion keys remain below 180 degrees.
+            if entry.target.component == TargetComponent::Angle {
+                let Some(value_source_id) = entry.value_source.id.as_deref() else {
+                    continue;
+                };
+                let Some(values) = source_data.get(value_source_id) else {
+                    continue;
+                };
+                for index in 1..entry.time_source.accessor.count {
+                    let previous_angle = values[(index - 1) * entry.value_source.accessor.stride];
+                    let angle = values[index * entry.value_source.accessor.stride];
+                    let delta = (angle - previous_angle).abs();
+                    if delta < 180.0 {
+                        continue;
+                    }
+
+                    // Add intermediate samples so consecutive quaternion keys remain below 180 degrees.
+                    let previous_time = times[(index - 1) * entry.time_source.accessor.stride];
+                    let time = times[index * entry.time_source.accessor.stride];
+                    let sample_count = (delta / 90.0).floor() as usize;
+                    for sample in 1..sample_count {
+                        evaluation_times.push(
+                            previous_time
+                                + (time - previous_time) * sample as f32 / sample_count as f32,
+                        );
+                    }
+                }
+            }
+        }
+        evaluation_times.sort_unstable_by(f32::total_cmp);
+        evaluation_times.dedup();
+        if evaluation_times.is_empty() {
+            continue;
+        }
+
+        let mut position_keys = Vec::with_capacity(evaluation_times.len());
+        let mut rotation_keys = Vec::with_capacity(evaluation_times.len());
+        let mut scaling_keys = Vec::with_capacity(evaluation_times.len());
+        for time in evaluation_times {
+            let mut matrix = node.transformation.clone();
+
+            for entry in &group.entries {
+                let (Some(time_source_id), Some(value_source_id)) = (
+                    entry.time_source.id.as_deref(),
+                    entry.value_source.id.as_deref(),
+                ) else {
+                    continue;
+                };
+                let (Some(times), Some(values)) = (
+                    source_data.get(time_source_id),
+                    source_data.get(value_source_id),
+                ) else {
+                    continue;
+                };
+
+                // Find the first key at or after the evaluation time.
+                let mut post_index = 0;
+                while post_index < entry.time_source.accessor.count
+                    && times[post_index * entry.time_source.accessor.stride] < time
+                {
+                    post_index += 1;
+                }
+                post_index = post_index.min(entry.time_source.accessor.count - 1);
+                let post_time = times[post_index * entry.time_source.accessor.stride];
+                let value_stride = entry.value_source.accessor.stride;
+                let value_start = post_index * value_stride;
+                let mut sampled_values = values[value_start..value_start + value_stride].to_vec();
+
+                // Linearly interpolate between the surrounding keys.
+                if post_time > time && post_index > 0 {
+                    let pre_index = post_index - 1;
+                    let pre_time = times[pre_index * entry.time_source.accessor.stride];
+                    let factor = (time - pre_time) / (post_time - pre_time);
+                    let pre_start = pre_index * value_stride;
+                    for component in 0..value_stride {
+                        let pre_value = values[pre_start + component];
+                        sampled_values[component] =
+                            pre_value + (sampled_values[component] - pre_value) * factor;
+                    }
+                }
+
+                let property = entry.target.property.to_ascii_lowercase();
+                match property.as_str() {
+                    property if property.contains("matrix") || property == "transform" => {
+                        // Set the matrix in its entirety.
+                        let mut elements: [AiReal; 16] = matrix.clone().into();
+                        match entry.target.component {
+                            TargetComponent::Whole if sampled_values.len() >= 16 => {
+                                for (element, value) in
+                                    elements.iter_mut().zip(&sampled_values[..16])
+                                {
+                                    *element = *value as AiReal;
+                                }
+                            }
+                            TargetComponent::Matrix(index) => {
+                                elements[index] = sampled_values[0] as AiReal;
+                            }
+                            _ => continue,
+                        }
+                        matrix = AiMatrix4x4::from(elements);
+                    }
+                    property
+                        if property.contains("translate")
+                            || property.contains("translation")
+                            || property.contains("location") =>
+                    {
+                        // Set the translation in its entirety.
+                        match entry.target.component {
+                            TargetComponent::Whole if sampled_values.len() >= 3 => {
+                                matrix.a4 = sampled_values[0] as AiReal;
+                                matrix.b4 = sampled_values[1] as AiReal;
+                                matrix.c4 = sampled_values[2] as AiReal;
+                            }
+                            TargetComponent::X => matrix.a4 = sampled_values[0] as AiReal,
+                            TargetComponent::Y => matrix.b4 = sampled_values[0] as AiReal,
+                            TargetComponent::Z => matrix.c4 = sampled_values[0] as AiReal,
+                            _ => continue,
+                        }
+                    }
+                    property if property.contains("scale") => {
+                        // Scale the matrix in its entirety.
+                        let current_scale = matrix.decompose().scale;
+                        let mut scale = current_scale;
+                        match entry.target.component {
+                            TargetComponent::Whole if sampled_values.len() >= 3 => {
+                                scale.x = sampled_values[0] as AiReal;
+                                scale.y = sampled_values[1] as AiReal;
+                                scale.z = sampled_values[2] as AiReal;
+                            }
+                            TargetComponent::X => scale.x = sampled_values[0] as AiReal,
+                            TargetComponent::Y => scale.y = sampled_values[0] as AiReal,
+                            TargetComponent::Z => scale.z = sampled_values[0] as AiReal,
+                            _ => continue,
+                        }
+
+                        for (current, desired, column) in [
+                            (current_scale.x, scale.x, [0usize, 4, 8]),
+                            (current_scale.y, scale.y, [1usize, 5, 9]),
+                            (current_scale.z, scale.z, [2usize, 6, 10]),
+                        ] {
+                            let mut elements: [AiReal; 16] = matrix.clone().into();
+                            if current != 0.0 {
+                                let factor = desired / current;
+                                for index in column {
+                                    elements[index] *= factor;
+                                }
+                            } else {
+                                for index in column {
+                                    elements[index] = 0.0;
+                                }
+                                elements[column[0]] = desired;
+                            }
+                            matrix = AiMatrix4x4::from(elements);
+                        }
+                    }
+                    property if property.contains("rotate") || property.contains("rotation") => {
+                        let (axis, angle) = match entry.target.component {
+                            TargetComponent::Whole if sampled_values.len() >= 4 => (
+                                AiVector3D::new(
+                                    sampled_values[0] as AiReal,
+                                    sampled_values[1] as AiReal,
+                                    sampled_values[2] as AiReal,
+                                ),
+                                sampled_values[3],
+                            ),
+                            TargetComponent::Angle if property.contains('x') => {
+                                (AiVector3D::new(1.0, 0.0, 0.0), sampled_values[0])
+                            }
+                            TargetComponent::Angle if property.contains('y') => {
+                                (AiVector3D::new(0.0, 1.0, 0.0), sampled_values[0])
+                            }
+                            TargetComponent::Angle if property.contains('z') => {
+                                (AiVector3D::new(0.0, 0.0, 1.0), sampled_values[0])
+                            }
+                            _ => continue,
+                        };
+                        let translation = matrix.decompose().translation;
+                        let scale = matrix.decompose().scale;
+                        matrix = AiMatrix4x4::rotation((angle as AiReal).to_radians(), &axis);
+                        matrix.a1 *= scale.x;
+                        matrix.b1 *= scale.x;
+                        matrix.c1 *= scale.x;
+                        matrix.a2 *= scale.y;
+                        matrix.b2 *= scale.y;
+                        matrix.c2 *= scale.y;
+                        matrix.a3 *= scale.z;
+                        matrix.b3 *= scale.z;
+                        matrix.c3 *= scale.z;
+                        matrix.a4 = translation.x;
+                        matrix.b4 = translation.y;
+                        matrix.c4 = translation.z;
+                    }
+                    _ => continue,
+                }
+            }
+
+            let decomposed = matrix.decompose();
+            let key_time = time as f64 * 1000.0;
+            position_keys.push(AiVectorKey::new(
+                key_time,
+                decomposed.translation,
+                AiAnimInterpolation::Linear,
+            ));
+            rotation_keys.push(AiQuatKey::new(
+                key_time,
+                decomposed.rotation,
+                AiAnimInterpolation::Linear,
+            ));
+            scaling_keys.push(AiVectorKey::new(
+                key_time,
+                decomposed.scale,
+                AiAnimInterpolation::Linear,
+            ));
+        }
+
+        node_anims.push(AiNodeAnim {
+            node_name: node.name.clone(),
+            position_keys,
+            rotation_keys,
+            scaling_keys,
+            ..AiNodeAnim::default()
+        });
+    }
+
+    if node_anims.is_empty() {
+        return Ok(None);
+    }
+    let duration = node_anims
+        .iter()
+        .flat_map(|channel| {
+            [
+                channel.position_keys.last().map(|key| key.time),
+                channel.rotation_keys.last().map(|key| key.time),
+                channel.scaling_keys.last().map(|key| key.time),
+            ]
+        })
+        .flatten()
+        .fold(0.0, f64::max);
+
+    Ok(Some(AiAnimation {
+        name: name.to_string(),
+        duration,
+        ticks_per_second: 1000.0,
+        channels: node_anims,
+        ..AiAnimation::default()
+    }))
 }
 
 fn combine_single_channel_ai_anims(anims: &mut Vec<AiAnimation>) {
@@ -681,7 +948,7 @@ mod tests {
     }
 
     #[test]
-    fn import_animations_is_empty_while_create_is_stubbed() {
+    fn ignores_animation_channels_with_unknown_scene_nodes() {
         let channel_src = "#samp";
         let channel_target = "Root/translate";
         let document = document_with(&format!(
@@ -698,6 +965,100 @@ mod tests {
             .import_animations(&document, &AiNodeTree::default(), &HashMap::new())
             .expect("import");
         assert!(anims.is_empty());
+    }
+
+    #[test]
+    fn creates_node_animation_keys_from_translation_channel() {
+        let document = document_with(&format!(
+            r##"
+  <library_animations>
+    <animation name="Move">
+      {sources}
+      <channel source="#samp" target="Root/translate"/>
+    </animation>
+  </library_animations>"##,
+            sources = sampler_sources("samp", "times", "values")
+        ));
+        let mut nodes = AiNodeTree::with_root();
+        nodes.arena[0].name = "Root".to_string();
+
+        let anims = DaeImporter::new()
+            .import_animations(&document, &nodes, &HashMap::from([("Root".to_string(), 0)]))
+            .expect("import");
+
+        assert_eq!(anims.len(), 1);
+        assert_eq!(anims[0].name, "Move");
+        assert_eq!(anims[0].duration, 1000.0);
+        assert_eq!(anims[0].ticks_per_second, 1000.0);
+        assert_eq!(anims[0].channels.len(), 1);
+        assert_eq!(anims[0].channels[0].node_name, "Root");
+        assert_eq!(anims[0].channels[0].position_keys.len(), 2);
+        assert_eq!(anims[0].channels[0].position_keys[0].time, 0.0);
+        assert_eq!(anims[0].channels[0].position_keys[1].time, 1000.0);
+        assert_eq!(anims[0].channels[0].position_keys[0].value.x, 0.0);
+        assert_eq!(anims[0].channels[0].position_keys[1].value.x, 1.0);
+    }
+
+    #[test]
+    fn creates_scaling_keys_from_scale_channel() {
+        let sources = sampler_sources("samp", "times", "values")
+            .replace(">0 0 0 1 0 0</float_array>", ">1 1 1 2 3 4</float_array>");
+        let document = document_with(&format!(
+            r##"
+  <library_animations>
+    <animation name="Scale">
+      {sources}
+      <channel source="#samp" target="Root/scale"/>
+    </animation>
+  </library_animations>"##
+        ));
+        let mut nodes = AiNodeTree::with_root();
+        nodes.arena[0].name = "Root".to_string();
+
+        let anims = DaeImporter::new()
+            .import_animations(&document, &nodes, &HashMap::from([("Root".to_string(), 0)]))
+            .expect("import");
+        let scaling_keys = &anims[0].channels[0].scaling_keys;
+
+        assert_eq!(scaling_keys.len(), 2);
+        assert_eq!(scaling_keys[0].value, AiVector3D::new(1.0, 1.0, 1.0));
+        assert_eq!(scaling_keys[1].value, AiVector3D::new(2.0, 3.0, 4.0));
+    }
+
+    #[test]
+    fn interpolates_channels_at_other_channel_key_times() {
+        let translate = sampler_sources("translate", "translate-times", "translate-values");
+        let scale = sampler_sources("scale", "scale-times", "scale-values")
+            .replace(">0 1</float_array>", ">0.5 1</float_array>")
+            .replace(">0 0 0 1 0 0</float_array>", ">1 1 1 2 2 2</float_array>");
+        let (translate_sources, translate_sampler) =
+            translate.split_at(translate.find("<sampler").expect("translate sampler"));
+        let (scale_sources, scale_sampler) =
+            scale.split_at(scale.find("<sampler").expect("scale sampler"));
+        let document = document_with(&format!(
+            r##"
+  <library_animations>
+    <animation name="MoveAndScale">
+      {translate_sources}
+      {scale_sources}
+      {translate_sampler}
+      {scale_sampler}
+      <channel source="#translate" target="Root/translate"/>
+      <channel source="#scale" target="Root/scale"/>
+    </animation>
+  </library_animations>"##
+        ));
+        let mut nodes = AiNodeTree::with_root();
+        nodes.arena[0].name = "Root".to_string();
+
+        let anims = DaeImporter::new()
+            .import_animations(&document, &nodes, &HashMap::from([("Root".to_string(), 0)]))
+            .expect("import");
+        let position_keys = &anims[0].channels[0].position_keys;
+
+        assert_eq!(position_keys.len(), 3);
+        assert_eq!(position_keys[1].time, 500.0);
+        assert_eq!(position_keys[1].value.x, 0.5);
     }
 
     #[test]
