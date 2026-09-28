@@ -9,6 +9,7 @@ pub enum DaeImportError {
     InvalidMeshIndices(String),
     /// A Collada image has no data and no file reference.
     InvalidTexture(String),
+    InvalidAnimation(String),
     MissingVisualScene,
     MissingRootNode,
 }
@@ -30,6 +31,9 @@ impl Display for DaeImportError {
             }
             DaeImportError::InvalidTexture(detail) => {
                 write!(f, "invalid Collada texture: {}", detail)
+            }
+            DaeImportError::InvalidAnimation(detail) => {
+                write!(f, "invalid Collada animation: {}", detail)
             }
             DaeImportError::MissingVisualScene => {
                 write!(f, "no visual scene found in DAE file")

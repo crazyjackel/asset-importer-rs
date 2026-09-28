@@ -1,7 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
 use asset_importer_rs_scene::{AiAnimation, AiNodeTree};
-use dae_parser::{Animation, AnimationClip, Document, LocalMaps, Sampler, Semantic, Source};
+use dae_parser::{
+    Animation, AnimationClip, ArrayElement, Document, LocalMaps, Sampler, Semantic, Source,
+};
 
 use crate::DaeImportError;
 
@@ -90,6 +92,13 @@ struct ChannelEntry<'a> {
     value_source: &'a Source,
 }
 
+#[allow(dead_code)]
+struct NodeChannelEntries<'a> {
+    entries: Vec<ChannelEntry<'a>>,
+    start_time: f32,
+    end_time: f32,
+}
+
 impl DaeImporter {
     pub(crate) fn import_animations(
         &self,
@@ -156,10 +165,10 @@ impl DaeImporter {
             }
 
             // Create the animation if it has channels.
-            if !src.channel.is_empty()
-                && let Some(anim) = create_animation(src, &name, nodes, node_index_map, &maps)
-            {
-                anims.push(anim);
+            if !src.channel.is_empty() {
+                if let Some(anim) = create_animation(src, &name, nodes, node_index_map, &maps)? {
+                    anims.push(anim);
+                }
             }
         }
 
@@ -177,8 +186,8 @@ fn create_animation(
     nodes: &AiNodeTree,
     node_index_map: &HashMap<String, usize>,
     maps: &LocalMaps<'_>,
-) -> Option<AiAnimation> {
-    // Collect the channel entries for the animation.
+) -> Result<Option<AiAnimation>, DaeImportError> {
+    // Resolve all channel entries before grouping them by scene node.
     let mut entries = Vec::new();
     for channel in &src.channel {
         // Parse the target of the channel.
@@ -219,7 +228,6 @@ fn create_animation(
         ) else {
             continue;
         };
-        // Add the channel entry to the list.
         entries.push(ChannelEntry {
             target,
             node_index,
@@ -229,8 +237,97 @@ fn create_animation(
         });
     }
 
-    let _ = entries;
-    None
+    if entries.is_empty() {
+        return Ok(None);
+    }
+
+    // Collect the time and value data for each source.
+    let mut source_data: HashMap<&str, Vec<f32>> = HashMap::new();
+    let mut entries_by_node: HashMap<usize, NodeChannelEntries<'_>> = HashMap::new();
+    'entries: for entry in entries {
+        if entry.time_source.accessor.count != entry.value_source.accessor.count {
+            return Err(DaeImportError::InvalidAnimation(format!(
+                "time/value count mismatch for channel '{}/{}': {} != {}",
+                entry.target.node,
+                entry.target.property,
+                entry.time_source.accessor.count,
+                entry.value_source.accessor.count,
+            )));
+        }
+        // Get the time source ID.
+        let time_source = entry.time_source;
+        let Some(time_source_id) = time_source.id.as_deref() else {
+            continue;
+        };
+        if time_source.accessor.count == 0 || time_source.accessor.stride == 0 {
+            continue;
+        }
+        let mut start_time = f32::INFINITY;
+        let mut end_time = f32::NEG_INFINITY;
+        if let Some(times) = source_data.get(time_source_id) {
+            for time in times.iter().step_by(time_source.accessor.stride) {
+                start_time = start_time.min(*time);
+                end_time = end_time.max(*time);
+            }
+        } else {
+            let Some(ArrayElement::Float(data)) = &time_source.array else {
+                continue;
+            };
+            let mut times =
+                Vec::with_capacity(time_source.accessor.count * time_source.accessor.stride);
+            for index in 0..time_source.accessor.count {
+                let start = time_source.accessor.offset + index * time_source.accessor.stride;
+                let Some(time) = data.get(start..start + time_source.accessor.stride) else {
+                    continue 'entries;
+                };
+                start_time = start_time.min(time[0]);
+                end_time = end_time.max(time[0]);
+                times.extend_from_slice(time);
+            }
+            source_data.insert(time_source_id, times);
+        }
+
+        let value_source = entry.value_source;
+        let Some(value_source_id) = value_source.id.as_deref() else {
+            continue;
+        };
+        if value_source.accessor.stride == 0 {
+            continue;
+        }
+        if !source_data.contains_key(value_source_id) {
+            let Some(ArrayElement::Float(data)) = &value_source.array else {
+                continue;
+            };
+            let mut values =
+                Vec::with_capacity(value_source.accessor.count * value_source.accessor.stride);
+            for index in 0..value_source.accessor.count {
+                let start = value_source.accessor.offset + index * value_source.accessor.stride;
+                let Some(value) = data.get(start..start + value_source.accessor.stride) else {
+                    continue 'entries;
+                };
+                values.extend_from_slice(value);
+            }
+            source_data.insert(value_source_id, values);
+        }
+
+        let group = entries_by_node
+            .entry(entry.node_index)
+            .or_insert_with(|| NodeChannelEntries {
+                entries: Vec::new(),
+                start_time,
+                end_time,
+            });
+        group.start_time = group.start_time.min(start_time);
+        group.end_time = group.end_time.max(end_time);
+        group.entries.push(entry);
+    }
+
+    if entries_by_node.is_empty() {
+        return Ok(None);
+    }
+
+    let _ = entries_by_node;
+    Ok(None)
 }
 
 fn combine_single_channel_ai_anims(anims: &mut Vec<AiAnimation>) {
@@ -601,5 +698,34 @@ mod tests {
             .import_animations(&document, &AiNodeTree::default(), &HashMap::new())
             .expect("import");
         assert!(anims.is_empty());
+    }
+
+    #[test]
+    fn rejects_mismatched_time_and_value_counts() {
+        let sources = sampler_sources("samp", "times", "values").replacen(
+            r#"count="2" stride="3""#,
+            r#"count="1" stride="3""#,
+            1,
+        );
+        let document = document_with(&format!(
+            r##"
+  <library_animations>
+    <animation name="Move">
+      {sources}
+      <channel source="#samp" target="Root/translate"/>
+    </animation>
+  </library_animations>"##
+        ));
+        let result = DaeImporter::new().import_animations(
+            &document,
+            &AiNodeTree::with_root(),
+            &HashMap::from([("Root".to_string(), 0)]),
+        );
+
+        assert!(matches!(
+            result,
+            Err(DaeImportError::InvalidAnimation(detail))
+                if detail.contains("2 != 1")
+        ));
     }
 }
