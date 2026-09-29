@@ -330,6 +330,7 @@ fn create_animation(
     }
 
     let mut node_anims = Vec::with_capacity(entries_by_node.len());
+    let mut duration = 0.0_f64;
     for (node_index, group) in entries_by_node {
         let Some(node) = nodes.arena.get(node_index) else {
             continue;
@@ -383,6 +384,7 @@ fn create_animation(
         if evaluation_times.is_empty() {
             continue;
         }
+        duration = duration.max(evaluation_times[evaluation_times.len() - 1] as f64 * 1000.0);
 
         let mut position_keys = Vec::with_capacity(evaluation_times.len());
         let mut rotation_keys = Vec::with_capacity(evaluation_times.len());
@@ -576,17 +578,6 @@ fn create_animation(
     if node_anims.is_empty() {
         return Ok(None);
     }
-    let duration = node_anims
-        .iter()
-        .flat_map(|channel| {
-            [
-                channel.position_keys.last().map(|key| key.time),
-                channel.rotation_keys.last().map(|key| key.time),
-                channel.scaling_keys.last().map(|key| key.time),
-            ]
-        })
-        .flatten()
-        .fold(0.0, f64::max);
 
     Ok(Some(AiAnimation {
         name: name.to_string(),
