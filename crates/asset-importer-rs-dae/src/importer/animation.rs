@@ -1,8 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
 use asset_importer_rs_scene::{
-    AiAnimInterpolation, AiAnimation, AiMatrix4x4, AiNodeAnim, AiNodeTree, AiQuatKey, AiReal,
-    AiVector3D, AiVectorKey,
+    AiAnimInterpolation, AiAnimation, AiMatrix4x4, AiMeshMorphAnim, AiMeshMorphKey, AiNodeAnim,
+    AiNodeTree, AiQuatKey, AiReal, AiVector3D, AiVectorKey,
 };
 use dae_parser::{
     Animation, AnimationClip, ArrayElement, Document, LocalMaps, Sampler, Semantic, Source,
@@ -19,6 +19,7 @@ enum TargetComponent {
     Y,
     Z,
     Angle,
+    Index(usize),
     Matrix(usize),
 }
 
@@ -37,6 +38,7 @@ impl<'a> TryFrom<&'a str> for AnimationTarget<'a> {
         // component selection:
         // - `node/translate` applies the complete sampled value.
         // - `node/translate.X` selects X, Y, Z, or ANGLE.
+        // - `node/morph-weights(2)` selects one indexed array element.
         // - `node/matrix(2)(3)` selects one matrix element by row and column.
         // Targets with missing or additional path segments are unsupported.
         let (node, selector) = target.split_once('/').ok_or(())?;
@@ -45,20 +47,23 @@ impl<'a> TryFrom<&'a str> for AnimationTarget<'a> {
         }
 
         let (property, component) = match (selector.find('('), selector.split_once('.')) {
-            // Matrix element: `matrix(row)(column)`.
+            // Indexed array element or matrix element.
             (Some(open), _) => {
                 let property = &selector[..open];
-                let (row, rest) = selector[open + 1..].split_once(')').ok_or(())?;
-                let rest = rest.strip_prefix('(').ok_or(())?;
-                let (column, rest) = rest.split_once(')').ok_or(())?;
-                let (row, column) = (
-                    row.parse::<usize>().map_err(|_| ())?,
-                    column.parse::<usize>().map_err(|_| ())?,
-                );
-                if !rest.is_empty() || row >= 4 || column >= 4 {
-                    return Err(());
+                let (first, rest) = selector[open + 1..].split_once(')').ok_or(())?;
+                let first = first.parse::<usize>().map_err(|_| ())?;
+                match rest {
+                    "" => (property, TargetComponent::Index(first)),
+                    rest => {
+                        let rest = rest.strip_prefix('(').ok_or(())?;
+                        let (second, rest) = rest.split_once(')').ok_or(())?;
+                        let second = second.parse::<usize>().map_err(|_| ())?;
+                        if !rest.is_empty() || first >= 4 || second >= 4 {
+                            return Err(());
+                        }
+                        (property, TargetComponent::Matrix(second * 4 + first))
+                    }
                 }
-                (property, TargetComponent::Matrix(column * 4 + row))
             }
             // Single component: `property.X`, `.Y`, `.Z`, or `.ANGLE`.
             (None, Some((property, component))) => {
@@ -197,11 +202,9 @@ fn create_animation(
         let Ok(target) = AnimationTarget::try_from(channel.target.0.as_str()) else {
             continue;
         };
-        // Get the index of the node.
         let Some(&node_index) = node_index_map.get(target.node) else {
             continue;
         };
-        // Skip if the node is not found.
         if nodes.arena.get(node_index).is_none() {
             continue;
         }
@@ -330,6 +333,7 @@ fn create_animation(
     }
 
     let mut node_anims = Vec::with_capacity(entries_by_node.len());
+    let mut morph_anims = Vec::new();
     let mut duration = 0.0_f64;
     for (node_index, group) in entries_by_node {
         let Some(node) = nodes.arena.get(node_index) else {
@@ -389,8 +393,11 @@ fn create_animation(
         let mut position_keys = Vec::with_capacity(evaluation_times.len());
         let mut rotation_keys = Vec::with_capacity(evaluation_times.len());
         let mut scaling_keys = Vec::with_capacity(evaluation_times.len());
+        let mut morph_keys = Vec::with_capacity(evaluation_times.len());
         for time in evaluation_times {
             let mut matrix = node.transformation.clone();
+            let mut weights = Vec::new();
+            let mut has_transforms = false;
 
             for entry in &group.entries {
                 let (Some(time_source_id), Some(value_source_id)) = (
@@ -433,6 +440,12 @@ fn create_animation(
                 }
 
                 let property = entry.target.property.to_ascii_lowercase();
+                if property.contains("morph-weights") {
+                    weights.push(sampled_values[0] as f64);
+                    continue;
+                }
+
+                has_transforms = true;
                 match property.as_str() {
                     property if property.contains("matrix") || property == "transform" => {
                         // Set the matrix in its entirety.
@@ -547,35 +560,52 @@ fn create_animation(
                 }
             }
 
-            let decomposed = matrix.decompose();
             let key_time = time as f64 * 1000.0;
-            position_keys.push(AiVectorKey::new(
-                key_time,
-                decomposed.translation,
-                AiAnimInterpolation::Linear,
-            ));
-            rotation_keys.push(AiQuatKey::new(
-                key_time,
-                decomposed.rotation,
-                AiAnimInterpolation::Linear,
-            ));
-            scaling_keys.push(AiVectorKey::new(
-                key_time,
-                decomposed.scale,
-                AiAnimInterpolation::Linear,
-            ));
+            if has_transforms {
+                let decomposed = matrix.decompose();
+                position_keys.push(AiVectorKey::new(
+                    key_time,
+                    decomposed.translation,
+                    AiAnimInterpolation::Linear,
+                ));
+                rotation_keys.push(AiQuatKey::new(
+                    key_time,
+                    decomposed.rotation,
+                    AiAnimInterpolation::Linear,
+                ));
+                scaling_keys.push(AiVectorKey::new(
+                    key_time,
+                    decomposed.scale,
+                    AiAnimInterpolation::Linear,
+                ));
+            }
+            if !weights.is_empty() {
+                morph_keys.push(AiMeshMorphKey {
+                    time: key_time,
+                    values: (0..weights.len() as u32).collect(),
+                    weights,
+                });
+            }
         }
 
-        node_anims.push(AiNodeAnim {
-            node_name: node.name.clone(),
-            position_keys,
-            rotation_keys,
-            scaling_keys,
-            ..AiNodeAnim::default()
-        });
+        if !position_keys.is_empty() {
+            node_anims.push(AiNodeAnim {
+                node_name: node.name.clone(),
+                position_keys,
+                rotation_keys,
+                scaling_keys,
+                ..AiNodeAnim::default()
+            });
+        }
+        if !morph_keys.is_empty() {
+            morph_anims.push(AiMeshMorphAnim {
+                name: node.name.clone(),
+                keys: morph_keys,
+            });
+        }
     }
 
-    if node_anims.is_empty() {
+    if node_anims.is_empty() && morph_anims.is_empty() {
         return Ok(None);
     }
 
@@ -584,6 +614,7 @@ fn create_animation(
         duration,
         ticks_per_second: 1000.0,
         channels: node_anims,
+        morph_channels: morph_anims,
         ..AiAnimation::default()
     }))
 }
@@ -592,7 +623,7 @@ fn combine_single_channel_ai_anims(anims: &mut Vec<AiAnimation>) {
     let mut delete_indices = Vec::new();
     for a in 0..anims.len() {
         // Skip if the animation has more than one channel.
-        if anims[a].channels.len() != 1 {
+        if anims[a].channels.len() != 1 || !anims[a].morph_channels.is_empty() {
             continue;
         }
 
@@ -602,6 +633,7 @@ fn combine_single_channel_ai_anims(anims: &mut Vec<AiAnimation>) {
         let mut collected = Vec::new();
         for b in a + 1..anims.len() {
             if anims[b].channels.len() == 1
+                && anims[b].morph_channels.is_empty()
                 && anims[b].duration == duration
                 && anims[b].ticks_per_second == ticks_per_second
             {
@@ -838,6 +870,12 @@ mod tests {
                 .component,
             TargetComponent::Matrix(14)
         );
+        assert_eq!(
+            AnimationTarget::try_from("Root/morph-weights(2)")
+                .unwrap()
+                .component,
+            TargetComponent::Index(2)
+        );
         assert!(AnimationTarget::try_from("Root/location.W").is_err());
     }
 
@@ -1050,6 +1088,37 @@ mod tests {
         assert_eq!(position_keys.len(), 3);
         assert_eq!(position_keys[1].time, 500.0);
         assert_eq!(position_keys[1].value.x, 0.5);
+    }
+
+    #[test]
+    fn creates_morph_animation_keys() {
+        let document = document_with(&format!(
+            r##"
+  <library_animations>
+    <animation name="Morph">
+      {sources}
+      <channel source="#samp" target="Face/morph-weights(0)"/>
+    </animation>
+  </library_animations>"##,
+            sources = sampler_sources("samp", "times", "values")
+        ));
+        let mut nodes = AiNodeTree::with_root();
+        nodes.arena[0].name = "Face".to_string();
+
+        let anims = DaeImporter::new()
+            .import_animations(&document, &nodes, &HashMap::from([("Face".to_string(), 0)]))
+            .expect("import");
+
+        assert_eq!(anims.len(), 1);
+        assert!(anims[0].channels.is_empty());
+        assert_eq!(anims[0].morph_channels.len(), 1);
+        assert_eq!(anims[0].morph_channels[0].name, "Face");
+        assert_eq!(anims[0].morph_channels[0].keys.len(), 2);
+        assert_eq!(anims[0].morph_channels[0].keys[0].time, 0.0);
+        assert_eq!(anims[0].morph_channels[0].keys[0].values, vec![0]);
+        assert_eq!(anims[0].morph_channels[0].keys[0].weights, vec![0.0]);
+        assert_eq!(anims[0].morph_channels[0].keys[1].time, 1000.0);
+        assert_eq!(anims[0].morph_channels[0].keys[1].weights, vec![1.0]);
     }
 
     #[test]
