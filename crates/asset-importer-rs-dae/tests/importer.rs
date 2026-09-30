@@ -4,9 +4,12 @@ use std::{
 };
 
 use asset_importer_rs_core::AiImporterExt;
-use asset_importer_rs_dae::{DaeImportError, DaeImporter};
+use asset_importer_rs_dae::{
+    AI_COLLADA_CREATED, AI_COLLADA_MODIFIED, AI_METADATA_SOURCE_GENERATOR, DaeImportError,
+    DaeImporter,
+};
 use asset_importer_rs_scene::{
-    AiColor4D, AiShadingMode, AiTextureType,
+    AiColor4D, AiMatrix4x4, AiMetadataEntry, AiShadingMode, AiTextureType,
     matkey::{
         AI_MATKEY_COLOR_DIFFUSE, AI_MATKEY_NAME, AI_MATKEY_OPACITY, AI_MATKEY_SHADING_MODEL,
         AI_MATKEY_SHININESS,
@@ -40,6 +43,14 @@ fn load_cube_scene() -> asset_importer_rs_scene::AiScene {
     let scene = importer.read_file_default(path);
     assert!(scene.is_ok(), "error: {}", scene.err().unwrap());
     scene.unwrap()
+}
+
+fn load_box_animated_scene() -> asset_importer_rs_scene::AiScene {
+    let path = Path::new("tests/BoxAnimated.dae");
+    assert!(path.exists(), "path does not exist");
+    DaeImporter::new()
+        .read_file_default(path)
+        .expect("BoxAnimated should import")
 }
 
 #[test]
@@ -129,4 +140,136 @@ fn test_dae_import_empty_visual_scene_missing_root() {
 </COLLADA>"##;
     let result = importer.read_file("empty.dae", |_| Ok(Cursor::new(xml.to_vec())));
     assert!(matches!(result, Err(DaeImportError::MissingRootNode)));
+}
+
+fn node_only_dae(unit_meter: &str, up_axis: &str) -> Vec<u8> {
+    format!(
+        r##"<?xml version="1.0"?>
+<COLLADA xmlns="http://www.collada.org/2005/11/COLLADASchema" version="1.4.1">
+  <asset>
+    <created>1970-01-01T00:00:00Z</created>
+    <modified>1970-01-01T00:00:00Z</modified>
+    <unit meter="{unit_meter}"/>
+    <up_axis>{up_axis}</up_axis>
+  </asset>
+  <library_visual_scenes>
+    <visual_scene id="Scene">
+      <node id="Root"/>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene url="#Scene"/>
+  </scene>
+</COLLADA>"##
+    )
+    .into_bytes()
+}
+
+#[test]
+fn test_dae_applies_unit_size_and_z_up() {
+    let importer = DaeImporter::new();
+    let xml = node_only_dae("2", "Z_UP");
+    let scene = importer
+        .read_file("unit-up.dae", |_| Ok(Cursor::new(xml.clone())))
+        .expect("import");
+    let root = scene.nodes.root.expect("root");
+    let expected = {
+        let mut m = AiMatrix4x4::identity();
+        m *= AiMatrix4x4::from([
+            2.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        ]);
+        m *= AiMatrix4x4::from([
+            1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        ]);
+        m
+    };
+    assert_eq!(scene.nodes.arena[root].transformation, expected);
+}
+
+#[test]
+fn test_dae_ignore_unit_size_and_up_direction() {
+    let importer = DaeImporter {
+        ignore_unit_size: true,
+        ignore_up_direction: true,
+        ..DaeImporter::new()
+    };
+    let xml = node_only_dae("2", "Z_UP");
+    let scene = importer
+        .read_file("ignore-unit-up.dae", |_| Ok(Cursor::new(xml.clone())))
+        .expect("import");
+    let root = scene.nodes.root.expect("root");
+    assert_eq!(
+        scene.nodes.arena[root].transformation,
+        AiMatrix4x4::identity()
+    );
+}
+
+fn metadata_str<'a>(metadata: &'a asset_importer_rs_scene::AiMetadata, key: &str) -> &'a str {
+    match metadata.get(key) {
+        Some(AiMetadataEntry::AiStr(s)) => s,
+        other => panic!("expected string metadata for {key}, got {other:?}"),
+    }
+}
+
+#[test]
+fn test_dae_import_cube_metadata() {
+    let scene = load_cube_scene();
+    assert_eq!(
+        metadata_str(&scene.metadata, AI_METADATA_SOURCE_GENERATOR),
+        "SceneKit Collada Exporter v1.0"
+    );
+    assert_eq!(
+        metadata_str(&scene.metadata, AI_COLLADA_CREATED),
+        "2018-10-25T16:29:03+00:00"
+    );
+    assert_eq!(
+        metadata_str(&scene.metadata, AI_COLLADA_MODIFIED),
+        "2018-10-25T16:29:03+00:00"
+    );
+}
+
+#[test]
+fn test_dae_import_box_animated_channels() {
+    let scene = load_box_animated_scene();
+    assert_eq!(scene.animations.len(), 2);
+
+    for animation in &scene.animations {
+        assert_eq!(animation.ticks_per_second, 1000.0);
+        assert_eq!(animation.channels.len(), 1);
+        assert_eq!(animation.channels[0].node_name, "Geometry-mesh020Node");
+        assert!(animation.morph_channels.is_empty());
+    }
+
+    let translation = scene
+        .animations
+        .iter()
+        .find(|animation| (animation.duration - 3708.33).abs() < 0.01)
+        .expect("translation animation");
+    let keys = &translation.channels[0].position_keys;
+    assert_eq!(keys.len(), 4);
+    assert_eq!(
+        keys.iter().map(|key| key.time).collect::<Vec<_>>(),
+        vec![0.0, 1250.0, 2500.0, 3708.329916000366]
+    );
+    assert_eq!(
+        keys.iter().map(|key| key.value.y).collect::<Vec<_>>(),
+        vec![0.0, 2.52, 2.52, 0.0]
+    );
+}
+
+#[test]
+fn test_dae_import_box_animated_subsamples_rotation() {
+    let scene = load_box_animated_scene();
+    let rotation = scene
+        .animations
+        .iter()
+        .find(|animation| animation.duration == 2500.0)
+        .expect("rotation animation");
+    let keys = &rotation.channels[0].rotation_keys;
+
+    assert_eq!(keys.len(), 3);
+    assert_eq!(
+        keys.iter().map(|key| key.time).collect::<Vec<_>>(),
+        vec![1250.0, 1875.0, 2500.0]
+    );
 }

@@ -15,6 +15,7 @@ use super::DaeImporter;
 pub(crate) struct ImportNodes {
     pub nodes: AiNodeTree,
     pub meshes: Vec<AiMesh>,
+    pub node_index_map: HashMap<String, usize>,
     /// Mesh name → scene mesh index. Kept for animation/controller lookup.
     #[allow(dead_code)]
     pub mesh_name_map: HashMap<String, usize>,
@@ -48,6 +49,7 @@ impl DaeImporter {
         let mut scene_cameras = Vec::new();
         let mut scene_lights = Vec::new();
         let mut scene_mesh_name_map = HashMap::new();
+        let mut node_index_map = HashMap::new();
         let mut material_uv_map = HashMap::new();
         let mut seen_node_names: HashMap<String, ()> = HashMap::new();
         let mut node_name_counter = 0u32;
@@ -114,6 +116,9 @@ impl DaeImporter {
             let index = tree
                 .insert(ai_node, parent_index)
                 .expect("parent was already inserted into the tree");
+            for name in [&node.id, &node.sid, &node.name].into_iter().flatten() {
+                node_index_map.insert(name.clone(), index);
+            }
 
             let instances = resolve_node_instances(node, &node_map, visual_scene);
             for instance in instances.into_iter().rev() {
@@ -127,6 +132,7 @@ impl DaeImporter {
         Ok(ImportNodes {
             nodes: tree,
             meshes: scene_meshes,
+            node_index_map,
             mesh_name_map: scene_mesh_name_map,
             material_uv_map,
             cameras: scene_cameras,
