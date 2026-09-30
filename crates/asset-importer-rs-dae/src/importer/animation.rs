@@ -174,9 +174,10 @@ impl DaeImporter {
 
             // Create the animation if it has channels.
             if !src.channel.is_empty()
-                && let Some(anim) = create_animation(src, &name, nodes, node_index_map, &maps)? {
-                    anims.push(anim);
-                }
+                && let Some(anim) = create_animation(src, &name, nodes, node_index_map, &maps)?
+            {
+                anims.push(anim);
+            }
         }
 
         // When processing the clips, we may have created duplicate animations with the same name.
