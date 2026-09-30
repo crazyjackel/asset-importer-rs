@@ -45,6 +45,14 @@ fn load_cube_scene() -> asset_importer_rs_scene::AiScene {
     scene.unwrap()
 }
 
+fn load_box_animated_scene() -> asset_importer_rs_scene::AiScene {
+    let path = Path::new("tests/BoxAnimated.dae");
+    assert!(path.exists(), "path does not exist");
+    DaeImporter::new()
+        .read_file_default(path)
+        .expect("BoxAnimated should import")
+}
+
 #[test]
 fn test_dae_import_cube_scene_name() {
     let scene = load_cube_scene();
@@ -217,5 +225,51 @@ fn test_dae_import_cube_metadata() {
     assert_eq!(
         metadata_str(&scene.metadata, AI_COLLADA_MODIFIED),
         "2018-10-25T16:29:03+00:00"
+    );
+}
+
+#[test]
+fn test_dae_import_box_animated_channels() {
+    let scene = load_box_animated_scene();
+    assert_eq!(scene.animations.len(), 2);
+
+    for animation in &scene.animations {
+        assert_eq!(animation.ticks_per_second, 1000.0);
+        assert_eq!(animation.channels.len(), 1);
+        assert_eq!(animation.channels[0].node_name, "Geometry-mesh020Node");
+        assert!(animation.morph_channels.is_empty());
+    }
+
+    let translation = scene
+        .animations
+        .iter()
+        .find(|animation| (animation.duration - 3708.33).abs() < 0.01)
+        .expect("translation animation");
+    let keys = &translation.channels[0].position_keys;
+    assert_eq!(keys.len(), 4);
+    assert_eq!(
+        keys.iter().map(|key| key.time).collect::<Vec<_>>(),
+        vec![0.0, 1250.0, 2500.0, 3708.329916000366]
+    );
+    assert_eq!(
+        keys.iter().map(|key| key.value.y).collect::<Vec<_>>(),
+        vec![0.0, 2.52, 2.52, 0.0]
+    );
+}
+
+#[test]
+fn test_dae_import_box_animated_subsamples_rotation() {
+    let scene = load_box_animated_scene();
+    let rotation = scene
+        .animations
+        .iter()
+        .find(|animation| animation.duration == 2500.0)
+        .expect("rotation animation");
+    let keys = &rotation.channels[0].rotation_keys;
+
+    assert_eq!(keys.len(), 3);
+    assert_eq!(
+        keys.iter().map(|key| key.time).collect::<Vec<_>>(),
+        vec![1250.0, 1875.0, 2500.0]
     );
 }
