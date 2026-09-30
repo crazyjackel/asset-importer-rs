@@ -173,11 +173,10 @@ impl DaeImporter {
             }
 
             // Create the animation if it has channels.
-            if !src.channel.is_empty() {
-                if let Some(anim) = create_animation(src, &name, nodes, node_index_map, &maps)? {
+            if !src.channel.is_empty()
+                && let Some(anim) = create_animation(src, &name, nodes, node_index_map, &maps)? {
                     anims.push(anim);
                 }
-            }
         }
 
         // When processing the clips, we may have created duplicate animations with the same name.
@@ -631,11 +630,11 @@ fn combine_single_channel_ai_anims(anims: &mut Vec<AiAnimation>) {
         let duration = anims[a].duration;
         let ticks_per_second = anims[a].ticks_per_second;
         let mut collected = Vec::new();
-        for b in a + 1..anims.len() {
-            if anims[b].channels.len() == 1
-                && anims[b].morph_channels.is_empty()
-                && anims[b].duration == duration
-                && anims[b].ticks_per_second == ticks_per_second
+        for (b, anim) in anims.iter().enumerate().skip(a + 1) {
+            if anim.channels.len() == 1
+                && anim.morph_channels.is_empty()
+                && anim.duration == duration
+                && anim.ticks_per_second == ticks_per_second
             {
                 collected.push(b);
             }
