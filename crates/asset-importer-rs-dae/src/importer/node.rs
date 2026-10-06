@@ -15,6 +15,7 @@ use super::DaeImporter;
 pub(crate) struct ImportNodes {
     pub nodes: AiNodeTree,
     pub meshes: Vec<AiMesh>,
+    pub node_index_map: HashMap<String, usize>,
     /// Mesh name → scene mesh index. Kept for animation/controller lookup.
     #[allow(dead_code)]
     pub mesh_name_map: HashMap<String, usize>,
@@ -48,6 +49,7 @@ impl DaeImporter {
         let mut scene_cameras = Vec::new();
         let mut scene_lights = Vec::new();
         let mut scene_mesh_name_map = HashMap::new();
+        let mut node_index_map = HashMap::new();
         let mut material_uv_map = HashMap::new();
         let mut seen_node_names: HashMap<String, ()> = HashMap::new();
         let mut node_name_counter = 0u32;
@@ -55,10 +57,7 @@ impl DaeImporter {
         let mut queue: VecDeque<(&Node, Option<usize>)> = VecDeque::new();
 
         match visual_scene.nodes.len().cmp(&1) {
-            Ordering::Equal => {
-                queue.push_back((&visual_scene.nodes[0], None));
-            }
-            Ordering::Greater => {
+            Ordering::Equal | Ordering::Greater => {
                 let root = AiNode {
                     name: visual_scene
                         .name
@@ -80,6 +79,8 @@ impl DaeImporter {
             }
         }
 
+        // Collect node IDs for later insertion
+        let mut node_ids = Vec::new();
         while let Some((node, parent_index)) = queue.pop_back() {
             let name = find_name_for_node(node, self.use_collada_name, &mut node_name_counter);
             if seen_node_names.contains_key(&name) {
@@ -115,6 +116,16 @@ impl DaeImporter {
                 .insert(ai_node, parent_index)
                 .expect("parent was already inserted into the tree");
 
+            if let Some(sid) = node.sid.as_ref() {
+                node_index_map.insert(sid.clone(), index);
+            }
+            if let Some(name) = node.name.as_ref() {
+                node_index_map.insert(name.clone(), index);
+            }
+            if let Some(id) = node.id.as_ref() {
+                node_ids.push((id.clone(), index));
+            }
+
             let instances = resolve_node_instances(node, &node_map, visual_scene);
             for instance in instances.into_iter().rev() {
                 queue.push_back((instance, Some(index)));
@@ -124,9 +135,15 @@ impl DaeImporter {
             }
         }
 
+        // Insert node IDs into the index map
+        for (node_id, index) in node_ids.into_iter() {
+            node_index_map.insert(node_id, index);
+        }
+
         Ok(ImportNodes {
             nodes: tree,
             meshes: scene_meshes,
+            node_index_map,
             mesh_name_map: scene_mesh_name_map,
             material_uv_map,
             cameras: scene_cameras,
