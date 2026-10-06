@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791328676760,
+  "lastUpdate": 1791329146514,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -2435,6 +2435,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 32386696,
             "range": "± 1452783",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "23128385884e0b6437c953e9db57fbae7af7d617",
+          "message": "Add Scorecard workflow for supply-chain security",
+          "timestamp": "2026-10-06T19:23:13-04:00",
+          "tree_id": "7059acadb39218ab5c6c189a20b50aa26f69bb21",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/23128385884e0b6437c953e9db57fbae7af7d617"
+        },
+        "date": 1791329146094,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 93886857,
+            "range": "± 280277",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 50711884,
+            "range": "± 154856",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 195695654,
+            "range": "± 885768",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 50913308,
+            "range": "± 311779",
             "unit": "ns/iter"
           }
         ]
