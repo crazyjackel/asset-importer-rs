@@ -78,7 +78,7 @@ impl DaeImporter {
                 return Err(DaeImportError::MissingRootNode);
             }
         }
-        
+
         // Collect node IDs for later insertion
         let mut node_ids = Vec::new();
         while let Some((node, parent_index)) = queue.pop_back() {
@@ -137,7 +137,7 @@ impl DaeImporter {
 
         // Insert node IDs into the index map
         for (node_id, index) in node_ids.into_iter() {
-           node_index_map.insert(node_id, index);
+            node_index_map.insert(node_id, index);
         }
 
         Ok(ImportNodes {
