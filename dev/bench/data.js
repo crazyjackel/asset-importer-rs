@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789916262734,
+  "lastUpdate": 1791324286470,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -2339,6 +2339,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 50228808,
             "range": "± 473286",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b6685e33451d377832ffa505dc86b8300bfbdf54",
+          "message": "Merge pull request #112 from crazyjackel/dependabot/github_actions/SonarSource/sonarqube-scan-action-8.3.0\n\nbuild(deps): bump SonarSource/sonarqube-scan-action from 8.2.1 to 8.3.0",
+          "timestamp": "2026-10-06T18:02:30-04:00",
+          "tree_id": "b1c0d3ccc10d203e82845850d00e6b9169a42558",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/b6685e33451d377832ffa505dc86b8300bfbdf54"
+        },
+        "date": 1791324286033,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 99459021,
+            "range": "± 178647",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 49136596,
+            "range": "± 110246",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 201955665,
+            "range": "± 333091",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 50480964,
+            "range": "± 173858",
             "unit": "ns/iter"
           }
         ]
