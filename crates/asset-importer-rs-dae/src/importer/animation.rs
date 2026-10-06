@@ -279,8 +279,27 @@ fn create_animation(
             let Some(ArrayElement::Float(data)) = &time_source.array else {
                 continue;
             };
-            let mut times =
-                Vec::with_capacity(time_source.accessor.count * time_source.accessor.stride);
+            // Calculate the capacity of the time accessor.
+            let capacity = time_source
+                .accessor
+                .count
+                .checked_mul(time_source.accessor.stride)
+                .ok_or_else(|| {
+                    DaeImportError::InvalidAnimation("time accessor size overflow".into())
+                })?;
+            // Check if the time accessor range will overflow the loop buffer by being out of bounds.
+            time_source
+                .accessor
+                .offset
+                .checked_add(capacity)
+                .ok_or_else(|| {
+                    DaeImportError::InvalidAnimation("time accessor range overflow".into())
+                })?;
+            let mut times = Vec::new();
+            times.try_reserve_exact(capacity).map_err(|_| {
+                DaeImportError::InvalidAnimation("time accessor size overflow".into())
+            })?;
+            // Check if the time accessor size will overflow the loop buffer by being out of bounds.
             for index in 0..time_source.accessor.count {
                 let start = time_source.accessor.offset + index * time_source.accessor.stride;
                 let Some(time) = data.get(start..start + time_source.accessor.stride) else {
@@ -765,7 +784,7 @@ mod tests {
         let interp_array = format!("{interp}-array");
         let interp_src = format!("#{interp}");
         let interp_array_src = format!("#{interp_array}");
-        format!(
+        return format!(
             r#"
       <source id="{times}">
         <float_array id="{times_array}" count="2">0 1</float_array>
@@ -798,7 +817,7 @@ mod tests {
         <input semantic="OUTPUT" source="{values_src}"/>
         <input semantic="INTERPOLATION" source="{interp_src}"/>
       </sampler>"#
-        )
+        );
     }
 
     fn node_anim(node_name: &str) -> AiNodeAnim {

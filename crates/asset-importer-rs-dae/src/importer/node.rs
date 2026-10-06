@@ -57,10 +57,7 @@ impl DaeImporter {
         let mut queue: VecDeque<(&Node, Option<usize>)> = VecDeque::new();
 
         match visual_scene.nodes.len().cmp(&1) {
-            Ordering::Equal => {
-                queue.push_back((&visual_scene.nodes[0], None));
-            }
-            Ordering::Greater => {
+            Ordering::Equal | Ordering::Greater => {
                 let root = AiNode {
                     name: visual_scene
                         .name
@@ -81,7 +78,9 @@ impl DaeImporter {
                 return Err(DaeImportError::MissingRootNode);
             }
         }
-
+        
+        // Collect node IDs for later insertion
+        let mut node_ids = Vec::new();
         while let Some((node, parent_index)) = queue.pop_back() {
             let name = find_name_for_node(node, self.use_collada_name, &mut node_name_counter);
             if seen_node_names.contains_key(&name) {
@@ -116,8 +115,15 @@ impl DaeImporter {
             let index = tree
                 .insert(ai_node, parent_index)
                 .expect("parent was already inserted into the tree");
-            for name in [&node.id, &node.sid, &node.name].into_iter().flatten() {
+
+            if let Some(sid) = node.sid.as_ref() {
+                node_index_map.insert(sid.clone(), index);
+            }
+            if let Some(name) = node.name.as_ref() {
                 node_index_map.insert(name.clone(), index);
+            }
+            if let Some(id) = node.id.as_ref() {
+                node_ids.push((id.clone(), index));
             }
 
             let instances = resolve_node_instances(node, &node_map, visual_scene);
@@ -127,6 +133,11 @@ impl DaeImporter {
             for child in node.children.iter().rev() {
                 queue.push_back((child, Some(index)));
             }
+        }
+
+        // Insert node IDs into the index map
+        for (node_id, index) in node_ids.into_iter() {
+           node_index_map.insert(node_id, index);
         }
 
         Ok(ImportNodes {
