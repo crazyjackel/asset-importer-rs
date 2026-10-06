@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0](https://github.com/crazyjackel/asset-importer-rs/compare/asset-importer-rs-dae-v0.4.1...asset-importer-rs-dae-v0.5.0) - 2026-10-06
+
+### Added
+
+- test F1 conversion
+- animation tests
+- added morph animations
+- did duration calculations
+- added basic animations
+- *(dae)* collect and validate animation channel data
+- added beginnings of animation and exported from nodes a mapping of names to mapped indices
+- better metadata tests and first pass at animation
+- Added Metadata Handling, Direction Adjustment Settings, and stubbed animation
+- update clippy linting
+
+### Fixed
+
+- format and lint fix
+- small coderabbit issues
+- cargo fmt
+- linting
+- clippy fixes related to double_precision, if chains, extra into(), bad asserts, as_chunks vs. chunks_exact
+
 ## [0.4.1](https://github.com/crazyjackel/asset-importer-rs/compare/asset-importer-rs-dae-v0.4.0...asset-importer-rs-dae-v0.4.1) - 2026-09-06
 
 ### Added
