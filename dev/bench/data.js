@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1791324286470,
+  "lastUpdate": 1791328676760,
   "repoUrl": "https://github.com/crazyjackel/asset-importer-rs",
   "entries": {
     "Rust Benchmark": [
@@ -2387,6 +2387,54 @@ window.BENCHMARK_DATA = {
             "name": "Export Group/export avocado (gltf)",
             "value": 50480964,
             "range": "± 173858",
+            "unit": "ns/iter"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "47047592+crazyjackel@users.noreply.github.com",
+            "name": "Jackson Levitt",
+            "username": "crazyjackel"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "d4fb9713c7045dcbdd83b475cb1b56f38ead4123",
+          "message": "Merge pull request #111 from crazyjackel/jlevitt/dae_anim_metadata\n\nDAE Animations and Metadata",
+          "timestamp": "2026-10-06T19:16:07-04:00",
+          "tree_id": "40c7c18c5587115625cabed046068611ec75a2c3",
+          "url": "https://github.com/crazyjackel/asset-importer-rs/commit/d4fb9713c7045dcbdd83b475cb1b56f38ead4123"
+        },
+        "date": 1791328676037,
+        "tool": "cargo",
+        "benches": [
+          {
+            "name": "Import Group/import avocado (gltf2)",
+            "value": 63409637,
+            "range": "± 1881487",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Import Group/import avocado (gltf)",
+            "value": 32231626,
+            "range": "± 164948",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf2)",
+            "value": 136704838,
+            "range": "± 2316944",
+            "unit": "ns/iter"
+          },
+          {
+            "name": "Export Group/export avocado (gltf)",
+            "value": 32386696,
+            "range": "± 1452783",
             "unit": "ns/iter"
           }
         ]
