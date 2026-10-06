@@ -92,9 +92,13 @@ fn test_dae_import_cube_nodes() {
     let scene = load_cube_scene();
     let root = scene.nodes.root.expect("scene should have a root node");
     let root_node = &scene.nodes.arena[root];
-    assert_eq!(root_node.name, "F1");
-    assert!(root_node.children.is_empty());
+    assert_eq!(root_node.name, "reportScene");
     assert_eq!(root_node.parent, None);
+    let child = &scene.nodes.arena[1];
+    assert_eq!(child.name, "F1");
+    assert_eq!(child.parent, Some(root));
+    assert_eq!(child.mesh_indexes, vec![0]);
+    assert!(child.children.is_empty());
 }
 
 #[test]
@@ -107,7 +111,9 @@ fn test_dae_import_cube_meshes() {
     assert_eq!(mesh.faces.len(), 12);
     assert_eq!(mesh.material_index, 0);
     let root = scene.nodes.root.expect("scene should have a root node");
-    assert_eq!(scene.nodes.arena[root].mesh_indexes, vec![0]);
+    assert_eq!(scene.nodes.arena[root].mesh_indexes, vec![]);
+    assert_eq!(scene.nodes.arena[root].children, vec![1]);
+    assert_eq!(scene.nodes.arena[1].mesh_indexes, vec![0]);
 }
 
 #[test]

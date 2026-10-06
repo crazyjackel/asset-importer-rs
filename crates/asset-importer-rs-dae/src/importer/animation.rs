@@ -784,7 +784,7 @@ mod tests {
         let interp_array = format!("{interp}-array");
         let interp_src = format!("#{interp}");
         let interp_array_src = format!("#{interp_array}");
-        return format!(
+        format!(
             r#"
       <source id="{times}">
         <float_array id="{times_array}" count="2">0 1</float_array>
@@ -817,7 +817,7 @@ mod tests {
         <input semantic="OUTPUT" source="{values_src}"/>
         <input semantic="INTERPOLATION" source="{interp_src}"/>
       </sampler>"#
-        );
+        )
     }
 
     fn node_anim(node_name: &str) -> AiNodeAnim {
