@@ -1,0 +1,82 @@
+# asset-importer-rs CODEOWNERS
+#
+# The repository maintainer is the default owner of all files.
+# More specific rules below document the logical ownership boundaries
+# of the workspace and can be expanded as additional maintainers join.
+
+# Default ownership
+*                                       @crazyjackel
+
+# --------------------------------------------------------------------
+# Repository governance, CI, dependency management, and development
+# environment
+# --------------------------------------------------------------------
+
+/.github/                               @crazyjackel
+/.cargo/                                @crazyjackel
+/.devcontainer/                         @crazyjackel
+/.vscode/                               @crazyjackel
+
+/Cargo.toml                             @crazyjackel
+/Cargo.lock                             @crazyjackel
+/rustfmt.toml                           @crazyjackel
+/sonar-project.properties               @crazyjackel
+
+# --------------------------------------------------------------------
+# Public API / top-level crate
+# --------------------------------------------------------------------
+
+/src/                                   @crazyjackel
+
+# --------------------------------------------------------------------
+# Core data model and importer infrastructure
+# --------------------------------------------------------------------
+
+/crates/asset-importer-rs-core/         @crazyjackel
+/crates/asset-importer-rs-scene/        @crazyjackel
+/crates/asset-importer-rs-post-process/ @crazyjackel
+
+# --------------------------------------------------------------------
+# COLLADA / DAE
+# --------------------------------------------------------------------
+
+/crates/asset-importer-rs-dae/          @crazyjackel
+
+# --------------------------------------------------------------------
+# glTF
+# --------------------------------------------------------------------
+
+/crates/asset-importer-rs-gltf/         @crazyjackel
+/crates/asset-importer-rs-gltf-v1/      @crazyjackel
+/crates/gltf-v1/                        @crazyjackel
+/crates/gltf-v1-json/                   @crazyjackel
+/crates/gltf-v1-derive/                 @crazyjackel
+
+# --------------------------------------------------------------------
+# Wavefront OBJ
+# --------------------------------------------------------------------
+
+/crates/asset-importer-rs-obj/          @crazyjackel
+
+# --------------------------------------------------------------------
+# FBX
+# --------------------------------------------------------------------
+
+/crates/fbx-dom/                        @crazyjackel
+/crates/fbxscii/                        @crazyjackel
+
+# --------------------------------------------------------------------
+# Verification and performance
+# --------------------------------------------------------------------
+
+/tests/                                 @crazyjackel
+/benches/                               @crazyjackel
+
+# --------------------------------------------------------------------
+# Project documentation and contributor policy
+# --------------------------------------------------------------------
+
+/README.md                              @crazyjackel
+/CONTRIBUTING.md                        @crazyjackel
+/CHANGELOG.md                           @crazyjackel
+/LICENSE                                @crazyjackel
